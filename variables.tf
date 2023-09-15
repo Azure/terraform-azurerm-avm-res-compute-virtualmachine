@@ -10,11 +10,34 @@ variable "tags" {
   description = "Map of tags to be assigned to this resource"
 }
 
+variable "public_ip_configuration_details" {
+  type = object({
+    allocation_method       = optional(string, "Static")
+    zones                   = optional(list(string))
+    ddos_protection_mode    = optional(string, "VirtualNetworkInherited")
+    ddos_protection_plan_id = optional(string)
+    domain_name_label       = optional(string)
+    edge_zone               = optional(string)
+    idle_timeout_in_minutes = optional(number, 30)
+    ip_version              = optional(string, "IPv4")
+    sku_tier                = optional(string, "Regional")
+    tags                    = optional(map(string))
+  })
+  default = {
+    allocation_method       = "Static"
+    ddos_protection_mode    = "VirtualNetworkInherited"
+    idle_timeout_in_minutes = 30
+    ip_version              = "IPv4"
+    sku_tier                = "Regional"
+  }
+}
+
+
 variable "virtualmachine_network_interfaces" {
   type = list(object({
     name = string
     ip_configurations = list(object({
-      name                                                        = optional(string)
+      name                                                        = string
       private_ip_address                                          = optional(string)
       private_ip_address_version                                  = optional(string, "IPv4")
       private_ip_address_allocation                               = optional(string, "Dynamic")
@@ -23,14 +46,13 @@ variable "virtualmachine_network_interfaces" {
       is_primary_interface                                        = optional(bool, false)
       gateway_load_balancer_frontend_ip_configuration_resource_id = optional(string)
       create_public_ip_address                                    = optional(bool, false)
-      create_private_ip_address                                   = optional(bool, true)
-
     }))
     dns_servers                    = optional(list(string))
     edge_zone                      = optional(string)
     accelerated_networking_enabled = optional(bool, false)
     ip_forwarding_enabled          = optional(bool, false)
     internal_dns_name_label        = optional(string)
+    tags                           = optional(map(string))
   }))
   default = [{
     name = "default-ipv4-ipconfig"
@@ -41,11 +63,9 @@ variable "virtualmachine_network_interfaces" {
         private_ip_address_version                                  = "IPv4"
         private_ip_address_allocation                               = "Dynamic"
         private_ip_subnet_resource_id                               = null
-        public_ip_address_resource_id                               = null        
+        public_ip_address_resource_id                               = null
         is_primary_interface                                        = true
         gateway_load_balancer_frontend_ip_configuration_resource_id = null
-        create_public_ip_address                                    = false
-        create_private_ip_address                                   = true
       }
     ]
     dns_servers                    = null
@@ -53,6 +73,7 @@ variable "virtualmachine_network_interfaces" {
     accelerated_networking_enabled = true
     ip_forwarding_enabled          = false
     internal_dns_name_label        = null
+    tags                           = {}
   }]
 }
 
