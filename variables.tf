@@ -5,6 +5,13 @@ variable "resource_group" {
   nullable    = false
 }
 
+variable "virtualmachine_os_type" {
+  type        = string
+  description = "The base OS type of the vm to be built.  Valid answers are Windows or Linux"
+  nullable    = false
+  default     = "Windows"
+}
+
 variable "virtualmachine_name" {
   type        = string
   description = "The name to use when creating the virtual machine."
@@ -17,50 +24,72 @@ variable "tags" {
 }
 
 variable "admin_username" {
-  type = string
+  type        = string
   description = "Name to use for the default admin account created for the virtual machine"
-  default = "azureuser"
-  nullable = false
+  default     = "azureuser"
+  nullable    = false
 }
 
 variable "virtualmachine_sku_size" {
-  type = string
+  type        = string
   description = "The sku value to use for this virtual machine"
-  default = "Standard_D2as_v4"
-  nullable = false
+  default     = "Standard_D2as_v4"
+  nullable    = false
 }
 
 variable "admin_credential_key_vault_resource_id" {
-  type = string
+  type        = string
   description = "The Azure resource ID for the key vault that stores admin credential information"
-  nullable = false
-}
-
-variable "admin_ssh_key" {
-  type = list(object({
-    public_key = string
-    username = string
-  }))
-  description = "A list of key objects including the public key 2048 bit RSA string, and the associated username to put the key in the user's home directory."
-  default = []
+  nullable    = false
 }
 
 variable "disable_password_authentication" {
-  type = bool
+  type        = bool
   description = "If true this value will disallow password authentication on linux vm's. This will require at least one public key to be configured."
-  default = false  
+  default     = true
 }
 
-variable "generate_admin_password" {
-  type = bool
+variable "generate_admin_password_or_ssh_key" {
+  type        = bool
   description = "Set this value to true if the deployment should create a strong password for the admin user."
-  default = true
+  default     = true
 }
 
 variable "admin_password_key_vault_secret_name" {
-  type = string
+  type        = string
   description = "The name of the key vault secret which should be used for the admin password"
-  default = ""
+  default     = ""
+}
+
+variable "admin_ssh_keys" {
+  type = list(object({
+    public_key = string
+    username   = string
+  }))
+  default     = []
+  description = <<-EOT
+  set(object({
+    public_key = "(Required) The Public Key which should be used for authentication, which needs to be at least 2048-bit and in `ssh-rsa` format. Changing this forces a new resource to be created."
+    username   = "(Required) The Username for which this Public SSH Key should be configured. Changing this forces a new resource to be created. The Azure VM Agent only allows creating SSH Keys at the path `/home/{admin_username}/.ssh/authorized_keys` - as such this public key will be written to the authorized keys file. If no username is provided this module will use var.admin_username."
+  }))
+  EOT
+}
+
+variable "source_image_reference" {
+  type = object({
+    publisher = string
+    offer     = string
+    sku       = string
+    version   = string
+  })
+  default = null
+  description = "The source image to use when building the virtual machine."
+}
+
+variable "source_image_resource_id" {
+  type = string
+  description = "The Azure resource ID of the source image used to create the VM."
+  default = null  
 }
 
 
@@ -88,7 +117,7 @@ variable "public_ip_configuration_details" {
 }
 
 
-variable "virtualmachine_network_interfaces" {
+variable "network_interfaces" {
   type = list(object({
     name = string
     ip_configurations = list(object({
@@ -132,14 +161,36 @@ variable "virtualmachine_network_interfaces" {
   }]
 }
 
+variable "os_disk" {
+  type = object({
+    caching                          = string
+    storage_account_type             = string
+    disk_encryption_set_id           = optional(string)
+    disk_size_gb                     = optional(number)
+    name                             = optional(string)
+    secure_vm_disk_encryption_set_id = optional(string)
+    security_encryption_type         = optional(string)
+    write_accelerator_enabled        = optional(bool, false)
+    diff_disk_settings = optional(object({
+      option    = string
+      placement = optional(string, "CacheDisk")
+    }), null)
+  })
+  nullable = false
+  default = {
+    caching = "ReadWrite"
+    storage_account_type = "StandardSSD_LRS"
+  }
+}
 
-##Variables describing the disk configuration
-variable "virtualmachine_data_disk_managed_disks" {
+##Variables describing the data disk configurations
+variable "data_disk_managed_disks" {
   type = list(object({
     name                                      = string
     storage_account_type                      = string
     lun                                       = number
     caching                                   = string
+    disk_attachment_create_option             = optional(string)
     create_option                             = optional(string, "Empty")
     write_accelerator_enabled                 = optional(bool)
     disk_iops_read_write                      = optional(number)
@@ -175,7 +226,7 @@ variable "virtualmachine_data_disk_managed_disks" {
       disk_encryption_key_vault_resource_id = optional(string)
       key_encryption_key_vault_secret_url   = optional(string)
       key_encryption_key_vault_resource_id  = optional(string)
-    })),[])
+    })), [])
     #disk_encryption_set_resource_id = optional(string) #this is currently a preview feature in the provider 
   }))
 

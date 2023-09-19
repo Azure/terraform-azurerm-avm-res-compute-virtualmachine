@@ -20,7 +20,7 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
 
 #create the Nics
 resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
-  for_each                      = { for nic in var.virtualmachine_network_interfaces : nic.name => nic }
+  for_each                      = { for nic in var.network_interfaces : nic.name => nic }
   name                          = each.value.name
   location                      = data.azurerm_resource_group.virtualmachine_deployment.location
   resource_group_name           = data.azurerm_resource_group.virtualmachine_deployment.name
