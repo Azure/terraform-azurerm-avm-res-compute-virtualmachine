@@ -91,8 +91,8 @@ variable "additional_unattend_contents" {
 
 variable "allow_extension_operations" {
   type        = bool
-  default     = false
-  description = "(Optional) Should Extension Operations be allowed on this Virtual Machine? Defaults to `false`."
+  default     = true
+  description = "(Optional) Should Extension Operations be allowed on this Virtual Machine? Defaults to `true`."
 }
 
 variable "enable_automatic_updates" {
@@ -150,34 +150,34 @@ variable "custom_data" {
 }
 
 variable "dedicated_host_resource_id" {
-  type = string
-  default = null
+  type        = string
+  default     = null
   description = "(Optional) The Azure Resource ID of the dedicated host where this virtual machine should run. Conflicts with dedicated_host_group_resource_id (dedicated_host_group_id on the azurerm provider)"
-  
+
 }
 
 variable "dedicated_host_group_resource_id" {
-  type = string
-  default = null
+  type        = string
+  default     = null
   description = "(Optional) The Azure Resource ID of the dedicated host group where this virtual machine should run. Conflicts with dedicated_host_resource_id (dedicated_host_group_id on the azurerm provider)"
-  
+
 }
 
 variable "edge_zone" {
-  type = string
-  default = null
+  type        = string
+  default     = null
   description = "(Optional) Specifies the Edge Zone within the Azure Region where this Virtual Machine should exist. Changing this forces a new Virtual Machine to be created."
 }
 
 variable "encryption_at_host_enabled" {
-  type = bool
-  default = null
+  type        = bool
+  default     = null
   description = "(Optional) Should all of the disks (including the temp disk) attached to this Virtual Machine be encrypted by enabling Encryption at Host?"
 }
 
 variable "eviction_policy" {
-  type = string
-  default = null
+  type        = string
+  default     = null
   description = "(Optional) Specifies what should happen when the Virtual Machine is evicted for price reasons when using a Spot instance. Possible values are Deallocate and Delete. Changing this forces a new resource to be created. This value can only be set when priority is set to Spot"
 }
 
@@ -259,8 +259,8 @@ variable "proximity_placement_group_resource_id" {
 }
 
 variable "reboot_setting" {
-  type = string
-  default = null
+  type        = string
+  default     = null
   description = "(Optional) Specifies the reboot setting for platform scheduled patching. Possible values are Always, IfRequired and Never. can only be set when patch_mode is set to AutomaticByPlatform"
 }
 
@@ -541,7 +541,7 @@ variable "identity" {
     type         = string
     identity_ids = optional(set(string))
   })
-  default     = {
+  default = {
     type = "SystemAssigned"
   }
   description = <<-EOT
@@ -605,6 +605,42 @@ variable "name_string_suffix_length" {
   default     = 6
 }
 
+variable "azure_monitor_agent_enabled" {
+  type        = bool
+  default     = true
+  description = "When true this setting will enable the Azure Monitor Agent Extension on the VM. If set to false the Agent will not be installed"
+}
+
+variable "azure_monitor_agent_extension_settings" {
+  type = object({
+    name                                       = optional(string)
+    type_handler_version                       = optional(string, "1.0")
+    auto_upgrade_minor_version                 = optional(bool, true)
+    automatic_upgrade_enabled                  = optional(bool, true)
+    managed_identity_type                      = optional(string, "SystemAssigned")
+    user_assigned_managed_identity_resource_id = optional(string)
+  })
+  default = {}
+}
+
+variable "azure_monitor_data_collection_rule_associations" {
+  type = list(object({
+    name                             = optional(string)
+    data_collection_rule_resource_id = string
+    description                      = optional(string)
+  }))
+  default     = []
+  description = "This list of objects defines one or more data collection rule associations to create. Requires that the azure_monitor_agent_enabled value be set to true."
+}
+
+variable "azure_monitor_data_collection_endpoint_associations" {
+  type = list(object({
+    data_collection_endpoint_resource_id = string
+    description                      = optional(string)
+  }))
+  default     = []
+  description = "This list of objects defines one or more data collection endpoint associations to create. Requires that the azure_monitor_agent_enabled value be set to true."
+}
 
 /*
 variable "enable_telemetry" {

@@ -1,4 +1,6 @@
 locals {
+  virtualmachine_resource_id = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azurerm_linux_virtual_machine.this[0].id
+  
   #nic_subnets = [for subnet in jsondecode(data.azapi_resource.virtualmachine_virtual_network.output).properties.subnets : subnet if contains(var.subnet_names, subnet.name)]
   #flatten the network interface vars to properly create public ips
   flattened_nics = flatten([for nic_key, nic in var.network_interfaces : [
@@ -29,4 +31,12 @@ locals {
   #create a string to help with naming uniqueness when resource names are re-used
   name_string = var.append_name_string_suffix ? "-${substr(sha256(var.virtualmachine_name), 0, var.name_string_suffix_length)}" : ""
 
+  azure_monitor_agent_authentication_user_assigned_identity_settings = {
+    authentication = {
+        managedIdentity = {
+            identifier-name = "mi_res_id"
+            identifier-value = var.azure_monitor_agent_extension_settings.user_assigned_managed_identity_resource_id
+        }
+    }
+  }
 }

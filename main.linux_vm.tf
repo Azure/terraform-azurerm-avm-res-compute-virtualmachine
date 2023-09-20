@@ -35,7 +35,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   availability_set_id                                    = var.availability_set_resource_id
   bypass_platform_safety_checks_on_user_schedule_enabled = var.bypass_platform_safety_checks_on_user_schedule_enabled
   capacity_reservation_group_id                          = var.capacity_reservation_group_resource_id
-  computer_name                                          = coalesce(coalesce(var.computer_name, var.virtualmachine_name))
+  computer_name                                          = coalesce(var.computer_name, var.virtualmachine_name)
   custom_data                                            = var.custom_data
   dedicated_host_id                                      = var.dedicated_host_resource_id
   dedicated_host_group_id                                = var.dedicated_host_group_resource_id
