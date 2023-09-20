@@ -3,14 +3,7 @@ data "azurerm_resource_group" "virtualmachine_deployment" {
   name = var.resource_group
 }
 
-#create the namestring
-#create a random string for uniqueness during redeployments using the same values
-resource "random_string" "namestring" {
-  length  = 4
-  special = false
-  upper   = false
-  lower   = true
-}
+
 
 
 ####Admin password related Resources

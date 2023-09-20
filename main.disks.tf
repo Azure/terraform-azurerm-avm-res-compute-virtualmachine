@@ -1,7 +1,7 @@
 resource "azurerm_managed_disk" "this" {
-  for_each = (length(var.data_disk_managed_disks) > 0) ? { for disk in var.data_disk_managed_disks : disk.name => disk } : {}
+  for_each = (length(var.data_disk_managed_disks) > 0) ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
 
-  name                 = each.value.name
+  name                 = each.key
   location             = data.azurerm_resource_group.virtualmachine_deployment.location
   resource_group_name  = data.azurerm_resource_group.virtualmachine_deployment.name
   storage_account_type = each.value.storage_account_type
@@ -58,7 +58,7 @@ resource "azurerm_managed_disk" "this" {
 
 
 resource "azurerm_virtual_machine_data_disk_attachment" "this_linux" {
-  for_each                  = (length(var.data_disk_managed_disks) > 0) && (lower(var.virtualmachine_os_type) == "linux") ? { for disk in var.data_disk_managed_disks : disk.name => disk } : {}
+  for_each                  = (length(var.data_disk_managed_disks) > 0) && (lower(var.virtualmachine_os_type) == "linux") ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
   managed_disk_id           = azurerm_managed_disk.this[each.key].id
   virtual_machine_id        = azurerm_linux_virtual_machine.this[0].id
   lun                       = each.value.lun
@@ -67,3 +67,12 @@ resource "azurerm_virtual_machine_data_disk_attachment" "this_linux" {
   write_accelerator_enabled = each.value.write_accelerator_enabled
 }
 
+resource "azurerm_virtual_machine_data_disk_attachment" "this_windows" {
+  for_each                  = (length(var.data_disk_managed_disks) > 0) && (lower(var.virtualmachine_os_type) == "windows") ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
+  managed_disk_id           = azurerm_managed_disk.this[each.key].id
+  virtual_machine_id        = azurerm_windows_virtual_machine.this[0].id
+  lun                       = each.value.lun
+  caching                   = each.value.caching
+  create_option             = each.value.disk_attachment_create_option
+  write_accelerator_enabled = each.value.write_accelerator_enabled
+}
