@@ -4,7 +4,7 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
 
   name                    = "${each.value.ip_config_name}-pip"
   resource_group_name     = data.azurerm_resource_group.virtualmachine_deployment.name
-  location                = data.azurerm_resource_group.virtualmachine_deployment.location
+  location                = local.location
   allocation_method       = var.public_ip_configuration_details.allocation_method
   zones                   = var.public_ip_configuration_details.zones
   ddos_protection_mode    = var.public_ip_configuration_details.ddos_protection_mode
@@ -22,7 +22,7 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
 resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
   for_each                      = { for nic in var.network_interfaces : "${nic.name}${local.name_string}" => nic }
   name                          = each.key
-  location                      = data.azurerm_resource_group.virtualmachine_deployment.location
+  location                      = local.location
   resource_group_name           = data.azurerm_resource_group.virtualmachine_deployment.name
   dns_servers                   = each.value.dns_servers
   edge_zone                     = each.value.edge_zone

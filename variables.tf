@@ -5,6 +5,12 @@ variable "resource_group" {
   nullable    = false
 }
 
+variable "location" {
+  type        = string
+  description = "The Azure region where this and supporting resources should be deployed.  Defaults to the Resource Groups location if undefined."
+  default     = null
+}
+
 variable "virtualmachine_os_type" {
   type        = string
   description = "The base OS type of the vm to be built.  Valid answers are Windows or Linux"
@@ -28,6 +34,14 @@ variable "admin_username" {
   description = "Name to use for the default admin account created for the virtual machine"
   default     = "azureuser"
   nullable    = false
+}
+
+variable "admin_password" {
+  type        = string
+  description = "Password to use for the default admin account created for the virtual machine"
+  default     = null
+  sensitive   = true
+
 }
 
 variable "virtualmachine_sku_size" {
@@ -466,11 +480,11 @@ variable "data_disk_managed_disks" {
     disk_attachment_create_option             = optional(string)
     create_option                             = optional(string, "Empty")
     write_accelerator_enabled                 = optional(bool)
-    disk_iops_read_write                      = optional(number)
-    disk_mbps_read_write                      = optional(number)
-    disk_iops_read_only                       = optional(number)
-    disk_mbps_read_only                       = optional(number)
-    upload_size_bytes                         = optional(number)
+    disk_iops_read_write                      = optional(number, null)
+    disk_mbps_read_write                      = optional(number, null)
+    disk_iops_read_only                       = optional(number, null)
+    disk_mbps_read_only                       = optional(number, null)
+    upload_size_bytes                         = optional(number, null)
     disk_size_gb                              = optional(number, 128)
     edge_zone                                 = optional(string)
     hyper_v_generation                        = optional(string)
@@ -625,7 +639,7 @@ variable "azure_monitor_agent_extension_settings" {
 
 variable "azure_monitor_data_collection_rule_associations" {
   type = list(object({
-    name                             = optional(string)
+    name                             = string
     data_collection_rule_resource_id = string
     description                      = optional(string)
   }))
@@ -635,12 +649,69 @@ variable "azure_monitor_data_collection_rule_associations" {
 
 variable "azure_monitor_data_collection_endpoint_associations" {
   type = list(object({
+    name                                 = string
     data_collection_endpoint_resource_id = string
-    description                      = optional(string)
+    description                          = optional(string)
   }))
   default     = []
   description = "This list of objects defines one or more data collection endpoint associations to create. Requires that the azure_monitor_agent_enabled value be set to true."
 }
+
+variable "domain_join_the_windows_vm" {
+  type        = bool
+  default     = false
+  description = "Set this value to true if a Windows VM is to be joined to an Active Directory Domain Services Domain."
+}
+
+variable "domain_join_domain_name" {
+  type        = string
+  default     = null
+  description = "The domain name of the target domain if a Windows VM is to be joined to an Active Directory Domain Services Domain."
+}
+
+variable "domain_join_user_name" {
+  type        = string
+  default     = null
+  description = "A user in the target domain with permissions to join Windows virtual machines. It is recommended that this is NOT a domain admin."
+}
+
+variable "domain_join_ou_path_for_vm" {
+  type        = string
+  default     = "Computers"
+  description = "The optional OU path to use for placing the virtual machine computer object in the domain."
+}
+
+variable "domain_join_restart" {
+  type        = bool
+  default     = true
+  description = "Allow the domain join extension to restart the VM when domain joining. Defaults to true."
+}
+
+variable "domain_join_options" {
+  type        = number
+  default     = 3
+  description = "Domain join options for the domain join extension. Details can be found here https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/joindomainorworkgroup-method-in-class-win32-computersystem"
+}
+
+variable "domain_join_user_key_vault_secret_name" {
+  type        = string
+  default     = null
+  description = "The name of the key vault secret value that holds the domain join users password"
+}
+
+variable "domain_join_user_key_vault_resource_id" {
+  type        = string
+  default     = null
+  description = "the Azure resource ID of the key vault holding the domain join user's password secret."
+}
+
+variable "domain_join_user_password" {
+  type = string
+  default = null
+  description = "Password value for the domain join user. The default is that this will pull from a key vault and this can remain null. Setting this and a key vault will result in this value being set."
+  sensitive = true  
+}
+
 
 /*
 variable "enable_telemetry" {

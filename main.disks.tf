@@ -1,22 +1,17 @@
 resource "azurerm_managed_disk" "this" {
   for_each = (length(var.data_disk_managed_disks) > 0) ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
 
-  name                 = each.key
-  location             = data.azurerm_resource_group.virtualmachine_deployment.location
-  resource_group_name  = data.azurerm_resource_group.virtualmachine_deployment.name
-  storage_account_type = each.value.storage_account_type
-  create_option        = each.value.create_option
-  #disk_iops_read_write              = each.value.disk_iops_read_write
-  #disk_mbps_read_write              = each.value.disk_mbps_read_write
-  #disk_iops_read_only               = each.value.disk_iops_read_only
-  #disk_mbps_read_only               = each.value.disk_mbps_read_only
-  upload_size_bytes          = each.value.upload_size_bytes
-  disk_size_gb               = each.value.disk_size_gb
-  edge_zone                  = each.value.edge_zone
-  hyper_v_generation         = each.value.hyper_v_generation
-  image_reference_id         = each.value.image_reference_resource_id
-  gallery_image_reference_id = each.value.gallery_image_reference_resource_id
-  #logical_sector_size               = each.value.logical_sector_size
+  name                              = each.key
+  location                          = local.location
+  resource_group_name               = data.azurerm_resource_group.virtualmachine_deployment.name
+  storage_account_type              = each.value.storage_account_type
+  create_option                     = each.value.create_option
+  upload_size_bytes                 = each.value.upload_size_bytes
+  disk_size_gb                      = each.value.disk_size_gb
+  edge_zone                         = each.value.edge_zone
+  hyper_v_generation                = each.value.hyper_v_generation
+  image_reference_id                = each.value.image_reference_resource_id
+  gallery_image_reference_id        = each.value.gallery_image_reference_resource_id
   optimized_frequent_attach_enabled = each.value.optimized_frequent_attach_enabled
   performance_plus_enabled          = each.value.performance_plus_enabled
   os_type                           = each.value.os_type
@@ -34,6 +29,11 @@ resource "azurerm_managed_disk" "this" {
   network_access_policy             = each.value.network_access_policy
   disk_access_id                    = each.value.disk_access_resource_id
   public_network_access_enabled     = each.value.public_network_access_enabled
+  disk_iops_read_write              = each.value.disk_iops_read_write
+  #disk_mbps_read_write              = each.value.disk_mbps_read_write
+  #disk_iops_read_only               = each.value.disk_iops_read_only
+  #disk_mbps_read_only               = each.value.disk_mbps_read_only
+  #logical_sector_size               = each.value.logical_sector_size
 
   dynamic "encryption_settings" {
     for_each = each.value.encryption_settings

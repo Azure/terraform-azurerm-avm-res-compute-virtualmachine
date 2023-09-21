@@ -13,9 +13,9 @@ resource "azurerm_virtual_machine_extension" "azure_monitor_agent" {
 
 # associate to a Data Collection Rule
 resource "azurerm_monitor_data_collection_rule_association" "this_endpoint" {
-  for_each = { for association in var.azure_monitor_data_collection_rule_associations : association.data_collection_rule_resource_id => association }
+  for_each = { for association in var.azure_monitor_data_collection_rule_associations : association.name => association }
 
-  name                    = coalesce(each.value.name, (split("/", each.value.data_collection_rule_resource_id)[8]))
+  name                    = each.value.name
   target_resource_id      = local.virtualmachine_resource_id
   data_collection_rule_id = each.value.data_collection_rule_resource_id
   description             = each.value.description
@@ -23,7 +23,7 @@ resource "azurerm_monitor_data_collection_rule_association" "this_endpoint" {
 
 # associate to a Data Collection Endpoint
 resource "azurerm_monitor_data_collection_rule_association" "this" {
-  for_each = { for association in var.azure_monitor_data_collection_endpoint_associations : association.data_collection_endpoint_resource_id => association }
+  for_each = { for association in var.azure_monitor_data_collection_endpoint_associations : association.name => association }
 
   target_resource_id          = local.virtualmachine_resource_id
   data_collection_endpoint_id = each.value.data_collection_endpoint_resource_id

@@ -7,5 +7,5 @@
 #}
 
 output "testoutput" {
-    value = local.flattened_nics
+    value = var.domain_join_the_windows_vm
 }

@@ -3,7 +3,7 @@ resource "azurerm_linux_virtual_machine" "this" {
 
   #required properties
   admin_username        = var.admin_username
-  location              = data.azurerm_resource_group.virtualmachine_deployment.location
+  location              = local.location
   name                  = var.virtualmachine_name
   network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
   resource_group_name   = data.azurerm_resource_group.virtualmachine_deployment.name
@@ -30,7 +30,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 
   #optional properties
-  admin_password                                         = (var.disable_password_authentication ? null : (var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : data.azurerm_key_vault_secret.admin_password[0].value))
+  admin_password                                         = (var.disable_password_authentication ? null : local.admin_password)
   allow_extension_operations                             = var.allow_extension_operations
   availability_set_id                                    = var.availability_set_resource_id
   bypass_platform_safety_checks_on_user_schedule_enabled = var.bypass_platform_safety_checks_on_user_schedule_enabled

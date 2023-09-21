@@ -2,9 +2,9 @@ resource "azurerm_windows_virtual_machine" "this" {
   count = (lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
 
   #required properties
-  admin_password        = var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : data.azurerm_key_vault_secret.admin_password[0].value
+  admin_password        = local.admin_password
   admin_username        = var.admin_username
-  location              = data.azurerm_resource_group.virtualmachine_deployment.location
+  location              = local.location
   name                  = var.virtualmachine_name
   network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
   resource_group_name   = data.azurerm_resource_group.virtualmachine_deployment.name
