@@ -735,6 +735,23 @@ variable "system_managed_identity_role_assignments" {
   description = "A list of role definitions and scopes to be assigned to the system managed identity"
 }
 
+variable "azure_guest_configuration_extension" {
+  type = object({
+    guest_config_extension_enabled = optional(bool, true)
+    name                           = optional(string)
+    type_handler_version           = optional(string, "1.0")
+    auto_upgrade_minor_version     = optional(bool, true)
+    automatic_upgrade_enabled      = optional(bool, true)
+    settings                       = optional(string)
+    protected_settings             = optional(string)
+  })
+  default = {
+    guest_config_extension_enabled = true
+  }
+  description = "Values for the guest configuration extension"
+}
+
+
 /*
 variable "enable_telemetry" {
   type        = bool
