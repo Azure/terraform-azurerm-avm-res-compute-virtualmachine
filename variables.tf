@@ -697,10 +697,10 @@ variable "domain_join_user_key_vault_resource_id" {
 }
 
 variable "domain_join_user_password" {
-  type = string
-  default = null
+  type        = string
+  default     = null
   description = "Password value for the domain join user. The default is that this will pull from a key vault and this can remain null. Setting this and a key vault will result in this value being set."
-  sensitive = true  
+  sensitive   = true
 }
 
 
@@ -717,6 +717,22 @@ variable "name_string_suffix_length" {
   type        = number
   description = "The length of the partial hash value to include in the name string"
   default     = 6
+}
+
+variable "system_managed_identity_role_assignments" {
+  type = list(object({
+    name                             = optional(string)
+    scope_resource_id                = string
+    role_definition_resource_id      = optional(string)
+    role_definition_name             = optional(string)
+    condition                        = optional(string)
+    condition_version                = optional(string)
+    description                      = optional(string)
+    skip_service_principal_aad_check = optional(bool, true)
+    }
+  ))
+  default     = []
+  description = "A list of role definitions and scopes to be assigned to the system managed identity"
 }
 
 /*

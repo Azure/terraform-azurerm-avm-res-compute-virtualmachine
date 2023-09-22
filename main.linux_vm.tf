@@ -47,7 +47,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   license_type                                           = var.license_type
   max_bid_price                                          = var.max_bid_price
   patch_assessment_mode                                  = var.patch_assessment_mode
-  patch_mode                                             = var.patch_mode  
+  patch_mode                                             = var.patch_mode
   platform_fault_domain                                  = var.platform_fault_domain
   priority                                               = var.priority
   provision_vm_agent                                     = var.provision_vm_agent
@@ -58,7 +58,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   tags                                                   = var.tags
   user_data                                              = var.user_data
   virtual_machine_scale_set_id                           = var.virtual_machine_scale_set_resource_id
-  vtpm_enabled                                           = var.vtpm_enabled  
+  vtpm_enabled                                           = var.vtpm_enabled
   zone                                                   = var.zone
 
   dynamic "additional_capabilities" {
@@ -154,5 +154,3 @@ resource "azurerm_linux_virtual_machine" "this" {
     }
   }
 }
-
-

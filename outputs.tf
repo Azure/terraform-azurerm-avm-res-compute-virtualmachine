@@ -7,5 +7,5 @@
 #}
 
 output "testoutput" {
-    value = var.domain_join_the_windows_vm
+    value = local.system_managed_identity_id
 }
