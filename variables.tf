@@ -751,6 +751,25 @@ variable "azure_guest_configuration_extension" {
   description = "Values for the guest configuration extension"
 }
 
+variable "enable_azure_backup" {
+  type        = bool
+  default     = false
+  description = "Flag to determine whether to enable azure backup on this VM. Requires the backup configuration variable to be populated."
+}
+
+variable "azure_backup_configuration" {
+  type = object({
+    recovery_vault_resource_group_name = string
+    recovery_vault_name                = string
+    backup_policy_resource_id          = optional(string)
+    exclude_disk_luns                  = optional(list(number))
+    include_disk_luns                  = optional(list(number))
+    protection_state                   = optional(string)
+  })
+  default = null
+  description = "Configuration details for the Azure backup policy"
+
+}
 
 /*
 variable "enable_telemetry" {
