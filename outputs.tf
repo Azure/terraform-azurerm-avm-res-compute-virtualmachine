@@ -9,3 +9,8 @@
 output "testoutput" {
     value = local.system_managed_identity_id
 }
+
+output "virtual_machine" {
+ value = azurerm_linux_virtual_machine.this
+ description = "value"
+}

@@ -4,6 +4,14 @@ variable "admin_username" {
   description = "Name to use for the default admin account created for the virtual machine"
   default     = "azureuser"
   nullable    = false
+  validation {
+    condition     = !can(regex("^(administrator|admin|user|user1|test|user2|test2|user3|admin1|1|123|a|actuser|adm|admin2|aspnet|backup|console|david|guest|john|owner|root|server|sql|support|support_388945a0|sys|test2|test3|user4|user5)$", lower(var.admin_username)))
+    error_message = "Admin username may not contain any of the following reserved values. ( administrator, admin, user, user1, test, user2, test1, user3, admin1, 1, 123, a, actuser, adm, admin2, aspnet, backup, console, david, guest, john, owner, root, server, sql, support, support_388945a0, sys, test2, test3, user4, user5 )"
+  }
+  validation {
+    condition     = can(regex("^.{1,64}$", var.admin_username))
+    error_message = "Admin username for linux must be between 1 and 64 characters in length. Admin name for windows must be between 1 and 20 characters in length."
+  }
 }
 
 variable "location" {
@@ -22,6 +30,10 @@ variable "virtualmachine_name" {
   type        = string
   description = "The name to use when creating the virtual machine."
   nullable    = false
+  validation {
+    condition     = can(regex("^.{1,64}$", var.virtualmachine_name))
+    error_message = "virtual machine names for linux must be between 1 and 64 characters in length. Admin name for windows must be between 1 and 20 characters in length."
+  }
 }
 
 variable "virtualmachine_os_type" {
@@ -29,6 +41,10 @@ variable "virtualmachine_os_type" {
   description = "The base OS type of the vm to be built.  Valid answers are Windows or Linux"
   nullable    = false
   default     = "Windows"
+  validation {
+    condition     = can(regex("^(windows|linux)$", lower(var.virtualmachine_os_type)))
+    error_message = "Valid OS type values are Windows or Linux."
+  }
 }
 
 variable "virtualmachine_sku_size" {
@@ -43,12 +59,10 @@ variable "tags" {
   description = "Map of tags to be assigned to this resource"
 }
 
-
 #Identity related variables
 variable "admin_credential_key_vault_resource_id" {
   type        = string
   description = "The Azure resource ID for the key vault that stores admin credential information"
-  nullable    = false
 }
 
 variable "admin_password" {
@@ -61,7 +75,7 @@ variable "admin_password" {
 variable "admin_password_key_vault_secret_name" {
   type        = string
   description = "The name of the key vault secret which should be used for the admin password"
-  default     = ""
+  default     = null
 }
 
 variable "disable_password_authentication" {
@@ -82,15 +96,29 @@ variable "admin_ssh_keys" {
     username   = string
   }))
   default     = []
-  description = <<-EOT
-  set(object({
+  description = <<ADMIN_SSH_KEYS
+  list(object({
     public_key = "(Required) The Public Key which should be used for authentication, which needs to be at least 2048-bit and in `ssh-rsa` format. Changing this forces a new resource to be created."
     username   = "(Required) The Username for which this Public SSH Key should be configured. Changing this forces a new resource to be created. The Azure VM Agent only allows creating SSH Keys at the path `/home/{admin_username}/.ssh/authorized_keys` - as such this public key will be written to the authorized keys file. If no username is provided this module will use var.admin_username."
   }))
-  EOT
+
+  Example Input:
+
+  admin_ssh_keys = [
+    {
+      public_key = "<base64 string for the key>"
+      username   = "exampleuser"
+    },
+    {
+      public_key = "<base64 string for the next user key>"
+      username   = "examleuser2"
+    }
+  ]
+  ADMIN_SSH_KEYS
 }
 
 variable "identity" {
+  nullable = true
   type = object({
     type         = string
     identity_ids = optional(set(string))
@@ -98,12 +126,39 @@ variable "identity" {
   default = {
     type = "SystemAssigned"
   }
-  description = <<-EOT
+  description = <<IDENTITY
   object({
     type         = "(Required) Specifies the type of Managed Service Identity that should be configured on this Linux Virtual Machine. Possible values are `SystemAssigned`, `UserAssigned`, `SystemAssigned, UserAssigned` (to enable both)."
     identity_ids = "(Optional) Specifies a list of User Assigned Managed Identity IDs to be assigned to this Linux Virtual Machine. This is required when `type` is set to `UserAssigned` or `SystemAssigned, UserAssigned`."
   })
-  EOT
+
+  Example Inputs:
+
+  #default system managed identity
+  identity = {
+    type = "SystemAssigned"
+  }
+  #user assigned managed identity only
+  identity = {
+    type = "UserAssigned"
+    identity_ids = ["<azure resource ID of a user assigned managed identity>]
+  }
+  #user assigned and system assigned managed identities
+  identity = {
+    type = "SystemAssigned, UserAssigned"
+    identity_ids = ["<azure resource ID of a user assigned managed identity>]
+  }
+  IDENTITY
+
+  validation {
+    condition     = can(regex("^(UserAssigned|SystemAssigned|SystemAssigned, UserAssigned)$", var.identity.type)) || var.identity == null
+    error_message = "Valid identity type values are `UserAssigned`, `SystemAssigned`, or `SystemAssigned, UserAssigned`."
+  }
+
+  validation {
+    condition     = (can(regex("^(UserAssigned|SystemAssigned, UserAssigned)$", try(var.identity.type, ""))) && (try(var.identity.identity_ids, []) != null)) || (can(regex("^SystemAssigned$", try(var.identity.type, ""))) && (try(var.identity.identity_ids, []) == null)) || var.identity == null
+    error_message = "An identity id must be included when the identity type is `UserAssigned` or `SystemAssigned, UserAssigned`"
+  }
 }
 
 
@@ -116,12 +171,39 @@ variable "source_image_reference" {
     version   = string
   })
   default     = null
-  description = "The source image to use when building the virtual machine."
+  description = <<SOURCE_IMAGE_REFERENCE
+    The source image to use when building the virtual machine. Either source_image_resource_id or source_image_reference must be set and both can not be null at the same time."
+    object({
+      publisher = "(Required) Specifies the publisher of the image this virtual machine should be created from.  Changing this forces a new virtual machine to be created.
+      offer     = "(Required) Specifies the offer of the image used to create this virtual machine.  Changing this forces a new virtual machine to be created.
+      sku       = "(Required) Specifies the sku of the image used to create this virutal machine.  Changing this forces a new virtual machine to be created.
+      version   = "(Required) Specifies the version of the image used to create this virutal machine.  Changing this forces a new virtual machine to be created.
+    })
+
+  Example Inputs:
+  #Linux example:
+  source_image_reference = {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts"
+    version   = "latest"
+  }
+
+  #Windows example:
+  source_image_reference = {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2019-Datacenter"
+    version   = "latest"
+  }
+
+  SOURCE_IMAGE_REFERENCE
+
 }
 
 variable "source_image_resource_id" {
   type        = string
-  description = "The Azure resource ID of the source image used to create the VM."
+  description = "The Azure resource ID of the source image used to create the VM. Either source_image_resource_id or source_image_reference must be set and both can not be null at the same time."
   default     = null
 }
 
@@ -145,6 +227,40 @@ variable "os_disk" {
     caching              = "ReadWrite"
     storage_account_type = "StandardSSD_LRS"
   }
+
+  description = <<OS_DISK
+  Configuration values for the OS disk on the virtual machine
+    object({
+      caching                          = (Required) - The type of caching which should be used for the internal OS disk.  Possible values are `None`, `ReadOnly`, and `ReadWrite`.
+      storage_account_type             = (Required) - The Type of Storage Account which should back this the Internal OS Disk. Possible values are `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and `Premium_ZRS`. Changing this forces a new resource to be created
+      disk_encryption_set_id           = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. Conflicts with secure_vm_disk_encryption_set_id. The Disk Encryption Set must have the Reader Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault
+      disk_size_gb                     = (Optional) - The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from.
+      name                             = (Optional) - The name which should be used for the Internal OS Disk. Changing this forces a new resource to be created.
+      secure_vm_disk_encryption_set_id = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk when the Virtual Machine is a Confidential VM. Conflicts with disk_encryption_set_id. Changing this forces a new resource to be created.
+      security_encryption_type         = (Optional) - Encryption Type when the Virtual Machine is a Confidential VM. Possible values are `VMGuestStateOnly` and `DiskWithVMGuestState`. Changing this forces a new resource to be created. `vtpm_enabled` must be set to true when security_encryption_type is specified. encryption_at_host_enabled cannot be set to `true` when security_encryption_type is set to `DiskWithVMGuestState`
+      write_accelerator_enabled        = (Optional) - Should Write Accelerator be Enabled for this OS Disk? Defaults to `false`. This requires that the storage_account_type is set to `Premium_LRS` and that caching is set to `None`
+      diff_disk_settings = optional(object({
+        option    = (Required) - Specifies the Ephemeral Disk Settings for the OS Disk. At this time the only possible value is `Local`. Changing this forces a new resource to be created.
+        placement = (Optional) - Specifies where to store the Ephemeral Disk. Possible values are CacheDisk and ResourceDisk. Defaults to CacheDisk. Changing this forces a new resource to be created.
+      }), null)                  
+    })
+  
+  Example Inputs:
+  #basic example:
+  os_disk = {
+    caching              = "ReadWrite"
+    storage_account_type = "StandardSSD_LRS"
+  }
+
+  #increased disk size and write acceleration example
+  {
+    name                      = "sample os disk"
+    caching                   = "None"
+    storage_account_type      = "Premium_LRS"
+    disk_size_gb              = 128
+    write_accelerator_enabled = true
+  }
+  OS_DISK  
 }
 
 ##Variables describing the data disk configurations
@@ -273,12 +389,21 @@ variable "additional_unattend_contents" {
     setting = string
   }))
   default     = []
-  description = <<-EOT
+  description = <<ADDITIONAL_UNATTEND_CONTENTS
   list(object({
     content = "(Required) The XML formatted content that is added to the unattend.xml file for the specified path and component. Changing this forces a new resource to be created."
     setting = "(Required) The name of the setting to which the content applies. Possible values are `AutoLogon` and `FirstLogonCommands`. Changing this forces a new resource to be created."
   }))
-  EOT
+
+  Example Inputs:
+  #Example Reboot
+  additional_unattend_contents = [
+    {
+      content = "<FirstLogonCommands><SynchronousCommand><CommandLine>shutdown /r /t 0 /c \"initial reboot\"</CommandLine><Description>reboot</Description><Order>1</Order></SynchronousCommand></FirstLogonCommands>"
+      setting = "FirstLogonCommands"
+    }
+  ]
+  ADDITIONAL_UNATTEND_CONTENTS  
 }
 
 variable "allow_extension_operations" {
@@ -416,13 +541,21 @@ variable "plan" {
     publisher = string
   })
   default     = null
-  description = <<-EOT
+  description = <<PLAN
+  Defines the Marketplace image this virtual machine should be creaed from. If you use the plan block with one of Microsoft's marketplace images (e.g. publisher = "MicrosoftWindowsServer"). This may prevent the purchase of the offer. An example Azure API error: The Offer: 'WindowsServer' cannot be purchased by subscription: '12345678-12234-5678-9012-123456789012' as it is not to be sold in market: 'US'. Please choose a subscription which is associated with a different market.
   object({
     name      = "(Required) Specifies the Name of the Marketplace Image this Virtual Machine should be created from. Changing this forces a new resource to be created."
     product   = "(Required) Specifies the Product of the Marketplace Image this Virtual Machine should be created from. Changing this forces a new resource to be created."
     publisher = "(Required) Specifies the Publisher of the Marketplace Image this Virtual Machine should be created from. Changing this forces a new resource to be created."
   })
-  EOT
+
+  Example Input:
+  plan = {
+    name      = "17_04_02-payg-essentials"
+    product   = "cisco-8000v"
+    publisher = "cisco"
+  }
+  PLAN
 }
 
 variable "platform_fault_domain" {
@@ -469,12 +602,19 @@ variable "termination_notification" {
     timeout = optional(string, "PT5M")
   })
   default     = null
-  description = <<-EOT
+  description = <<TERMINATION_NOTIFICATION
   object({
-    enabled = bool
-    timeout = optional(string, "PT5M")
+    enabled = (Required) - Should the termination notification be enabled on this Virtual Machine?
+    timeout = (Optional) - Length of time (in minutes, between 5 and 15) a notification to be sent to the VM on the instance metadata server till the VM gets deleted. The time duration should be specified in ISO 8601 format. Defaults to PT5M.
   })
-  EOT
+
+  Example Inputs:
+  termination_notification = {
+    enabled = true
+    timeout = "PT5M"
+
+  }
+  TERMINATION_NOTIFICATION
 }
 
 variable "timezone" {
@@ -505,11 +645,16 @@ variable "vm_additional_capabilities" {
     ultra_ssd_enabled = optional(bool, false)
   })
   default     = null
-  description = <<-EOT
+  description = <<VM_ADDITIONAL_CAPABILITIES
   object({
     ultra_ssd_enabled = "(Optional) Should the capacity to enable Data Disks of the `UltraSSD_LRS` storage account type be supported on this Virtual Machine? Defaults to `false`."
   })
-  EOT
+
+  Example Inputs:
+  vm_additional_capabilities = {
+    ultra_ssd_enabled = true
+  }
+  VM_ADDITIONAL_CAPABILITIES
 }
 
 variable "vtpm_enabled" {
@@ -524,12 +669,18 @@ variable "winrm_listeners" {
     certificate_url = optional(string)
   }))
   default     = []
-  description = <<-EOT
+  description = <<WINRM_LISTENERS
   set(object({
     protocol        = "(Required) Specifies Specifies the protocol of listener. Possible values are `Http` or `Https`"
     certificate_url = "(Optional) The Secret URL of a Key Vault Certificate, which must be specified when `protocol` is set to `Https`. Changing this forces a new resource to be created."
   }))
-  EOT
+
+  Example Inputs: TODO: Validate this example
+  winrm_listeners = {
+    protocol = "Https"
+    certificate_url = data.azurerm_keyvault_secret.example.secret_id
+  }
+  WINRM_LISTENERS
   nullable    = false
 }
 
@@ -766,7 +917,7 @@ variable "azure_backup_configuration" {
     include_disk_luns                  = optional(list(number))
     protection_state                   = optional(string)
   })
-  default = null
+  default     = null
   description = "Configuration details for the Azure backup policy"
 
 }
