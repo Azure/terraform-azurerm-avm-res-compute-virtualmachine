@@ -698,14 +698,14 @@ variable "gallery_application" {
     tag                    = optional(string)
   }))
   default     = []
-  description = <<-EOT
+  description = <<GALLERY_APPLICATION
   list(object({
     version_id             = "(Required) Specifies the Gallery Application Version resource ID."
     configuration_blob_uri = "(Optional) Specifies the URI to an Azure Blob that will replace the default configuration for the package if provided."
     order                  = "(Optional) Specifies the order in which the packages have to be installed. Possible values are between `0` and `2,147,483,647`."
     tag                    = "(Optional) Specifies a passthrough value for more generic context. This field can be any valid `string` value."
   }))
-  EOT
+  GALLERY_APPLICATION
 }
 
 variable "secrets" {
@@ -717,7 +717,8 @@ variable "secrets" {
     }))
   }))
   default     = []
-  description = <<-EOT
+  nullable    = false
+  description = <<SECRETS
   list(object({
     key_vault_id = "(Required) The ID of the Key Vault from which all Secrets should be sourced."
     certificate  = set(object({
@@ -725,8 +726,7 @@ variable "secrets" {
       store = "(Optional) The certificate store on the Virtual Machine where the certificate should be added. Required when use with Windows Virtual Machine."
     }))
   }))
-  EOT
-  nullable    = false
+  SECRETS
 }
 
 
@@ -742,6 +742,7 @@ variable "extensions" {
     failure_suppression_enabled = optional(bool, false)
     settings                    = optional(string)
     protected_settings          = optional(string)
+    provision_after_extensions  = optional(list(string),[])
     protected_settings_from_key_vault = optional(object({
       secret_url      = string
       source_vault_id = string
@@ -749,7 +750,69 @@ variable "extensions" {
   }))
   # tflint-ignore: terraform_sensitive_variable_no_default
   default     = []
-  description = "Argument to create `azurerm_virtual_machine_extension` resource, the argument descriptions could be found at [the document](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension)."
+  description = <<EXTENSIONS
+    Argument to create any additional `azurerm_virtual_machine_extension` resource, the argument descriptions could be found at [the document](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension).
+    set(object({
+      name                           = (Required) - Set a custom name on this value if you want the guest configuration extension to have a custom name
+      publisher                      = (Required) - Configure the publisher for the extension to be deployed. The Publisher and Type of Virtual Machine Extensions can be found using the Azure CLI, via: az vm extension image list --location westus -o table
+      type                           = (Required) - Configure the type value for the extension to be deployed. 
+      type_handler_version           = (Required) - The type handler version for the extension. A common value is 1.0.
+      auto_upgrade_minor_version     = (Optional) - Set this to false to avoid automatic upgrades for minor versions on the extension.  Defaults to true
+      automatic_upgrade_enabled      = (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
+      failure_suppression_enabled    = (Optional) - Should failures from the extension be suppressed? Possible values are true or false. Defaults to false. Operational failures such as not connecting to the VM will not be suppressed regardless of the failure_suppression_enabled value.
+      settings                       = (Optional) - The settings passed to the extension, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
+      protected_settings             = (Optional) - The protected_settings passed to the extension, like settings, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the protected_settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
+      provision_after_extensions     = optional(list(string)) [
+        (Optional) - Specifies the collection of extension names after which this extension needs to be provisioned.
+      ]      
+      protected_settings_from_key_vault = optional(object({   #protected_settings_from_key_vault cannot be used with protected_settings
+        secret_url      = (Required) - The Secret URL of a Key Vault Certificate. This can be sourced from the `secret_id` field within the `azurerm_key_vault_certificate` Resource.
+        source_vault_id = (Required) - the Azure resource ID of the key vault holding the secret
+      }))
+    }))
+
+    Example Inputs:
+    #custom script extension example - linux
+    extensions = [
+      {
+        name = "CustomScriptExtension"
+        publisher = "Microsoft.Azure.Extensions"
+        type = "CustomScript"
+        type_handler_version = "2.0"
+        settings = <<SETTINGS
+          {
+            "script": "<base 64 encoded script file>"
+          }
+        SETTINGS
+      }
+    ]
+
+    #custom script extension example - windows
+    extensions = [
+      {
+        name = "CustomScriptExtension"
+        publisher = "Microsoft.Compute"
+        type = "CustomScriptExtension"
+        type_handler_version = "1.10"
+        settings = <<SETTINGS
+          {
+            "timestamp":123456789
+          }
+        SETTINGS
+        protected_settings = <<PROTECTED_SETTINGS
+          {
+            "commandToExecute": "myExecutionCommand",
+            "storageAccountName": "myStorageAccountName",
+            "storageAccountKey": "myStorageAccountKey",
+            "managedIdentity" : {},
+            "fileUris": [
+                "script location"
+            ]
+          }
+        PROTECTED_SETTINGS        
+      }
+    ]
+   EXTENSIONS
   nullable    = false
   sensitive   = true # Because `protected_settings` is sensitive
 
@@ -776,7 +839,29 @@ variable "azure_monitor_agent_extension_settings" {
     managed_identity_type                      = optional(string, "SystemAssigned")
     user_assigned_managed_identity_resource_id = optional(string)
   })
-  default = {}
+  default     = {}
+  description = <<AZURE_MONITOR_AGENT_EXTENSION_SETTINGS
+  This object defines the azure monitor agent configuration.   
+  object({
+
+    name                                       = (Optional) - The custom name to use for the Azure Monitor Agent extension installation
+    type_handler_version                       = (Optional) - The type handler version for the extension. Default is 1.0.
+    auto_upgrade_minor_version                 = (Optional) - Set this to false to avoid automatic upgrades for minor versions on the extension.  Defaults to true
+    automatic_upgrade_enabled                  = (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
+    managed_identity_type                      = (Optional) - Specifies the type of Managed Service Identity that should be used by the Azure Monitor Agent. Possible values are `SystemAssigned`, `UserAssigned`
+    user_assigned_managed_identity_resource_id = (Optional) - The Azure Resource ID of the User Assigned Managed Identity to be used by the Azure Monitor Agent.
+  })
+
+  Example Inputs:
+  #for the most common configuration no overriding of defaults is required
+  #The following example shows a user assigned managed identity example.
+  azure_monitor_agent_extension_settings = {
+    name = "ExampleName"
+    managed_identity_type = "UserAssigned"
+    user_assigned_managed_identity_resource_id = azurerm_user_assigned_identity.example.id
+  }
+
+  AZURE_MONITOR_AGENT_EXTENSION_SETTINGS  
 }
 
 variable "azure_monitor_data_collection_rule_associations" {
@@ -786,7 +871,25 @@ variable "azure_monitor_data_collection_rule_associations" {
     description                      = optional(string)
   }))
   default     = []
-  description = "This list of objects defines one or more data collection rule associations to create. Requires that the azure_monitor_agent_enabled value be set to true."
+  description = <<AZURE_MONITOR_DATA_COLLECTION_RULE_ASSOCIATIONS
+  This list of objects defines one or more data collection endpoint associations to create. Requires that the azure_monitor_agent_enabled value be set to true.
+  list(object({
+    name                                 = (Required) - The name which should be used for this Data Collection Rule Association. Changing this forces a new Data Collection Rule Association to be created.
+    data_collection_endpoint_resource_id = (Required) - The Azure Resource ID of the Data Collection Rule which will be associated to the target resource.
+    description                          = (Optional) - The description of the Data Collection Rule Association.
+  }))
+
+  Example Inputs:
+    #Basic Input
+    azure_monitor_data_collection_rule_associations = [
+      {
+      name                                 = "dcr_example"
+      data_collection_endpoint_resource_id = azurerm_monitor_data_collection_rule.test.id
+      description                          = "Association for test Data Collection Rule" 
+      }
+    ]
+
+  AZURE_MONITOR_DATA_COLLECTION_RULE_ASSOCIATIONS
 }
 
 variable "azure_monitor_data_collection_endpoint_associations" {
@@ -796,7 +899,24 @@ variable "azure_monitor_data_collection_endpoint_associations" {
     description                          = optional(string)
   }))
   default     = []
-  description = "This list of objects defines one or more data collection endpoint associations to create. Requires that the azure_monitor_agent_enabled value be set to true."
+  description = <<AZURE_MONITOR_DATA_COLLECTION_ENDPOINT_ASSOCIATIONS
+  "This list of objects defines one or more data collection endpoint associations to create. Requires that the azure_monitor_agent_enabled value be set to true."
+  list(object({
+    name                                 = (Required) - The name which should be used for this Data Collection Endpoint Association. Changing this forces a new Data Collection Endpoint Association to be created.
+    data_collection_endpoint_resource_id = (Required) - The Azure Resource ID of the Data Collection Endpoint which will be associated to the target resource.
+    description                          = (Optional) - The description of the Data Collection Endpoint Association.
+  }))
+
+  Example Inputs:
+    #Basic Input
+    azure_monitor_data_collection_endpoint_associations = [
+      {
+      name                                 = "dce_example"
+      data_collection_endpoint_resource_id = azurerm_monitor_data_collection_endpoint.test.id
+      description                          = "Association for test Data Collection Endpoint" 
+      }
+    ]
+  AZURE_MONITOR_DATA_COLLECTION_ENDPOINT_ASSOCIATIONS
 }
 
 variable "domain_join_the_windows_vm" {
@@ -805,69 +925,52 @@ variable "domain_join_the_windows_vm" {
   description = "Set this value to true if a Windows VM is to be joined to an Active Directory Domain Services Domain."
 }
 
-variable "domain_join_domain_name" {
-  type        = string
-  default     = null
-  description = "The domain name of the target domain if a Windows VM is to be joined to an Active Directory Domain Services Domain."
-}
+variable "domain_join_extension_values" {
+  type = object({
+    domain_name                            = string
+    domain_join_user_name                  = string
+    domain_join_ou_path_for_vm             = optional(string, "Computers")
+    domain_join_restart                    = optional(bool, true)
+    domain_join_options                    = optional(number, 3)
+    domain_join_user_key_vault_secret_name = optional(string)
+    domain_join_user_key_vault_resource_id = optional(string)
+    domain_join_user_password              = optional(string)
+  })
+  sensitive = true
+  default = {
+    domain_name           = ""
+    domain_join_user_name = ""
+  }
 
-variable "domain_join_user_name" {
-  type        = string
-  default     = null
-  description = "A user in the target domain with permissions to join Windows virtual machines. It is recommended that this is NOT a domain admin."
-}
+  description = <<DOMAIN_JOIN_EXTENSION_VALUES
+  object({  
+    domain_name                            = (Required) - The domain name of the target domain if a Windows VM is to be joined to an Active Directory Domain Services Domain.
+    domain_join_user_name                  = (Required) - A user in the target domain with permissions to join Windows virtual machines. It is recommended that this is NOT a domain admin.
+    domain_join_ou_path_for_vm             = (Optional) - The optional OU path to use for placing the virtual machine computer object in the domain.
+    domain_join_restart                    = (Optional) - Allow the domain join extension to restart the VM when domain joining. Defaults to true.
+    domain_join_options                    = (Optional) - Domain join options for the domain join extension. Details can be found here https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/joindomainorworkgroup-method-in-class-win32-computersystem
+    domain_join_user_key_vault_secret_name = (Optional) - The name of the key vault secret value that holds the domain join users password
+    domain_join_user_key_vault_resource_id = (Optional) - the Azure resource ID of the key vault holding the domain join user's password secret
+    domain_join_user_password              = (Optional) - Password value for the domain join user. The default is that this will pull from a key vault and this can remain null. Setting both this value and a password key vault value will result in this value being set
+  }
+  
+  Example Inputs:
+    #Basic password based input
+    domain_join_extension_values = {
+      domain_name               = "testdomain.com"
+      domain_join_user_name     = "domainjoinuser"
+      domain_join_user_password = "1SuperSecretPassword!" 
+    }
 
-variable "domain_join_ou_path_for_vm" {
-  type        = string
-  default     = "Computers"
-  description = "The optional OU path to use for placing the virtual machine computer object in the domain."
-}
-
-variable "domain_join_restart" {
-  type        = bool
-  default     = true
-  description = "Allow the domain join extension to restart the VM when domain joining. Defaults to true."
-}
-
-variable "domain_join_options" {
-  type        = number
-  default     = 3
-  description = "Domain join options for the domain join extension. Details can be found here https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/joindomainorworkgroup-method-in-class-win32-computersystem"
-}
-
-variable "domain_join_user_key_vault_secret_name" {
-  type        = string
-  default     = null
-  description = "The name of the key vault secret value that holds the domain join users password"
-}
-
-variable "domain_join_user_key_vault_resource_id" {
-  type        = string
-  default     = null
-  description = "the Azure resource ID of the key vault holding the domain join user's password secret."
-}
-
-variable "domain_join_user_password" {
-  type        = string
-  default     = null
-  description = "Password value for the domain join user. The default is that this will pull from a key vault and this can remain null. Setting this and a key vault will result in this value being set."
-  sensitive   = true
-}
-
-
-
-
-#Future work to complete
-variable "append_name_string_suffix" {
-  type        = bool
-  description = "Disable this to remove the partial hash value used to ensure sub-resource naming uniqueness"
-  default     = true
-}
-
-variable "name_string_suffix_length" {
-  type        = number
-  description = "The length of the partial hash value to include in the name string"
-  default     = 6
+    #Basic Key Vault Based Input. It is also common for the key vault resource ID to be a terraform resource reference like azurerm_key_vault.example.id
+    domain_join_extension_values = {
+      domain_name           = "testdomain.com"
+      domain_join_user_name = "domainjoinuser"
+      domain_join_user_key_vault_secret_name = "domain_join_password_secret" 
+      domain_join_user_key_vault_resource_id = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test-resource-group/providers/Microsoft.KeyVault/vaults/example-key-vault"
+    } 
+  
+  DOMAIN_JOIN_EXTENSION_VALUES
 }
 
 variable "system_managed_identity_role_assignments" {
@@ -882,8 +985,32 @@ variable "system_managed_identity_role_assignments" {
     skip_service_principal_aad_check = optional(bool, true)
     }
   ))
-  default     = []
-  description = "A list of role definitions and scopes to be assigned to the system managed identity"
+  default = []
+
+  description = <<SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS
+  A list of role definitions and scopes to be assigned to the system managed identity
+  list(object({
+    name                             = (Optional) - A unique UUID/GUID for this Role Assignment - one will be generated if not specified. Changing this forces a new resource to be created.
+    scope_resource_id                = (Required) - The scope at which the Role Assignment applies to, such as /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333, /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup, or /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup/providers/Microsoft.Compute/virtualMachines/myVM, or /providers/Microsoft.Management/managementGroups/myMG. Changing this forces a new resource to be created.
+    role_definition_resource_id      = (Optional) - The Scoped-ID of the Role Definition. Changing this forces a new resource to be created. Conflicts with role_definition_name
+    role_definition_name             = (Optional) - The name of a built-in Role. Changing this forces a new resource to be created. Conflicts with role_definition_id
+    condition                        = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
+    condition_version                = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
+    description                      = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.
+    skip_service_principal_aad_check = (Optional) - If the principal_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal_id is a Service Principal identity. Defaults to true.
+  }))
+
+  Example Inputs:
+    #typical assignment example. It is also common for the scope resource ID to be a terraform resource reference like azurerm_resource_group.example.id
+    system_managed_identity_role_assignments = [
+      {
+        scope_resource_id    = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test_resource_group/providers/Microsoft.Storage/storageAccounts/examplestorageacct"
+        role_definition_name = "Storage Blob Data Contributor"
+        description          = "Example for assigning a role to a resource"
+      }
+    ]
+
+  SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS 
 }
 
 variable "azure_guest_configuration_extension" {
@@ -899,7 +1026,25 @@ variable "azure_guest_configuration_extension" {
   default = {
     guest_config_extension_enabled = true
   }
-  description = "Values for the guest configuration extension"
+  description = <<AZURE_GUEST_CONFIGURATION_EXTENSION
+  "Values for the guest configuration extension"
+  object({
+    guest_config_extension_enabled = (Optional) - Set this to false if you want to disable the guest configuration extension
+    name                           = (Optional) - Set a custom name on this value if you want the guest configuration extension to have a custom name
+    type_handler_version           = (Optional) - The type handler version for the extension. Default is 1.0.
+    auto_upgrade_minor_version     = (Optional) - Set this to false to avoid automatic upgrades for minor versions on the extension.  Defaults to true
+    automatic_upgrade_enabled      = (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
+    settings                       = (Optional) - Passing through this value in case we need to allow custom settings on the extension in the future.  Unused in the default case.
+    protected_settings             = (Optional) - Passing through this value in case we need to allow custom protected_settings on the extension in the future.  Unused in the default case.
+  }
+
+  Example Inputs:
+    azure_guest_configuration_extensions = {
+      guest_config_extension_enabled = false
+    }
+
+
+  AZURE_GUEST_CONFIGURATION_EXTENSION
 }
 
 variable "enable_azure_backup" {
@@ -918,9 +1063,51 @@ variable "azure_backup_configuration" {
     protection_state                   = optional(string)
   })
   default     = null
-  description = "Configuration details for the Azure backup policy"
+  description = <<AZURE_BACKUP_CONFIGURATION
+  Configuration details for the Azure backup policy that this VM will use.
+  object({
+    recovery_vault_resource_group_name = (Required) - The resource group name of the recovery services vault.  Allows the vault to existing in a different resource group. 
+    recovery_vault_name                = (Required) - The name of the recovery services vault to use for the backup.  
+    backup_policy_resource_id          = (Optional/Required) - The Azure Resource ID of the backup policy to use for the backup of this VM. Required in creation or when `protection_stopped` is not specified.
+    exclude_disk_luns                  = (Optional) - A list of Disks' Logical Unit Numbers(LUN) to be excluded for VM Protection.
+    include_disk_luns                  = (Optional) - A list of Disks' Logical Unit Numbers(LUN) to be included for VM Protection.
+    protection_state                   = (Optional) Specifies Protection state of the backup. Possible values are Invalid, IRPending, Protected, ProtectionStopped, ProtectionError and ProtectionPaused.
+  }
+
+  Example Inputs:
+    #Simple Standard Configuration
+    azure_backup_configuration = {
+      recovery_vault_resource_group_name = "test_resource_group_name"
+      recovery_vault_name                = "test_recovery_services_vault"
+      backup_policy_resource_id          = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test_resource_group_name/providers/Microsoft.RecoveryServices/vaults/test_recovery_services_vault/backupPolicies/DefaultPolicy"
+    }
+
+    #full sample
+    azure_backup_configuration = {
+      recovery_vault_resource_group_name = "test_resource_group_name"
+      recovery_vault_name                = "test_recovery_services_vault"
+      backup_policy_resource_id          = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test_resource_group_name/providers/Microsoft.RecoveryServices/vaults/test_recovery_services_vault/backupPolicies/DefaultPolicy"
+      exclude_disk_luns                  = [2,3]
+      include_disk_luns                  = [0,1]
+      protection_state                   = "Protected"
+    }
+  AZURE_BACKUP_CONFIGURATION
 
 }
+
+#Future work to complete
+variable "append_name_string_suffix" {
+  type        = bool
+  description = "Disable this to remove the partial hash value used to ensure sub-resource naming uniqueness"
+  default     = false
+}
+
+variable "name_string_suffix_length" {
+  type        = number
+  description = "The length of the partial hash value to include in the name string"
+  default     = 6
+}
+
 
 /*
 variable "enable_telemetry" {

@@ -3,8 +3,8 @@ locals {
   virtualmachine_resource_id = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azurerm_linux_virtual_machine.this[0].id
 
   #get the first system managed identity id if it is provisioned and depending on whether the vm type is linux or windows
-  system_managed_identity_id =  can(regex("SystemAssigned",try(var.identity.type,""))) ? ((lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : azurerm_linux_virtual_machine.this[0].identity[0].principal_id) : null
-    
+  system_managed_identity_id = can(regex("SystemAssigned", try(var.identity.type, ""))) ? ((lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : azurerm_linux_virtual_machine.this[0].identity[0].principal_id) : null
+
   #flatten the network interface vars to properly create public ips that can be referenced in the ipconfig
   flattened_nics = flatten([for nic_key, nic in var.network_interfaces : [
     for ip_config_key, ip_config in nic.ip_configurations : {
@@ -37,20 +37,20 @@ locals {
   #create an object that can be converted to JSON for the AMA agent's identity setting
   azure_monitor_agent_authentication_user_assigned_identity_settings = {
     authentication = {
-        managedIdentity = {
-            identifier-name = "mi_res_id"
-            identifier-value = var.azure_monitor_agent_extension_settings.user_assigned_managed_identity_resource_id
-        }
+      managedIdentity = {
+        identifier-name  = "mi_res_id"
+        identifier-value = var.azure_monitor_agent_extension_settings.user_assigned_managed_identity_resource_id
+      }
     }
   }
 
   #create an object that can be converted to JSON for the domain join extension
   domain_join_extension_settings = var.domain_join_the_windows_vm ? {
-    Name = var.domain_join_domain_name
-    OUpath = var.domain_join_ou_path_for_vm
-    User = "${var.domain_join_user_name}\\${var.domain_join_domain_name}"
-    Restart = var.domain_join_restart
-    Options = var.domain_join_options
+    Name    = var.domain_join_extension_values.domain_name
+    OUpath  = var.domain_join_extension_values.domain_join_ou_path_for_vm
+    User    = "${var.domain_join_extension_values.domain_join_user_name}\\${var.domain_join_extension_values.domain_name}"
+    Restart = var.domain_join_extension_values.domain_join_restart
+    Options = var.domain_join_extension_values.domain_join_options
   } : null
 
   domain_join_extension_protected_settings = var.domain_join_the_windows_vm ? {
@@ -61,7 +61,7 @@ locals {
   admin_password = var.generate_admin_password_or_ssh_key ? random_password.admin_password.result : coalesce(var.admin_password, (data.azurerm_key_vault_secret.admin_password[0].value))
 
   #set the domain join user password to either the manually entered value or the value from a vault
-  domain_join_user_password = var.domain_join_the_windows_vm ? coalesce(var.domain_join_user_password, data.azurerm_key_vault_secret.domain_join_user_password[0].value ) : null
+  domain_join_user_password = var.domain_join_the_windows_vm ? coalesce(var.domain_join_extension_values.domain_join_user_password, data.azurerm_key_vault_secret.domain_join_user_password[0].value) : null
 
   #set the resource deployment location. Default to the resource group location
   location = coalesce(var.location, data.azurerm_resource_group.virtualmachine_deployment.location)
