@@ -7,7 +7,7 @@
 #}
 
 output "testoutput" {
-    value = local.system_managed_identity_id
+    value = length(split("/","Storage Blob Data Contributor"))
 }
 
 output "virtual_machine" {

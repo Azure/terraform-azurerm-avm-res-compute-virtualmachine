@@ -54,6 +54,30 @@ variable "virtualmachine_sku_size" {
   nullable    = false
 }
 
+variable "lock" {
+  type = object({
+    name = optional(string, null)
+    kind = optional(string, "None")
+  })
+  description = <<LOCK
+    "The lock level to apply to this virtual machine and all of it's child resources. The default value is none. Possible values are `None`, `CanNotDelete`, and `ReadOnly`. Set the lock value on child resource values explicitly to override any inherited locks." 
+
+    Example Inputs:
+    ```terraform
+    lock = {
+      name = "lock-{resourcename}" # optional
+      type = "CanNotDelete" 
+    }
+    ```
+    LOCK
+  default     = {}
+  nullable    = false
+  validation {
+    condition     = contains(["CanNotDelete", "ReadOnly", "None"], var.lock.kind)
+    error_message = "The lock level must be one of: 'None', 'CanNotDelete', or 'ReadOnly'."
+  }
+}
+
 variable "tags" {
   type        = map(string)
   description = "Map of tags to be assigned to this resource"
@@ -104,6 +128,7 @@ variable "admin_ssh_keys" {
 
   Example Input:
 
+  ```terraform
   admin_ssh_keys = [
     {
       public_key = "<base64 string for the key>"
@@ -114,6 +139,7 @@ variable "admin_ssh_keys" {
       username   = "examleuser2"
     }
   ]
+  ```
   ADMIN_SSH_KEYS
 }
 
@@ -134,6 +160,7 @@ variable "identity" {
 
   Example Inputs:
 
+  ```terraform
   #default system managed identity
   identity = {
     type = "SystemAssigned"
@@ -148,6 +175,7 @@ variable "identity" {
     type = "SystemAssigned, UserAssigned"
     identity_ids = ["<azure resource ID of a user assigned managed identity>]
   }
+  ```
   IDENTITY
 
   validation {
@@ -181,6 +209,8 @@ variable "source_image_reference" {
     })
 
   Example Inputs:
+
+  ```terraform
   #Linux example:
   source_image_reference = {
     publisher = "Canonical"
@@ -196,7 +226,7 @@ variable "source_image_reference" {
     sku       = "2019-Datacenter"
     version   = "latest"
   }
-
+  ```
   SOURCE_IMAGE_REFERENCE
 
 }
@@ -246,6 +276,8 @@ variable "os_disk" {
     })
   
   Example Inputs:
+
+  ```terraform
   #basic example:
   os_disk = {
     caching              = "ReadWrite"
@@ -260,6 +292,7 @@ variable "os_disk" {
     disk_size_gb              = 128
     write_accelerator_enabled = true
   }
+  ```
   OS_DISK  
 }
 
@@ -270,8 +303,8 @@ variable "data_disk_managed_disks" {
     storage_account_type                      = string
     lun                                       = number
     caching                                   = string
-    disk_attachment_create_option             = optional(string)
     create_option                             = optional(string, "Empty")
+    disk_attachment_create_option             = optional(string)
     write_accelerator_enabled                 = optional(bool)
     disk_iops_read_write                      = optional(number, null)
     disk_mbps_read_write                      = optional(number, null)
@@ -283,7 +316,7 @@ variable "data_disk_managed_disks" {
     hyper_v_generation                        = optional(string)
     image_reference_resource_id               = optional(string)
     gallery_image_reference_resource_id       = optional(string)
-    logical_sector_size                       = optional(number, 4096)
+    logical_sector_size                       = optional(number, null)
     optimized_frequent_attach_enabled         = optional(bool, false)
     performance_plus_enabled                  = optional(bool, false)
     os_type                                   = optional(string)
@@ -309,24 +342,85 @@ variable "data_disk_managed_disks" {
     })), [])
     #disk_encryption_set_resource_id = optional(string) #this is currently a preview feature in the provider 
   }))
+  default     = []
+  description = <<DATA_DISK_MANAGED_DISKS
+  This variable is used to define one or more data disks for creation and attachment to the virtual machine. 
+    list(object({
+    name                                      = (Required) - Specifies the name of the Managed Disk. Changing this forces a new resource to be created.
+    storage_account_type                      = (Required) - The type of storage to use for the managed disk. Possible values are Standard_LRS, StandardSSD_ZRS, Premium_LRS, PremiumV2_LRS, Premium_ZRS, StandardSSD_LRS or UltraSSD_LRS
+    lun                                       = (Required) - The Logical Unit Number of the Data Disk, which needs to be unique within the Virtual Machine. Changing this forces a new resource to be created.
+    caching                                   = (Required) - Specifies the caching requirements for this Data Disk. Possible values include None, ReadOnly and ReadWrite
+    create_option                             = (Required) - The method to use when creating the managed disk. Changing this forces a new resource to be created. Possible values include: 1. Import - Import a VHD file in to the managed disk (VHD specified with source_uri). 2.ImportSecure - Securely import a VHD file in to the managed disk (VHD specified with source_uri). 3. Empty - Create an empty managed disk. 4. Copy - Copy an existing managed disk or snapshot (specified with source_resource_id). 5. FromImage - Copy a Platform Image (specified with image_reference_id) 6. Restore - Set by Azure Backup or Site Recovery on a restored disk (specified with source_resource_id). 7. Upload - Upload a VHD disk with the help of SAS URL (to be used with upload_size_bytes).
+    disk_attachment_create_option             = (Optional) - The disk attachment create Option of the Data Disk, such as Empty or Attach. Defaults to Attach. Changing this forces a new resource to be created.    
+    write_accelerator_enabled                 = (Optional) - Specifies if Write Accelerator is enabled on the disk. This can only be enabled on Premium_LRS managed disks with no caching and M-Series VMs. Defaults to false.
+    disk_iops_read_write                      = (Optional) - The number of IOPS allowed for this disk; only settable for UltraSSD disks and PremiumV2 disks. One operation can transfer between 4k and 256k bytes.
+    disk_mbps_read_write                      = (Optional) - The bandwidth allowed for this disk; only settable for UltraSSD disks and PremiumV2 disks. MBps means millions of bytes per second.
+    disk_iops_read_only                       = (Optional) - The number of IOPS allowed across all VMs mounting the shared disk as read-only; only settable for UltraSSD disks and PremiumV2 disks with shared disk enabled. One operation can transfer between 4k and 256k bytes.
+    disk_mbps_read_only                       = (Optional) - The bandwidth allowed across all VMs mounting the shared disk as read-only; only settable for UltraSSD disks and PremiumV2 disks with shared disk enabled. MBps means millions of bytes per second.
+    upload_size_bytes                         = (Optional) - Specifies the size of the managed disk to create in bytes. Required when create_option is Upload. The value must be equal to the source disk to be copied in bytes. Source disk size could be calculated with ls -l or wc -c. More information can be found at Copy a managed disk. Changing this forces a new resource to be created.
+    disk_size_gb                              = (Optional, Required for a new managed disk) - Specifies the size of the managed disk to create in gigabytes. If create_option is Copy or FromImage, then the value must be equal to or greater than the source's size. The size can only be increased.If No Downtime Resizing is not available, be aware that changing this value is disruptive if the disk is attached to a Virtual Machine. The VM will be shut down and de-allocated as required by Azure to action the change. Terraform will attempt to start the machine again after the update if it was in a running state when the apply was started. When upgrading disk_size_gb from value less than 4095 to a value greater than 4095, the disk will be detached from its associated Virtual Machine as required by Azure to action the change. Terraform will attempt to reattach the disk again after the update.
+    edge_zone                                 = (Optional) - Specifies the Edge Zone within the Azure Region where this Managed Disk should exist. Changing this forces a new Managed Disk to be created.
+    hyper_v_generation                        = (Optional) - The HyperV Generation of the Disk when the source of an Import or Copy operation targets a source that contains an operating system. Possible values are V1 and V2. For ImportSecure it must be set to V2. Changing this forces a new resource to be created.
+    image_reference_resource_id               = (Optional) - ID of an existing platform/marketplace disk image to copy when create_option is FromImage. This field cannot be specified if gallery_image_reference_resource_id is specified. Changing this forces a new resource to be created.
+    gallery_image_reference_resource_id       = (Optional) - ID of a Gallery Image Version to copy when create_option is FromImage. This field cannot be specified if image_reference_id is specified. Changing this forces a new resource to be created.
+    logical_sector_size                       = (Optional) - Logical Sector Size. Possible values are: 512 and 4096. Defaults to 4096. Changing this forces a new resource to be created. Setting logical sector size is supported only with UltraSSD_LRS disks and PremiumV2_LRS disks.
+    optimized_frequent_attach_enabled         = (Optional) - Specifies whether this Managed Disk should be optimized for frequent disk attachments (where a disk is attached/detached more than 5 times in a day). Defaults to false. Setting optimized_frequent_attach_enabled to true causes the disks to not align with the fault domain of the Virtual Machine, which can have operational implications.
+    performance_plus_enabled                  = (Optional) - Specifies whether Performance Plus is enabled for this Managed Disk. Defaults to false. Changing this forces a new resource to be created. performance_plus_enabled can only be set to true when using a Managed Disk with an Ultra SSD.
+    os_type                                   = (Optional) - Specify a value when the source of an Import, ImportSecure or Copy operation targets a source that contains an operating system. Valid values are Linux or Windows.
+    source_resource_id                        = (Optional) - The ID of an existing Managed Disk or Snapshot to copy when create_option is Copy or the recovery point to restore when create_option is Restore. Changing this forces a new resource to be created.
+    source_uri                                = (Optional) - URI to a valid VHD file to be used when create_option is Import or ImportSecure. Changing this forces a new resource to be created.
+    storage_account_resource_id               = (Optional) - The ID of the Storage Account where the source_uri is located. Required when create_option is set to Import or ImportSecure. Changing this forces a new resource to be created.
+    tier                                      = (Optional) - The disk performance tier to use. Possible values are documented at https://docs.microsoft.com/azure/virtual-machines/disks-change-performance. This feature is currently supported only for premium SSDs.Changing this value is disruptive if the disk is attached to a Virtual Machine. The VM will be shut down and de-allocated as required by Azure to action the change. Terraform will attempt to start the machine again after the update if it was in a running state when the apply was started.
+    max_shares                                = (Optional) - The maximum number of VMs that can attach to the disk at the same time. Value greater than one indicates a disk that can be mounted on multiple VMs at the same time. Premium SSD maxShares limit: P15 and P20 disks: 2. P30,P40,P50 disks: 5. P60,P70,P80 disks: 10. For ultra disks the max_shares minimum value is 1 and the maximum is 5.
+    trusted_launch_enabled                    = (Optional) - Specifies if Trusted Launch is enabled for the Managed Disk. Changing this forces a new resource to be created. Trusted Launch can only be enabled when create_option is FromImage or Import
+    security_type                             = (Optional) - Security Type of the Managed Disk when it is used for a Confidential VM. Possible values are ConfidentialVM_VMGuestStateOnlyEncryptedWithPlatformKey, ConfidentialVM_DiskEncryptedWithPlatformKey and ConfidentialVM_DiskEncryptedWithCustomerKey. Changing this forces a new resource to be created. When security_type is set to ConfidentialVM_DiskEncryptedWithCustomerKey the value of create_option must be one of FromImage or ImportSecure. security_type cannot be specified when trusted_launch_enabled is set to true. secure_vm_disk_encryption_set_id must be specified when security_type is set to ConfidentialVM_DiskEncryptedWithCustomerKey.
+    secure_vm_disk_encryption_set_resource_id = (Optional) - The ID of the Disk Encryption Set which should be used to Encrypt this OS Disk when the Virtual Machine is a Confidential VM. Conflicts with disk_encryption_set_id. Changing this forces a new resource to be created. secure_vm_disk_encryption_set_resource_id can only be specified when security_type is set to ConfidentialVM_DiskEncryptedWithCustomerKey.
+    on_demand_bursting_enabled                = (Optional) - Specifies if On-Demand Bursting is enabled for the Managed Disk.
+    tags                                      = (Optional) - A mapping of tags to assign to the resource.
+    zone                                      = (Optional) - Specifies the Availability Zone in which this Managed Disk should be located. Changing this property forces a new resource to be created. Availability Zones are only supported in select regions at this time.
+    network_access_policy                     = (Optional) - Policy for accessing the disk via network. Allowed values are AllowAll, AllowPrivate, and DenyAll.
+    disk_access_resource_id                   = (Optional) - The ID of the disk access resource for using private endpoints on disks. disk_access_resource_id is only supported when network_access_policy is set to AllowPrivate.
+    public_network_access_enabled             = (Optional) - Whether it is allowed to access the disk via public network. Defaults to true.
+    encryption_settings = optional(list(object({
+      disk_encryption_key_vault_secret_url  = (Required) - The URL to the Key Vault Secret used as the Disk Encryption Key. This can be found as id on the azurerm_key_vault_secret resource.
+      disk_encryption_key_vault_resource_id = (Required) - The ID of the source Key Vault. This can be found as id on the azurerm_key_vault resource.
+      key_encryption_key_vault_secret_url   = (Required) - The URL to the Key Vault Key used as the Key Encryption Key. This can be found as id on the azurerm_key_vault_key resource.
+      key_encryption_key_vault_resource_id  = (Required) - The ID of the source Key Vault. This can be found as id on the azurerm_key_vault resource.
+    })), [])
 
-  default = []
+  Example Inputs:
+
+  ```terraform
+  #Create a new empty disk and attach it as lun 0
+  data_disk_managed_disks = [
+    {
+      name                 = "testdisk1-win-lun0"
+      storage_account_type = "StandardSSD_LRS"
+      lun                  = 0
+      caching              = "ReadWrite"
+      disk_size_gb         = 32
+    }
+  ]
+  ```
+  DATA_DISK_MANAGED_DISKS
 }
 
 
 ##Variables describing the networking configuration
+#variable configuration values to use when the network interface include the option to create a new public IP address
 variable "public_ip_configuration_details" {
   type = object({
-    allocation_method       = optional(string, "Static")
-    zones                   = optional(list(string))
-    ddos_protection_mode    = optional(string, "VirtualNetworkInherited")
-    ddos_protection_plan_id = optional(string)
-    domain_name_label       = optional(string)
-    edge_zone               = optional(string)
-    idle_timeout_in_minutes = optional(number, 30)
-    ip_version              = optional(string, "IPv4")
-    sku_tier                = optional(string, "Regional")
-    tags                    = optional(map(string))
+    allocation_method        = optional(string, "Static")
+    zones                    = optional(list(string))
+    ddos_protection_mode     = optional(string, "VirtualNetworkInherited")
+    ddos_protection_plan_id  = optional(string)
+    domain_name_label        = optional(string)
+    edge_zone                = optional(string)
+    idle_timeout_in_minutes  = optional(number, 30)
+    ip_version               = optional(string, "IPv4")
+    sku_tier                 = optional(string, "Regional")
+    tags                     = optional(map(string))
+    disable_lock_inheritance = optional(bool, false)
   })
   default = {
     allocation_method       = "Static"
@@ -335,6 +429,32 @@ variable "public_ip_configuration_details" {
     ip_version              = "IPv4"
     sku_tier                = "Regional"
   }
+  description = <<PUBLIC_IP_CONFIGURATION_DETAILS
+    allocation_method       = (Required) - Defines the allocation method for this IP address. Possible values are Static or Dynamic.
+    zones                   = (Optional) - A collection containing the availability zone to allocate the Public IP in. Changing this forces a new resource to be created.
+    ddos_protection_mode    = (Optional) - The DDoS protection mode of the public IP. Possible values are Disabled, Enabled, and VirtualNetworkInherited. Defaults to VirtualNetworkInherited.
+    ddos_protection_plan_id = (Optional) - The ID of DDoS protection plan associated with the public IP. ddos_protection_plan_id can only be set when ddos_protection_mode is Enabled
+    domain_name_label       = (Optional) - Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system.
+    edge_zone               = (Optional) - Specifies the Edge Zone within the Azure Region where this Public IP should exist. Changing this forces a new Public IP to be created.
+    idle_timeout_in_minutes = (Optional) - Specifies the timeout for the TCP idle connection. The value can be set between 4 and 30 minutes.
+    ip_version              = (Optional) - The IP Version to use, IPv6 or IPv4. Changing this forces a new resource to be created. Only static IP address allocation is supported for IPv6.
+    sku_tier                = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Basic. Changing this forces a new resource to be created. When sku_tier is set to Global, sku must be set to Standard.
+    tags                    = (Optional) - A mapping of tags to assign to the resource.
+    disable_lock_inheritance = (Optional) - Set this value to true to disable the lock inheritance from the parent VM resource lock definition.  Defaults to false. 
+
+    Example Inputs:
+
+    ```terraform
+    #Standard Regional IPV4 Public IP address configuration
+    public_ip_configuration_details = {
+      allocation_method       = "Static"
+      ddos_protection_mode    = "VirtualNetworkInherited"
+      idle_timeout_in_minutes = 30
+      ip_version              = "IPv4"
+      sku_tier                = "Regional"
+    }
+    ```
+  PUBLIC_IP_CONFIGURATION_DETAILS
 }
 
 variable "network_interfaces" {
@@ -379,6 +499,62 @@ variable "network_interfaces" {
     internal_dns_name_label        = null
     tags                           = {}
   }]
+  description = <<NETWORK_INTERFACES
+    list(object({
+    name = (Required) The name of the Network Interface. Changing this forces a new resource to be created.
+    ip_configurations = list(object({ 
+      name                                                        = (Required) - A name used for this IP Configuration.
+      private_ip_address                                          = (Optional) - The Static IP Address which should be used. Configured when private_ip_address_allocation is set to Static 
+      private_ip_address_version                                  = (Optional) - The IP Version to use. Possible values are IPv4 or IPv6. Defaults to IPv4.
+      private_ip_address_allocation                               = (Required) - The allocation method used for the Private IP Address. Possible values are Dynamic and Static. Dynamic means "An IP is automatically assigned during creation of this Network Interface"; Static means "User supplied IP address will be used"
+      private_ip_subnet_resource_id                               = (Optional) - The Azure Resource ID of the Subnet where this Network Interface should be located in.
+      public_ip_address_resource_id                               = (Optional) - Reference to a Public IP Address resource ID to associate with this NIC
+      is_primary_ipconfiguration                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified.
+      gateway_load_balancer_frontend_ip_configuration_resource_id = (Optional) - The Frontend IP Configuration Azure Resource ID of a Gateway SKU Load Balancer.)
+      create_public_ip_address                                    = (Optional) - Select true here to have the module create the public IP address for this IP Configuration
+    }))
+    dns_servers                    = (Optional) - A list of IP Addresses defining the DNS Servers which should be used for this Network Interface.
+    edge_zone                      = (Optional) - Specifies the Edge Zone within the Azure Region where this Network Interface should exist. Changing this forces a new Network Interface to be created.
+    accelerated_networking_enabled = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.
+    ip_forwarding_enabled          = (Optional) - Should IP Forwarding be enabled? Defaults to false
+    internal_dns_name_label        = (Optional) - The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network.
+    tags                           = (Optional) - A mapping of tags to assign to the resource.
+  }))
+
+  Example Inputs:
+
+  ```terraform
+  #Simple private IP single NIC with IPV4 private address
+    network_interfaces = [{
+      name = "testnic1"
+      ip_configurations = [
+        {
+          name                          = "testnic1-ipconfig"
+          private_ip_subnet_resource_id = data.azurerm_subnet.vmsubnet1.id
+          create_public_ip_address      = false
+        }
+      ]
+    }
+  ]
+
+  #Simple NIC with private and public IP address 
+  network_interfaces = [{
+      name = "testnic1"
+      ip_configurations = [
+        {
+          name                          = "testnic1-ipconfig"
+          private_ip_subnet_resource_id = data.azurerm_subnet.vmsubnet1.id
+          create_public_ip_address      = false
+        },
+        {
+          name                          = "testnic1-ipconfig2-public"
+          create_public_ip_address      = true
+        }
+      ]
+    }
+  ]
+  ```
+  NETWORK_INTERFACES
 }
 
 
@@ -396,6 +572,8 @@ variable "additional_unattend_contents" {
   }))
 
   Example Inputs:
+
+  ```terraform
   #Example Reboot
   additional_unattend_contents = [
     {
@@ -403,6 +581,7 @@ variable "additional_unattend_contents" {
       setting = "FirstLogonCommands"
     }
   ]
+  ```
   ADDITIONAL_UNATTEND_CONTENTS  
 }
 
@@ -550,11 +729,14 @@ variable "plan" {
   })
 
   Example Input:
+
+  ```terraform
   plan = {
     name      = "17_04_02-payg-essentials"
     product   = "cisco-8000v"
     publisher = "cisco"
   }
+  ```
   PLAN
 }
 
@@ -609,11 +791,14 @@ variable "termination_notification" {
   })
 
   Example Inputs:
+
+  ```terraform
   termination_notification = {
     enabled = true
     timeout = "PT5M"
 
   }
+  ```
   TERMINATION_NOTIFICATION
 }
 
@@ -651,9 +836,12 @@ variable "vm_additional_capabilities" {
   })
 
   Example Inputs:
+
+  ```terraform
   vm_additional_capabilities = {
     ultra_ssd_enabled = true
   }
+  ```
   VM_ADDITIONAL_CAPABILITIES
 }
 
@@ -676,10 +864,13 @@ variable "winrm_listeners" {
   }))
 
   Example Inputs: TODO: Validate this example
+
+  ```terraform
   winrm_listeners = {
     protocol = "Https"
     certificate_url = data.azurerm_keyvault_secret.example.secret_id
   }
+  ```
   WINRM_LISTENERS
   nullable    = false
 }
@@ -690,7 +881,7 @@ variable "zone" {
   description = "(Optional) The Availability Zone which the Virtual Machine should be allocated in, only one zone would be accepted. If set then this module won't create `azurerm_availability_set` resource. Changing this forces a new resource to be created."
 }
 
-variable "gallery_application" {
+variable "gallery_applications" {
   type = list(object({
     version_id             = string
     configuration_blob_uri = optional(string)
@@ -698,14 +889,24 @@ variable "gallery_application" {
     tag                    = optional(string)
   }))
   default     = []
-  description = <<GALLERY_APPLICATION
+  description = <<GALLERY_APPLICATIONS
   list(object({
     version_id             = "(Required) Specifies the Gallery Application Version resource ID."
     configuration_blob_uri = "(Optional) Specifies the URI to an Azure Blob that will replace the default configuration for the package if provided."
     order                  = "(Optional) Specifies the order in which the packages have to be installed. Possible values are between `0` and `2,147,483,647`."
     tag                    = "(Optional) Specifies a passthrough value for more generic context. This field can be any valid `string` value."
   }))
-  GALLERY_APPLICATION
+
+  Example Inputs:
+
+  ```terraform
+  gallery_applications = [
+    {
+      version_id = "/subscriptions/{subscriptionId}/resourceGroups/<resource group>/providers/Microsoft.Compute/galleries/{gallery name}/applications/{application name}/versions/{version}"
+      order      = 1
+  ]
+  ```
+  GALLERY_APPLICATIONS
 }
 
 variable "secrets" {
@@ -726,6 +927,22 @@ variable "secrets" {
       store = "(Optional) The certificate store on the Virtual Machine where the certificate should be added. Required when use with Windows Virtual Machine."
     }))
   }))
+
+  Example Inputs:
+
+  ```terraform
+  secrets = [
+    {
+      key_vault_id = azurerm_key_vault.example.id
+      certificate = [
+        {
+          url = azurerm_key_vault_certificate.example.secret_id
+          store = "My"
+        }
+      ]
+    }
+  ]
+  ```
   SECRETS
 }
 
@@ -742,7 +959,7 @@ variable "extensions" {
     failure_suppression_enabled = optional(bool, false)
     settings                    = optional(string)
     protected_settings          = optional(string)
-    provision_after_extensions  = optional(list(string),[])
+    provision_after_extensions  = optional(list(string), [])
     protected_settings_from_key_vault = optional(object({
       secret_url      = string
       source_vault_id = string
@@ -772,6 +989,8 @@ variable "extensions" {
     }))
 
     Example Inputs:
+
+    ```terraform
     #custom script extension example - linux
     extensions = [
       {
@@ -812,6 +1031,7 @@ variable "extensions" {
         PROTECTED_SETTINGS        
       }
     ]
+    ```
    EXTENSIONS
   nullable    = false
   sensitive   = true # Because `protected_settings` is sensitive
@@ -853,6 +1073,8 @@ variable "azure_monitor_agent_extension_settings" {
   })
 
   Example Inputs:
+
+  ```terraform
   #for the most common configuration no overriding of defaults is required
   #The following example shows a user assigned managed identity example.
   azure_monitor_agent_extension_settings = {
@@ -860,7 +1082,7 @@ variable "azure_monitor_agent_extension_settings" {
     managed_identity_type = "UserAssigned"
     user_assigned_managed_identity_resource_id = azurerm_user_assigned_identity.example.id
   }
-
+  ```
   AZURE_MONITOR_AGENT_EXTENSION_SETTINGS  
 }
 
@@ -880,6 +1102,8 @@ variable "azure_monitor_data_collection_rule_associations" {
   }))
 
   Example Inputs:
+
+  ```terraform
     #Basic Input
     azure_monitor_data_collection_rule_associations = [
       {
@@ -888,7 +1112,7 @@ variable "azure_monitor_data_collection_rule_associations" {
       description                          = "Association for test Data Collection Rule" 
       }
     ]
-
+  ```
   AZURE_MONITOR_DATA_COLLECTION_RULE_ASSOCIATIONS
 }
 
@@ -908,6 +1132,8 @@ variable "azure_monitor_data_collection_endpoint_associations" {
   }))
 
   Example Inputs:
+
+  ```terraform
     #Basic Input
     azure_monitor_data_collection_endpoint_associations = [
       {
@@ -916,6 +1142,7 @@ variable "azure_monitor_data_collection_endpoint_associations" {
       description                          = "Association for test Data Collection Endpoint" 
       }
     ]
+  ```
   AZURE_MONITOR_DATA_COLLECTION_ENDPOINT_ASSOCIATIONS
 }
 
@@ -955,6 +1182,8 @@ variable "domain_join_extension_values" {
   }
   
   Example Inputs:
+
+  ```terraform
     #Basic password based input
     domain_join_extension_values = {
       domain_name               = "testdomain.com"
@@ -969,28 +1198,27 @@ variable "domain_join_extension_values" {
       domain_join_user_key_vault_secret_name = "domain_join_password_secret" 
       domain_join_user_key_vault_resource_id = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test-resource-group/providers/Microsoft.KeyVault/vaults/example-key-vault"
     } 
-  
+  ```
   DOMAIN_JOIN_EXTENSION_VALUES
 }
 
 variable "system_managed_identity_role_assignments" {
-  type = list(object({
-    name                             = optional(string)
-    scope_resource_id                = string
-    role_definition_resource_id      = optional(string)
-    role_definition_name             = optional(string)
-    condition                        = optional(string)
-    condition_version                = optional(string)
-    description                      = optional(string)
-    skip_service_principal_aad_check = optional(bool, true)
+  type = map(object({
+    role_definition_id_or_name             = string
+    scope_resource_id                      = string
+    role_definition_name                   = optional(string)
+    condition                              = optional(string)
+    condition_version                      = optional(string)
+    description                            = optional(string)
+    skip_service_principal_aad_check       = optional(bool, true)
+    delegated_managed_identity_resource_id = optional(string)
     }
   ))
-  default = []
+  default = {}
 
   description = <<SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS
   A list of role definitions and scopes to be assigned to the system managed identity
   list(object({
-    name                             = (Optional) - A unique UUID/GUID for this Role Assignment - one will be generated if not specified. Changing this forces a new resource to be created.
     scope_resource_id                = (Required) - The scope at which the Role Assignment applies to, such as /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333, /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup, or /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup/providers/Microsoft.Compute/virtualMachines/myVM, or /providers/Microsoft.Management/managementGroups/myMG. Changing this forces a new resource to be created.
     role_definition_resource_id      = (Optional) - The Scoped-ID of the Role Definition. Changing this forces a new resource to be created. Conflicts with role_definition_name
     role_definition_name             = (Optional) - The name of a built-in Role. Changing this forces a new resource to be created. Conflicts with role_definition_id
@@ -998,18 +1226,21 @@ variable "system_managed_identity_role_assignments" {
     condition_version                = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
     description                      = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.
     skip_service_principal_aad_check = (Optional) - If the principal_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal_id is a Service Principal identity. Defaults to true.
+    delegated_managed_identity_resource_id = ""
   }))
 
   Example Inputs:
+
+  ```terraform
     #typical assignment example. It is also common for the scope resource ID to be a terraform resource reference like azurerm_resource_group.example.id
-    system_managed_identity_role_assignments = [
-      {
+    system_managed_identity_role_assignments = {
+      role_assignment_1 = {
         scope_resource_id    = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test_resource_group/providers/Microsoft.Storage/storageAccounts/examplestorageacct"
-        role_definition_name = "Storage Blob Data Contributor"
+        role_definition_id_or_name = "Storage Blob Data Contributor"
         description          = "Example for assigning a role to a resource"
       }
-    ]
-
+    }
+  ```
   SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS 
 }
 
@@ -1039,11 +1270,13 @@ variable "azure_guest_configuration_extension" {
   }
 
   Example Inputs:
+
+  ```terraform
     azure_guest_configuration_extensions = {
       guest_config_extension_enabled = false
     }
 
-
+  ```
   AZURE_GUEST_CONFIGURATION_EXTENSION
 }
 
@@ -1075,6 +1308,8 @@ variable "azure_backup_configuration" {
   }
 
   Example Inputs:
+
+  ```terraform
     #Simple Standard Configuration
     azure_backup_configuration = {
       recovery_vault_resource_group_name = "test_resource_group_name"
@@ -1091,6 +1326,7 @@ variable "azure_backup_configuration" {
       include_disk_luns                  = [0,1]
       protection_state                   = "Protected"
     }
+  ```
   AZURE_BACKUP_CONFIGURATION
 
 }

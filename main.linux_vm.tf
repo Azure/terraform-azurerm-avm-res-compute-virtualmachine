@@ -87,7 +87,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 
   dynamic "gallery_application" {
-    for_each = { for app in var.gallery_application : app.version_id => app }
+    for_each = { for app in var.gallery_applications : app.version_id => app }
 
     content {
       version_id             = gallery_application.value.version_id
@@ -154,3 +154,11 @@ resource "azurerm_linux_virtual_machine" "this" {
     }
   }
 }
+
+
+  resource "azurerm_management_lock" "this-linux-virtualmachine" {
+    count      = var.lock.kind != "None" ? 1 : 0
+    name       = coalesce(var.lock.name, "lock-${var.virtualmachine_name}")
+    scope      = azurerm_linux_virtual_machine.this[0].id
+    lock_level = var.lock.kind
+  }
