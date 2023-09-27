@@ -151,50 +151,37 @@ variable "admin_ssh_keys" {
   ADMIN_SSH_KEYS
 }
 
-variable "identity" {
-  nullable = true
+variable "managed_identities" {
   type = object({
-    type         = string
-    identity_ids = optional(set(string))
+    system_assigned            = optional(bool, false)
+    user_assigned_resource_ids = optional(set(string), [])
   })
-  default = {
-    type = "SystemAssigned"
-  }
+  default     = {}
   description = <<IDENTITY
+  Sets the managed identity configuration for the virtual machine being deployed. Be aware that capabilities such as the Azure Monitor Agent and Role Assignments require that a managed identity has been configured.
   object({
-    type         = "(Required) Specifies the type of Managed Service Identity that should be configured on this Linux Virtual Machine. Possible values are `SystemAssigned`, `UserAssigned`, `SystemAssigned, UserAssigned` (to enable both)."
-    identity_ids = "(Optional) Specifies a list of User Assigned Managed Identity IDs to be assigned to this Linux Virtual Machine. This is required when `type` is set to `UserAssigned` or `SystemAssigned, UserAssigned`."
+    system_assigned = "(Optional) Specifies whether the System Assigned Managed Identity should be enabled.  Defaults to false. 
+   user_assigned_resource_ids    = "(Optional) Specifies a list of User Assigned Managed Identity IDs to be assigned to this Virtual Machine."
   })
 
   Example Inputs:
 
   ```terraform
   #default system managed identity
-  identity = {
-    type = "SystemAssigned"
+  managed_identities = {
+   system_assigned = true
   }
   #user assigned managed identity only
-  identity = {
-    type = "UserAssigned"
-    identity_ids = ["<azure resource ID of a user assigned managed identity>]
+  managed_identities           = {
+    user_assigned_resource_ids = ["<azure resource ID of a user assigned managed identity>]
   }
   #user assigned and system assigned managed identities
   identity = {
-    type = "SystemAssigned, UserAssigned"
-    identity_ids = ["<azure resource ID of a user assigned managed identity>]
+    system_assigned            = true
+    user_assigned_resource_ids = ["<azure resource ID of a user assigned managed identity>]
   }
   ```
   IDENTITY
-
-  validation {
-    condition     = can(regex("^(UserAssigned|SystemAssigned|SystemAssigned, UserAssigned)$", var.identity.type)) || var.identity == null
-    error_message = "Valid identity type values are `UserAssigned`, `SystemAssigned`, or `SystemAssigned, UserAssigned`."
-  }
-
-  validation {
-    condition     = (can(regex("^(UserAssigned|SystemAssigned, UserAssigned)$", try(var.identity.type, ""))) && (try(var.identity.identity_ids, []) != null)) || (can(regex("^SystemAssigned$", try(var.identity.type, ""))) && (try(var.identity.identity_ids, []) == null)) || var.identity == null
-    error_message = "An identity id must be included when the identity type is `UserAssigned` or `SystemAssigned, UserAssigned`"
-  }
 }
 
 

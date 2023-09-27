@@ -3,7 +3,10 @@ locals {
   virtualmachine_resource_id = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azurerm_linux_virtual_machine.this[0].id
 
   #get the first system managed identity id if it is provisioned and depending on whether the vm type is linux or windows
-  system_managed_identity_id = can(regex("SystemAssigned", try(var.identity.type, ""))) ? ((lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : azurerm_linux_virtual_machine.this[0].identity[0].principal_id) : null
+  system_managed_identity_id = var.managed_identities.system_assigned ? ((lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : azurerm_linux_virtual_machine.this[0].identity[0].principal_id) : null
+
+  #set the type value for the managed identity that is used by azurerm
+  managed_identity_type = var.managed_identities.system_assigned ? ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "SystemAssigned, UserAssigned" : "SystemAssigned") : ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "UserAssigned" : null)
 
   #flatten the network interface vars to properly create public ips that can be referenced in the ipconfig
   flattened_nics = flatten([for nic_key, nic in var.network_interfaces : [

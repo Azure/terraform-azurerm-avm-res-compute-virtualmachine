@@ -101,13 +101,12 @@ resource "azurerm_windows_virtual_machine" "this" {
     }
   }
 
-  dynamic "identity" {
-    for_each = var.identity == null ? [] : ["identity"]
-
-    content {
-      type         = var.identity.type
-      identity_ids = var.identity.identity_ids
-    }
+  dynamic identity {
+    for_each = local.managed_identity_type == null ? [] : ["identity"]
+      content{
+        type         = local.managed_identity_type
+        identity_ids = var.managed_identities.user_assigned_resource_ids
+      }
   }
 
   dynamic "plan" {
