@@ -334,6 +334,8 @@ variable "data_disk_managed_disks" {
     network_access_policy                     = optional(string)
     disk_access_resource_id                   = optional(string)
     public_network_access_enabled             = optional(bool)
+    lock                                      = optional(string)
+    lock_name_suffix                          = optional(string, "lock")
     encryption_settings = optional(list(object({
       disk_encryption_key_vault_secret_url  = optional(string)
       disk_encryption_key_vault_resource_id = optional(string)
@@ -381,6 +383,8 @@ variable "data_disk_managed_disks" {
     network_access_policy                     = (Optional) - Policy for accessing the disk via network. Allowed values are AllowAll, AllowPrivate, and DenyAll.
     disk_access_resource_id                   = (Optional) - The ID of the disk access resource for using private endpoints on disks. disk_access_resource_id is only supported when network_access_policy is set to AllowPrivate.
     public_network_access_enabled             = (Optional) - Whether it is allowed to access the disk via public network. Defaults to true.
+    lock                                      = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+    lock_name_suffix                          = (Optional) - The name suffix to append to the nic name for use as the lock name.  Defaults to lock.
     encryption_settings = optional(list(object({
       disk_encryption_key_vault_secret_url  = (Required) - The URL to the Key Vault Secret used as the Disk Encryption Key. This can be found as id on the azurerm_key_vault_secret resource.
       disk_encryption_key_vault_resource_id = (Required) - The ID of the source Key Vault. This can be found as id on the azurerm_key_vault resource.
@@ -410,17 +414,18 @@ variable "data_disk_managed_disks" {
 #variable configuration values to use when the network interface include the option to create a new public IP address
 variable "public_ip_configuration_details" {
   type = object({
-    allocation_method        = optional(string, "Static")
-    zones                    = optional(list(string))
-    ddos_protection_mode     = optional(string, "VirtualNetworkInherited")
-    ddos_protection_plan_id  = optional(string)
-    domain_name_label        = optional(string)
-    edge_zone                = optional(string)
-    idle_timeout_in_minutes  = optional(number, 30)
-    ip_version               = optional(string, "IPv4")
-    sku_tier                 = optional(string, "Regional")
-    tags                     = optional(map(string))
-    disable_lock_inheritance = optional(bool, false)
+    allocation_method       = optional(string, "Static")
+    zones                   = optional(list(string))
+    ddos_protection_mode    = optional(string, "VirtualNetworkInherited")
+    ddos_protection_plan_id = optional(string)
+    domain_name_label       = optional(string)
+    edge_zone               = optional(string)
+    idle_timeout_in_minutes = optional(number, 30)
+    ip_version              = optional(string, "IPv4")
+    sku_tier                = optional(string, "Regional")
+    tags                    = optional(map(string))
+    lock                    = optional(string)
+    lock_name_suffix        = optional(string, "lock")
   })
   default = {
     allocation_method       = "Static"
@@ -440,7 +445,8 @@ variable "public_ip_configuration_details" {
     ip_version              = (Optional) - The IP Version to use, IPv6 or IPv4. Changing this forces a new resource to be created. Only static IP address allocation is supported for IPv6.
     sku_tier                = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Basic. Changing this forces a new resource to be created. When sku_tier is set to Global, sku must be set to Standard.
     tags                    = (Optional) - A mapping of tags to assign to the resource.
-    disable_lock_inheritance = (Optional) - Set this value to true to disable the lock inheritance from the parent VM resource lock definition.  Defaults to false. 
+    lock                    = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+    lock_name_suffix        = (Optional) - The name suffix to append to the pip name for use as the lock name.  Defaults to lock.
 
     Example Inputs:
 
@@ -477,6 +483,8 @@ variable "network_interfaces" {
     ip_forwarding_enabled          = optional(bool, false)
     internal_dns_name_label        = optional(string)
     tags                           = optional(map(string))
+    lock                           = optional(string)
+    lock_name_suffix               = optional(string, "lock")
   }))
   default = [{
     name = "default-ipv4-ipconfig"
@@ -519,6 +527,8 @@ variable "network_interfaces" {
     ip_forwarding_enabled          = (Optional) - Should IP Forwarding be enabled? Defaults to false
     internal_dns_name_label        = (Optional) - The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network.
     tags                           = (Optional) - A mapping of tags to assign to the resource.
+    lock                           = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+    lock_name_suffix               = (Optional) - The name suffix to append to the nic name for use as the lock name.  Defaults to lock.
   }))
 
   Example Inputs:
@@ -1202,7 +1212,7 @@ variable "domain_join_extension_values" {
   DOMAIN_JOIN_EXTENSION_VALUES
 }
 
-variable "system_managed_identity_role_assignments" {
+variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
     scope_resource_id                      = string
@@ -1233,7 +1243,7 @@ variable "system_managed_identity_role_assignments" {
 
   ```terraform
     #typical assignment example. It is also common for the scope resource ID to be a terraform resource reference like azurerm_resource_group.example.id
-    system_managed_identity_role_assignments = {
+    role_assignments = {
       role_assignment_1 = {
         scope_resource_id    = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test_resource_group/providers/Microsoft.Storage/storageAccounts/examplestorageacct"
         role_definition_id_or_name = "Storage Blob Data Contributor"

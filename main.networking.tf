@@ -47,3 +47,35 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
     }
   }
 }
+
+#configure locks on each public IP that has been created if lock values are set.  
+resource "azurerm_management_lock" "this-public-ip" {
+  for_each = { for pub_ip in local.flattened_nics : pub_ip.ip_config_name => pub_ip if(pub_ip.create_public_ip_address && (coalesce(var.public_ip_configuration_details.lock, var.lock.kind) != "None")) }
+
+  name       = "${azurerm_public_ip.virtualmachine_public_ips[each.value.ip_config_name].name}-${var.public_ip_configuration_details.lock_name_suffix}"
+  scope      = azurerm_public_ip.virtualmachine_public_ips[each.value.ip_config_name].id
+  lock_level = coalesce(var.public_ip_configuration_details.lock, var.lock.kind)
+
+  depends_on = [ 
+    azurerm_network_interface.virtualmachine_network_interfaces,
+    azurerm_public_ip.virtualmachine_public_ips,
+    azurerm_linux_virtual_machine.this,
+    azurerm_windows_virtual_machine.this
+   ]
+}
+
+#configure resource locks on each NIC if the lock values are set
+resource "azurerm_management_lock" "this-nic" {
+  for_each = { for nic in var.network_interfaces : "${nic.name}${local.name_string}" => nic if coalesce(nic.lock, var.lock.kind) != "None"}
+
+  name       = "${each.key}-${each.value.lock_name_suffix}"
+  scope      = azurerm_network_interface.virtualmachine_network_interfaces[each.key].id
+  lock_level = coalesce(each.value.lock, var.lock.kind)
+
+    depends_on = [ 
+    azurerm_network_interface.virtualmachine_network_interfaces,
+    azurerm_public_ip.virtualmachine_public_ips,
+    azurerm_linux_virtual_machine.this,
+    azurerm_windows_virtual_machine.this
+   ]
+}

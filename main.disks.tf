@@ -30,10 +30,10 @@ resource "azurerm_managed_disk" "this" {
   disk_access_id                    = each.value.disk_access_resource_id
   public_network_access_enabled     = each.value.public_network_access_enabled
   disk_iops_read_write              = each.value.disk_iops_read_write
-  #disk_mbps_read_write              = each.value.disk_mbps_read_write
-  #disk_iops_read_only               = each.value.disk_iops_read_only
-  #disk_mbps_read_only               = each.value.disk_mbps_read_only
-  #logical_sector_size               = each.value.logical_sector_size
+  disk_mbps_read_write              = each.value.disk_mbps_read_write
+  disk_iops_read_only               = each.value.disk_iops_read_only
+  disk_mbps_read_only               = each.value.disk_mbps_read_only
+  logical_sector_size               = each.value.logical_sector_size
 
   dynamic "encryption_settings" {
     for_each = each.value.encryption_settings
@@ -56,7 +56,7 @@ resource "azurerm_managed_disk" "this" {
 
 }
 
-
+#attach the disk(s) to the virtual machine
 resource "azurerm_virtual_machine_data_disk_attachment" "this_linux" {
   for_each                  = (length(var.data_disk_managed_disks) > 0) && (lower(var.virtualmachine_os_type) == "linux") ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
   managed_disk_id           = azurerm_managed_disk.this[each.key].id
@@ -75,4 +75,20 @@ resource "azurerm_virtual_machine_data_disk_attachment" "this_windows" {
   caching                   = each.value.caching
   create_option             = each.value.disk_attachment_create_option
   write_accelerator_enabled = each.value.write_accelerator_enabled
+}
+
+#configure resource locks on each Data Disk if the lock values are set. Set explicit dependencies on the attachments and vm's to ensure provisioning is complete prior to setting resource locks
+resource "azurerm_management_lock" "this-disk" {
+  for_each = (length(var.data_disk_managed_disks) > 0) ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk if coalesce(disk.lock, var.lock.kind) != "None"} : {}
+
+  name       = "${each.key}-${each.value.lock_name_suffix}"
+  scope      = azurerm_managed_disk.this[each.key].id
+  lock_level = coalesce(each.value.lock, var.lock.kind)
+
+  depends_on = [ 
+    azurerm_virtual_machine_data_disk_attachment.this_linux,
+    azurerm_virtual_machine_data_disk_attachment.this_windows,
+    azurerm_windows_virtual_machine.this,
+    azurerm_linux_virtual_machine.this
+   ]
 }

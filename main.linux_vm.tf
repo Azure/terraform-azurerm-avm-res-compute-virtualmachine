@@ -155,10 +155,28 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 }
 
+#set explicit dependencies on all the child resources to ensure that they have finished update and modification prior to locking the vm
+resource "azurerm_management_lock" "this-linux-virtualmachine" {
+  count      = var.lock.kind != "None" &&  !(lower(var.virtualmachine_os_type) == "windows")  ? 1 : 0
+  name       = coalesce(var.lock.name, "lock-${var.virtualmachine_name}")
+  scope      = azurerm_linux_virtual_machine.this[0].id
+  lock_level = var.lock.kind
 
-  resource "azurerm_management_lock" "this-linux-virtualmachine" {
-    count      = var.lock.kind != "None" ? 1 : 0
-    name       = coalesce(var.lock.name, "lock-${var.virtualmachine_name}")
-    scope      = azurerm_linux_virtual_machine.this[0].id
-    lock_level = var.lock.kind
+
+  depends_on = [ 
+    azurerm_backup_protected_vm.this,
+    azurerm_managed_disk.this,
+    azurerm_monitor_data_collection_rule_association.this,
+    azurerm_monitor_data_collection_rule_association.this_endpoint,
+    azurerm_network_interface.virtualmachine_network_interfaces,
+    azurerm_public_ip.virtualmachine_public_ips,
+    azurerm_role_assignment.system_managed_identity,
+    azurerm_virtual_machine_data_disk_attachment.this_linux,
+    azurerm_virtual_machine_data_disk_attachment.this_windows,
+    azurerm_virtual_machine_extension.azure_monitor_agent,
+    azurerm_virtual_machine_extension.guest_configuration_extension,
+    azurerm_linux_virtual_machine.this,
+    azurerm_windows_virtual_machine.this,
+    azurerm_virtual_machine_extension.domain_join
+    ]
   }
