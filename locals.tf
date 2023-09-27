@@ -66,4 +66,7 @@ locals {
   #set the resource deployment location. Default to the resource group location
   location = coalesce(var.location, data.azurerm_resource_group.virtualmachine_deployment.location)
 
+  #merge the resource group tags if tag inheritance is on
+  tags = var.inherit_tags ? merge(data.azurerm_resource_group.virtualmachine_deployment.tags, var.tags) : var.tags
+
 }

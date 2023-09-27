@@ -78,8 +78,16 @@ variable "lock" {
   }
 }
 
+#potential future functionality.  Ignore for now
+variable "inherit_tags" {
+  type        = bool
+  default     = false
+  description = "Apply tags from the resource group to resources in the module that support tags.  Set this to false to disable the merging of the resource group tags. This is future functionality and can currently be ignored."
+}
+
 variable "tags" {
-  type        = map(string)
+  type        = map(any)
+  default     = {}
   description = "Map of tags to be assigned to this resource"
 }
 
@@ -329,7 +337,8 @@ variable "data_disk_managed_disks" {
     security_type                             = optional(string)
     secure_vm_disk_encryption_set_resource_id = optional(string)
     on_demand_bursting_enabled                = optional(bool)
-    tags                                      = optional(map(string))
+    tags                                      = optional(map(any))
+    inherit_tags                              = optional(bool, true)
     zone                                      = optional(string)
     network_access_policy                     = optional(string)
     disk_access_resource_id                   = optional(string)
@@ -379,6 +388,7 @@ variable "data_disk_managed_disks" {
     secure_vm_disk_encryption_set_resource_id = (Optional) - The ID of the Disk Encryption Set which should be used to Encrypt this OS Disk when the Virtual Machine is a Confidential VM. Conflicts with disk_encryption_set_id. Changing this forces a new resource to be created. secure_vm_disk_encryption_set_resource_id can only be specified when security_type is set to ConfidentialVM_DiskEncryptedWithCustomerKey.
     on_demand_bursting_enabled                = (Optional) - Specifies if On-Demand Bursting is enabled for the Managed Disk.
     tags                                      = (Optional) - A mapping of tags to assign to the resource.
+    inherit_tags                              = (Optional) - Defaults to true.  Set this to false if only the tags defined on this resource should be applied.
     zone                                      = (Optional) - Specifies the Availability Zone in which this Managed Disk should be located. Changing this property forces a new resource to be created. Availability Zones are only supported in select regions at this time.
     network_access_policy                     = (Optional) - Policy for accessing the disk via network. Allowed values are AllowAll, AllowPrivate, and DenyAll.
     disk_access_resource_id                   = (Optional) - The ID of the disk access resource for using private endpoints on disks. disk_access_resource_id is only supported when network_access_policy is set to AllowPrivate.
@@ -423,7 +433,8 @@ variable "public_ip_configuration_details" {
     idle_timeout_in_minutes = optional(number, 30)
     ip_version              = optional(string, "IPv4")
     sku_tier                = optional(string, "Regional")
-    tags                    = optional(map(string))
+    inherit_tags            = optional(bool, false)
+    tags                    = optional(map(any))
     lock                    = optional(string)
     lock_name_suffix        = optional(string, "lock")
   })
@@ -445,6 +456,7 @@ variable "public_ip_configuration_details" {
     ip_version              = (Optional) - The IP Version to use, IPv6 or IPv4. Changing this forces a new resource to be created. Only static IP address allocation is supported for IPv6.
     sku_tier                = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Basic. Changing this forces a new resource to be created. When sku_tier is set to Global, sku must be set to Standard.
     tags                    = (Optional) - A mapping of tags to assign to the resource.
+    inherit_tags            = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. - Future functionality leaving in.
     lock                    = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
     lock_name_suffix        = (Optional) - The name suffix to append to the pip name for use as the lock name.  Defaults to lock.
 
@@ -482,7 +494,8 @@ variable "network_interfaces" {
     accelerated_networking_enabled = optional(bool, false)
     ip_forwarding_enabled          = optional(bool, false)
     internal_dns_name_label        = optional(string)
-    tags                           = optional(map(string))
+    tags                           = optional(map(any))
+    inherit_tags                   = optional(bool, false)
     lock                           = optional(string)
     lock_name_suffix               = optional(string, "lock")
   }))
@@ -527,6 +540,7 @@ variable "network_interfaces" {
     ip_forwarding_enabled          = (Optional) - Should IP Forwarding be enabled? Defaults to false
     internal_dns_name_label        = (Optional) - The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network.
     tags                           = (Optional) - A mapping of tags to assign to the resource.
+    inherit_tags                   = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is potential future functionality and is currently ignored.
     lock                           = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
     lock_name_suffix               = (Optional) - The name suffix to append to the nic name for use as the lock name.  Defaults to lock.
   }))
@@ -970,6 +984,8 @@ variable "extensions" {
     settings                    = optional(string)
     protected_settings          = optional(string)
     provision_after_extensions  = optional(list(string), [])
+    tags                        = optional(map(any))
+    inherit_tags                = optional(bool, false)
     protected_settings_from_key_vault = optional(object({
       secret_url      = string
       source_vault_id = string
@@ -996,6 +1012,8 @@ variable "extensions" {
         secret_url      = (Required) - The Secret URL of a Key Vault Certificate. This can be sourced from the `secret_id` field within the `azurerm_key_vault_certificate` Resource.
         source_vault_id = (Required) - the Azure resource ID of the key vault holding the secret
       }))
+      tags                           = (Optional) - A mapping of tags to assign to the resource.
+      inherit_tags                   = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is future functionality and is currently ignored.
     }))
 
     Example Inputs:
@@ -1068,6 +1086,8 @@ variable "azure_monitor_agent_extension_settings" {
     automatic_upgrade_enabled                  = optional(bool, true)
     managed_identity_type                      = optional(string, "SystemAssigned")
     user_assigned_managed_identity_resource_id = optional(string)
+    tags                                       = optional(map(any))
+    inherit_tags                               = optional(bool, false)
   })
   default     = {}
   description = <<AZURE_MONITOR_AGENT_EXTENSION_SETTINGS
@@ -1080,6 +1100,8 @@ variable "azure_monitor_agent_extension_settings" {
     automatic_upgrade_enabled                  = (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
     managed_identity_type                      = (Optional) - Specifies the type of Managed Service Identity that should be used by the Azure Monitor Agent. Possible values are `SystemAssigned`, `UserAssigned`
     user_assigned_managed_identity_resource_id = (Optional) - The Azure Resource ID of the User Assigned Managed Identity to be used by the Azure Monitor Agent.
+    tags                                       = (Optional) - A mapping of tags to assign to the resource.
+    inherit_tags                               = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is future functionality and is currently ignored.
   })
 
   Example Inputs:
@@ -1172,6 +1194,8 @@ variable "domain_join_extension_values" {
     domain_join_user_key_vault_secret_name = optional(string)
     domain_join_user_key_vault_resource_id = optional(string)
     domain_join_user_password              = optional(string)
+    tags                                   = optional(map(any))
+    inherit_tags                           = optional(bool, false)
   })
   sensitive = true
   default = {
@@ -1189,6 +1213,8 @@ variable "domain_join_extension_values" {
     domain_join_user_key_vault_secret_name = (Optional) - The name of the key vault secret value that holds the domain join users password
     domain_join_user_key_vault_resource_id = (Optional) - the Azure resource ID of the key vault holding the domain join user's password secret
     domain_join_user_password              = (Optional) - Password value for the domain join user. The default is that this will pull from a key vault and this can remain null. Setting both this value and a password key vault value will result in this value being set
+    tags                                   = (Optional) - A mapping of tags to assign to the resource.
+    inherit_tags                           = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is future functionality and can be ignored.
   }
   
   Example Inputs:
@@ -1263,6 +1289,8 @@ variable "azure_guest_configuration_extension" {
     automatic_upgrade_enabled      = optional(bool, true)
     settings                       = optional(string)
     protected_settings             = optional(string)
+    tags                           = optional(map(any))
+    inherit_tags                   = optional(bool, false)
   })
   default = {
     guest_config_extension_enabled = true
@@ -1277,6 +1305,8 @@ variable "azure_guest_configuration_extension" {
     automatic_upgrade_enabled      = (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
     settings                       = (Optional) - Passing through this value in case we need to allow custom settings on the extension in the future.  Unused in the default case.
     protected_settings             = (Optional) - Passing through this value in case we need to allow custom protected_settings on the extension in the future.  Unused in the default case.
+    tags                           = (Optional) - A mapping of tags to assign to the resource.
+    inherit_tags                   = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is future functionality and can be ignored.
   }
 
   Example Inputs:

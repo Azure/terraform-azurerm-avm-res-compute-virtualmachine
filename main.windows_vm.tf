@@ -56,7 +56,7 @@ resource "azurerm_windows_virtual_machine" "this" {
   reboot_setting                                         = var.reboot_setting
   secure_boot_enabled                                    = var.secure_boot_enabled
   source_image_id                                        = var.source_image_resource_id
-  tags                                                   = var.tags
+  tags                                                   = local.tags
   timezone                                               = var.timezone
   user_data                                              = var.user_data
   virtual_machine_scale_set_id                           = var.virtual_machine_scale_set_resource_id
