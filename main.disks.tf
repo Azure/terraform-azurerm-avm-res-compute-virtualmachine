@@ -93,3 +93,17 @@ resource "azurerm_management_lock" "this-disk" {
     azurerm_linux_virtual_machine.this
   ]
 }
+/*
+#assign permissions to the virtual machine if enabled and role assignments included
+resource "azurerm_role_assignment" "disks" {
+  for_each                               = local.disks_role_assignments
+  scope                                  = azurerm_key_vault_key.this[each.value.key_key].resource_versionless_id
+  role_definition_id                     = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? each.value.role_assignment.role_definition_id_or_name : null
+  role_definition_name                   = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? null : each.value.role_assignment.role_definition_id_or_name
+  principal_id                           = each.value.role_assignment.principal_id
+  condition                              = each.value.role_assignment.condition
+  condition_version                      = each.value.role_assignment.condition_version
+  skip_service_principal_aad_check       = each.value.role_assignment.skip_service_principal_aad_check
+  delegated_managed_identity_resource_id = each.value.role_assignment.delegated_managed_identity_resource_id
+}
+*/

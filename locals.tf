@@ -7,7 +7,7 @@ locals {
 
   #create a string to help with naming uniqueness when resource names are re-used
   name_string = var.append_name_string_suffix ? "-${substr(sha256(var.name), 0, var.name_string_suffix_length)}" : ""
-  
+
   #get the vm id value depending on whether the vm is linux or windows
   virtualmachine_resource_id = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azurerm_linux_virtual_machine.this[0].id
 
@@ -20,17 +20,7 @@ locals {
   #set the type value for the managed identity that is used by azurerm
   managed_identity_type = var.managed_identities.system_assigned ? ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "SystemAssigned, UserAssigned" : "SystemAssigned") : ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "UserAssigned" : null)
 
-  #flatten the network interface vars to properly create public ips that can be referenced in the ipconfig
-  flattened_nics = flatten([for nic_key, nic in var.network_interfaces : [
-    for ip_config_key, ip_config in nic.ip_configurations : {
-      nic_key                  = nic_key
-      ip_config_key            = ip_config_key
-      nic_name                 = nic.name
-      ip_config_name           = ip_config.name
-      create_public_ip_address = ip_config.create_public_ip_address
-    }
-    ]
-  ])
+
 
   #format the admin ssh key so it can be concat'ed to the other keys.
   admin_ssh_key = (((var.generate_admin_password_or_ssh_key == true) && (lower(var.virtualmachine_os_type) == "linux")) ?
@@ -66,5 +56,48 @@ locals {
     public_ip_addresses  = azurerm_windows_virtual_machine.this[0].public_ip_addresses
     virtual_machine_id   = azurerm_windows_virtual_machine.this[0].virtual_machine_id
   } : null
+
+  #flatten the role assignments for the disks
+  disks_role_assignments = flatten([
+    for dk, dv in var.data_disk_managed_disks : [
+      for rk, rv in dv.role_assignments : {
+        disk_key        = dk
+        ra_key          = rk
+        role_assignment = rv
+      }
+    ]
+  ])
+
+  nics_role_assignments =   { for ra in flatten([
+    for nk, nv in var.network_interfaces : [
+      for rk, rv in nv.role_assignments : {
+        nic_key         = nk
+        ra_key          = rk
+        role_assignment = rv
+      }
+    ]
+  ]) : "${ra.nic_key}-${ra.ra_key}" => ra }
+
+  nics_ip_configs =   { for ip_config in flatten([
+    for nk, nv in var.network_interfaces : [
+      for ipck, ipcv in nv.ip_configurations : {
+        nic_key         = nk
+        ipconfig_key    = ipck
+        ipconfig        = ipcv
+      }
+    ]
+  ]) : "${ip_config.nic_key}-${ip_config.ipconfig_key}" => ip_config }
+
+  #flatten the network interface vars to properly create public ips that can be referenced in the ipconfig
+  flattened_nics = {for pub_ip in flatten([for nic_key, nic in var.network_interfaces : [
+    for ip_config_key, ip_config in nic.ip_configurations : {
+      nic_key                  = nic_key
+      ip_config_key            = ip_config_key
+      nic_name                 = nic.name
+      ip_config_name           = ip_config.name
+      create_public_ip_address = ip_config.create_public_ip_address
+    }
+    ]
+  ]) : "${pub_ip.nic_key}-${pub_ip.ip_config_key}" => pub_ip }
 
 }

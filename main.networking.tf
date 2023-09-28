@@ -1,8 +1,10 @@
-#create public ip(s)
+#create public ip(s) - Assumes each ip configuration has a unique name
 resource "azurerm_public_ip" "virtualmachine_public_ips" {
-  for_each = { for pub_ip in local.flattened_nics : pub_ip.ip_config_name => pub_ip if pub_ip.create_public_ip_address }
+  #for_each = { for pub_ip in local.flattened_nics : pub_ip.ip_config_name => pub_ip if pub_ip.create_public_ip_address }
+  #for_each = { for key in local.nics_ip_configs : "${key.nic_key}-${key.ipconfig_key}" => key if key.ipconfig.create_public_ip_address == true }
+  for_each = { for key, values in local.nics_ip_configs : key => values if values.ipconfig.create_public_ip_address == true }
 
-  name                    = "${each.value.ip_config_name}-pip"
+  name                    = each.value.ipconfig.public_ip_address_name
   resource_group_name     = data.azurerm_resource_group.virtualmachine_deployment.name
   location                = local.location
   allocation_method       = var.public_ip_configuration_details.allocation_method
@@ -21,8 +23,8 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
 
 #create the Nics
 resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
-  for_each                      = { for nic in var.network_interfaces : "${nic.name}${local.name_string}" => nic }
-  name                          = each.key
+  for_each                      = var.network_interfaces
+  name                          = each.value.name
   location                      = local.location
   resource_group_name           = data.azurerm_resource_group.virtualmachine_deployment.name
   dns_servers                   = each.value.dns_servers
@@ -42,7 +44,7 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
       subnet_id                                          = ip_configuration.value.private_ip_subnet_resource_id
       private_ip_address_version                         = ip_configuration.value.private_ip_address_version
       private_ip_address_allocation                      = ip_configuration.value.private_ip_address_allocation
-      public_ip_address_id                               = ip_configuration.value.create_public_ip_address ? azurerm_public_ip.virtualmachine_public_ips[ip_configuration.value.name].id : ip_configuration.value.public_ip_address_resource_id
+      public_ip_address_id                               = ip_configuration.value.create_public_ip_address ? azurerm_public_ip.virtualmachine_public_ips["${each.key}-${ip_configuration.key}"].id : ip_configuration.value.public_ip_address_resource_id
       primary                                            = ip_configuration.value.is_primary_ipconfiguration
       private_ip_address                                 = ip_configuration.value.private_ip_address
 
@@ -52,10 +54,12 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
 
 #configure locks on each public IP that has been created if lock values are set.  
 resource "azurerm_management_lock" "this-public-ip" {
-  for_each = { for pub_ip in local.flattened_nics : pub_ip.ip_config_name => pub_ip if(pub_ip.create_public_ip_address && (coalesce(var.public_ip_configuration_details.lock, var.lock.kind) != "None")) }
+  #for_each = { for pub_ip in local.flattened_nics : pub_ip.ip_config_name => pub_ip if(pub_ip.create_public_ip_address && (coalesce(var.public_ip_configuration_details.lock, var.lock.kind) != "None")) }
+  #for_each = { for key in local.nics_ip_configs : "${key.nic_key}-${key.ipconfig_key}" => key if ((key.ipconfig.create_public_ip_address == true) && (coalesce(var.public_ip_configuration_details.lock, var.lock.kind) != "None"))}
+  for_each = {  for key, values in local.nics_ip_configs : key => values if ((values.ipconfig.create_public_ip_address == true ) && (coalesce(var.public_ip_configuration_details.lock, var.lock.kind) != "None"))}
 
-  name       = "${azurerm_public_ip.virtualmachine_public_ips[each.value.ip_config_name].name}-${var.public_ip_configuration_details.lock_name_suffix}"
-  scope      = azurerm_public_ip.virtualmachine_public_ips[each.value.ip_config_name].id
+  name       = coalesce(each.value.ipconfig.public_ip_address_lock_name, "${each.key}-lock")
+  scope      = azurerm_public_ip.virtualmachine_public_ips[each.key].id
   lock_level = coalesce(var.public_ip_configuration_details.lock, var.lock.kind)
 
   depends_on = [ 
@@ -68,9 +72,9 @@ resource "azurerm_management_lock" "this-public-ip" {
 
 #configure resource locks on each NIC if the lock values are set
 resource "azurerm_management_lock" "this-nic" {
-  for_each = { for nic in var.network_interfaces : "${nic.name}${local.name_string}" => nic if coalesce(nic.lock, var.lock.kind) != "None"}
+  for_each = { for nic, nicvalues in var.network_interfaces : nic => nicvalues  if coalesce(nicvalues.lock, var.lock.kind) != "None"}
 
-  name       = "${each.key}-${each.value.lock_name_suffix}"
+  name       = coalesce(each.value.lock_name, "${each.key}")
   scope      = azurerm_network_interface.virtualmachine_network_interfaces[each.key].id
   lock_level = coalesce(each.value.lock, var.lock.kind)
 
@@ -81,3 +85,17 @@ resource "azurerm_management_lock" "this-nic" {
     azurerm_windows_virtual_machine.this
    ]
 }
+
+#assign permissions to the network interface and/or public ip if enabled and role assignments included
+resource "azurerm_role_assignment" "this_network_interface" {  
+  for_each                               = local.nics_role_assignments
+  scope                                  = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  role_definition_id                     = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? each.value.role_assignment.role_definition_id_or_name : null
+  role_definition_name                   = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? null : each.value.role_assignment.role_definition_id_or_name
+  principal_id                           = each.value.role_assignment.principal_id
+  condition                              = each.value.role_assignment.condition
+  condition_version                      = each.value.role_assignment.condition_version
+  skip_service_principal_aad_check       = each.value.role_assignment.skip_service_principal_aad_check
+  delegated_managed_identity_resource_id = each.value.role_assignment.delegated_managed_identity_resource_id
+}
+

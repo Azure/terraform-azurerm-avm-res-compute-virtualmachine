@@ -44,10 +44,25 @@ resource "azurerm_key_vault_secret" "admin_ssh_key" {
 
 #assign permissions to the managed identity if enabled and role assignments included
 resource "azurerm_role_assignment" "system_managed_identity" {
-  for_each = local.system_managed_identity_id != null ? var.role_assignments : {}
+  for_each = local.system_managed_identity_id != null ? {for key, value in var.role_assignments : key => key if value.assign_to_system_assigned_managed_identity == true }: {}
 
   scope                                  = each.value.scope_resource_id
   principal_id                           = local.system_managed_identity_id
+  role_definition_id                     = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? each.value.role_definition_id_or_name : null
+  role_definition_name                   = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? null : each.value.role_definition_id_or_name
+  condition                              = each.value.condition
+  condition_version                      = each.value.condition_version
+  description                            = each.value.description
+  skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
+  delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id
+}
+
+#assign permissions to the virtual machine if enabled and role assignments included
+resource "azurerm_role_assignment" "this_virtual_machine" {
+  for_each = {for key, value in var.role_assignments : key => key if value.assign_to_system_assigned_managed_identity == false }
+
+  scope                                  = local.virtualmachine_resource_id
+  principal_id                           = each.value.principal_id
   role_definition_id                     = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? each.value.role_definition_id_or_name : null
   role_definition_name                   = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? null : each.value.role_definition_id_or_name
   condition                              = each.value.condition
