@@ -5,7 +5,7 @@ resource "azurerm_windows_virtual_machine" "this" {
   admin_password        = local.admin_password
   admin_username        = var.admin_username
   location              = local.location
-  name                  = var.virtualmachine_name
+  name                  = var.name
   network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
   resource_group_name   = data.azurerm_resource_group.virtualmachine_deployment.name
   size                  = var.virtualmachine_sku_size
@@ -35,7 +35,7 @@ resource "azurerm_windows_virtual_machine" "this" {
   availability_set_id                                    = var.availability_set_resource_id
   bypass_platform_safety_checks_on_user_schedule_enabled = var.bypass_platform_safety_checks_on_user_schedule_enabled
   capacity_reservation_group_id                          = var.capacity_reservation_group_resource_id
-  computer_name                                          = coalesce(var.computer_name, var.virtualmachine_name)
+  computer_name                                          = coalesce(var.computer_name, var.name)
   custom_data                                            = var.custom_data
   dedicated_host_id                                      = var.dedicated_host_resource_id
   dedicated_host_group_id                                = var.dedicated_host_group_resource_id
@@ -101,12 +101,12 @@ resource "azurerm_windows_virtual_machine" "this" {
     }
   }
 
-  dynamic identity {
+  dynamic "identity" {
     for_each = local.managed_identity_type == null ? [] : ["identity"]
-      content{
-        type         = local.managed_identity_type
-        identity_ids = var.managed_identities.user_assigned_resource_ids
-      }
+    content {
+      type         = local.managed_identity_type
+      identity_ids = var.managed_identities.user_assigned_resource_ids
+    }
   }
 
   dynamic "plan" {
@@ -129,7 +129,7 @@ resource "azurerm_windows_virtual_machine" "this" {
         for_each = secret.value.certificate
 
         content {
-          url = certificate.value.url
+          url   = certificate.value.url
           store = certificate.value.store
         }
       }
@@ -169,9 +169,19 @@ resource "azurerm_windows_virtual_machine" "this" {
 
 }
 
-  resource "azurerm_management_lock" "this-windows-virtualmachine" {
-    count      = var.lock.kind != "None" &&  (lower(var.virtualmachine_os_type) == "windows")  ? 1 : 0
-    name       = coalesce(var.lock.name, "lock-${var.virtualmachine_name}")
-    scope      = azurerm_windows_virtual_machine.this[0].id
-    lock_level = var.lock.kind
-  }
+resource "azurerm_management_lock" "this-windows-virtualmachine" {
+  count      = var.lock.kind != "None" && (lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
+  name       = coalesce(var.lock.name, "lock-${var.name}")
+  scope      = azurerm_windows_virtual_machine.this[0].id
+  lock_level = var.lock.kind
+
+  depends_on = [
+    azurerm_managed_disk.this,
+    azurerm_network_interface.virtualmachine_network_interfaces,
+    azurerm_public_ip.virtualmachine_public_ips,
+    azurerm_role_assignment.system_managed_identity,
+    azurerm_virtual_machine_data_disk_attachment.this_linux,
+    azurerm_virtual_machine_data_disk_attachment.this_windows,
+    azurerm_linux_virtual_machine.this
+  ]
+}

@@ -26,12 +26,12 @@ variable "resource_group" {
   nullable    = false
 }
 
-variable "virtualmachine_name" {
+variable "name" {
   type        = string
   description = "The name to use when creating the virtual machine."
   nullable    = false
   validation {
-    condition     = can(regex("^.{1,64}$", var.virtualmachine_name))
+    condition     = can(regex("^.{1,64}$", var.name))
     error_message = "virtual machine names for linux must be between 1 and 64 characters in length. Admin name for windows must be between 1 and 20 characters in length."
   }
 }
@@ -183,6 +183,37 @@ variable "managed_identities" {
   ```
   IDENTITY
 }
+
+variable "customer_managed_key" {
+    type = object({
+      key_vault_resource_id              = string
+      key_name                           = string
+      key_version                        = optional(string, null)
+      user_assigned_identity_resource_id = optional(string, null)
+    })
+    default = null
+    description = <<CUSTOMER_MANAGED_KEY
+    Defines a customer managed key to use for encryption.
+
+    object({
+      key_vault_resource_id              = (Required) - The full Azure Resource ID of the key_vault where the customer managed key will be referenced from.
+      key_name                           = (Required) - The key name for the customer managed key in the key vault.
+      key_version                        = (Optional) - The version of the key to use
+      user_assigned_identity_resource_id = (Optional) - The user assigned identity to use when access the key vault
+    })
+
+    Example Inputs:
+    ```terraform
+    customer_managed_key = {
+      key_vault_resource_id = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test-resource-group/providers/Microsoft.KeyVault/vaults/example-key-vault"
+      key_name              = "sample-customer-key"
+    }
+    ```
+
+    CUSTOMER_MANAGED_KEY
+  }
+
+
 
 
 ##variables describing the disks and imaging details
@@ -1059,171 +1090,8 @@ variable "extensions" {
   }
 }
 
-variable "azure_monitor_agent_enabled" {
-  type        = bool
-  default     = true
-  description = "When true this setting will enable the Azure Monitor Agent Extension on the VM. If set to false the Agent will not be installed"
-}
 
-variable "azure_monitor_agent_extension_settings" {
-  type = object({
-    name                                       = optional(string)
-    type_handler_version                       = optional(string, "1.0")
-    auto_upgrade_minor_version                 = optional(bool, true)
-    automatic_upgrade_enabled                  = optional(bool, true)
-    managed_identity_type                      = optional(string, "SystemAssigned")
-    user_assigned_managed_identity_resource_id = optional(string)
-    tags                                       = optional(map(any))
-    inherit_tags                               = optional(bool, false)
-  })
-  default     = {}
-  description = <<AZURE_MONITOR_AGENT_EXTENSION_SETTINGS
-  This object defines the azure monitor agent configuration.   
-  object({
 
-    name                                       = (Optional) - The custom name to use for the Azure Monitor Agent extension installation
-    type_handler_version                       = (Optional) - The type handler version for the extension. Default is 1.0.
-    auto_upgrade_minor_version                 = (Optional) - Set this to false to avoid automatic upgrades for minor versions on the extension.  Defaults to true
-    automatic_upgrade_enabled                  = (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
-    managed_identity_type                      = (Optional) - Specifies the type of Managed Service Identity that should be used by the Azure Monitor Agent. Possible values are `SystemAssigned`, `UserAssigned`
-    user_assigned_managed_identity_resource_id = (Optional) - The Azure Resource ID of the User Assigned Managed Identity to be used by the Azure Monitor Agent.
-    tags                                       = (Optional) - A mapping of tags to assign to the resource.
-    inherit_tags                               = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is future functionality and is currently ignored.
-  })
-
-  Example Inputs:
-
-  ```terraform
-  #for the most common configuration no overriding of defaults is required
-  #The following example shows a user assigned managed identity example.
-  azure_monitor_agent_extension_settings = {
-    name = "ExampleName"
-    managed_identity_type = "UserAssigned"
-    user_assigned_managed_identity_resource_id = azurerm_user_assigned_identity.example.id
-  }
-  ```
-  AZURE_MONITOR_AGENT_EXTENSION_SETTINGS  
-}
-
-variable "azure_monitor_data_collection_rule_associations" {
-  type = list(object({
-    name                             = string
-    data_collection_rule_resource_id = string
-    description                      = optional(string)
-  }))
-  default     = []
-  description = <<AZURE_MONITOR_DATA_COLLECTION_RULE_ASSOCIATIONS
-  This list of objects defines one or more data collection endpoint associations to create. Requires that the azure_monitor_agent_enabled value be set to true.
-  list(object({
-    name                                 = (Required) - The name which should be used for this Data Collection Rule Association. Changing this forces a new Data Collection Rule Association to be created.
-    data_collection_endpoint_resource_id = (Required) - The Azure Resource ID of the Data Collection Rule which will be associated to the target resource.
-    description                          = (Optional) - The description of the Data Collection Rule Association.
-  }))
-
-  Example Inputs:
-
-  ```terraform
-    #Basic Input
-    azure_monitor_data_collection_rule_associations = [
-      {
-      name                                 = "dcr_example"
-      data_collection_endpoint_resource_id = azurerm_monitor_data_collection_rule.test.id
-      description                          = "Association for test Data Collection Rule" 
-      }
-    ]
-  ```
-  AZURE_MONITOR_DATA_COLLECTION_RULE_ASSOCIATIONS
-}
-
-variable "azure_monitor_data_collection_endpoint_associations" {
-  type = list(object({
-    name                                 = string
-    data_collection_endpoint_resource_id = string
-    description                          = optional(string)
-  }))
-  default     = []
-  description = <<AZURE_MONITOR_DATA_COLLECTION_ENDPOINT_ASSOCIATIONS
-  "This list of objects defines one or more data collection endpoint associations to create. Requires that the azure_monitor_agent_enabled value be set to true."
-  list(object({
-    name                                 = (Required) - The name which should be used for this Data Collection Endpoint Association. Changing this forces a new Data Collection Endpoint Association to be created.
-    data_collection_endpoint_resource_id = (Required) - The Azure Resource ID of the Data Collection Endpoint which will be associated to the target resource.
-    description                          = (Optional) - The description of the Data Collection Endpoint Association.
-  }))
-
-  Example Inputs:
-
-  ```terraform
-    #Basic Input
-    azure_monitor_data_collection_endpoint_associations = [
-      {
-      name                                 = "dce_example"
-      data_collection_endpoint_resource_id = azurerm_monitor_data_collection_endpoint.test.id
-      description                          = "Association for test Data Collection Endpoint" 
-      }
-    ]
-  ```
-  AZURE_MONITOR_DATA_COLLECTION_ENDPOINT_ASSOCIATIONS
-}
-
-variable "domain_join_the_windows_vm" {
-  type        = bool
-  default     = false
-  description = "Set this value to true if a Windows VM is to be joined to an Active Directory Domain Services Domain."
-}
-
-variable "domain_join_extension_values" {
-  type = object({
-    domain_name                            = string
-    domain_join_user_name                  = string
-    domain_join_ou_path_for_vm             = optional(string, "Computers")
-    domain_join_restart                    = optional(bool, true)
-    domain_join_options                    = optional(number, 3)
-    domain_join_user_key_vault_secret_name = optional(string)
-    domain_join_user_key_vault_resource_id = optional(string)
-    domain_join_user_password              = optional(string)
-    tags                                   = optional(map(any))
-    inherit_tags                           = optional(bool, false)
-  })
-  sensitive = true
-  default = {
-    domain_name           = ""
-    domain_join_user_name = ""
-  }
-
-  description = <<DOMAIN_JOIN_EXTENSION_VALUES
-  object({  
-    domain_name                            = (Required) - The domain name of the target domain if a Windows VM is to be joined to an Active Directory Domain Services Domain.
-    domain_join_user_name                  = (Required) - A user in the target domain with permissions to join Windows virtual machines. It is recommended that this is NOT a domain admin.
-    domain_join_ou_path_for_vm             = (Optional) - The optional OU path to use for placing the virtual machine computer object in the domain.
-    domain_join_restart                    = (Optional) - Allow the domain join extension to restart the VM when domain joining. Defaults to true.
-    domain_join_options                    = (Optional) - Domain join options for the domain join extension. Details can be found here https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/joindomainorworkgroup-method-in-class-win32-computersystem
-    domain_join_user_key_vault_secret_name = (Optional) - The name of the key vault secret value that holds the domain join users password
-    domain_join_user_key_vault_resource_id = (Optional) - the Azure resource ID of the key vault holding the domain join user's password secret
-    domain_join_user_password              = (Optional) - Password value for the domain join user. The default is that this will pull from a key vault and this can remain null. Setting both this value and a password key vault value will result in this value being set
-    tags                                   = (Optional) - A mapping of tags to assign to the resource.
-    inherit_tags                           = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is future functionality and can be ignored.
-  }
-  
-  Example Inputs:
-
-  ```terraform
-    #Basic password based input
-    domain_join_extension_values = {
-      domain_name               = "testdomain.com"
-      domain_join_user_name     = "domainjoinuser"
-      domain_join_user_password = "1SuperSecretPassword!" 
-    }
-
-    #Basic Key Vault Based Input. It is also common for the key vault resource ID to be a terraform resource reference like azurerm_key_vault.example.id
-    domain_join_extension_values = {
-      domain_name           = "testdomain.com"
-      domain_join_user_name = "domainjoinuser"
-      domain_join_user_key_vault_secret_name = "domain_join_password_secret" 
-      domain_join_user_key_vault_resource_id = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test-resource-group/providers/Microsoft.KeyVault/vaults/example-key-vault"
-    } 
-  ```
-  DOMAIN_JOIN_EXTENSION_VALUES
-}
 
 variable "role_assignments" {
   type = map(object({
@@ -1267,96 +1135,9 @@ variable "role_assignments" {
   SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS 
 }
 
-variable "azure_guest_configuration_extension" {
-  type = object({
-    guest_config_extension_enabled = optional(bool, true)
-    name                           = optional(string)
-    type_handler_version           = optional(string, "1.0")
-    auto_upgrade_minor_version     = optional(bool, true)
-    automatic_upgrade_enabled      = optional(bool, true)
-    settings                       = optional(string)
-    protected_settings             = optional(string)
-    tags                           = optional(map(any))
-    inherit_tags                   = optional(bool, false)
-  })
-  default = {
-    guest_config_extension_enabled = true
-  }
-  description = <<AZURE_GUEST_CONFIGURATION_EXTENSION
-  "Values for the guest configuration extension"
-  object({
-    guest_config_extension_enabled = (Optional) - Set this to false if you want to disable the guest configuration extension
-    name                           = (Optional) - Set a custom name on this value if you want the guest configuration extension to have a custom name
-    type_handler_version           = (Optional) - The type handler version for the extension. Default is 1.0.
-    auto_upgrade_minor_version     = (Optional) - Set this to false to avoid automatic upgrades for minor versions on the extension.  Defaults to true
-    automatic_upgrade_enabled      = (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
-    settings                       = (Optional) - Passing through this value in case we need to allow custom settings on the extension in the future.  Unused in the default case.
-    protected_settings             = (Optional) - Passing through this value in case we need to allow custom protected_settings on the extension in the future.  Unused in the default case.
-    tags                           = (Optional) - A mapping of tags to assign to the resource.
-    inherit_tags                   = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is future functionality and can be ignored.
-  }
 
-  Example Inputs:
 
-  ```terraform
-    azure_guest_configuration_extensions = {
-      guest_config_extension_enabled = false
-    }
 
-  ```
-  AZURE_GUEST_CONFIGURATION_EXTENSION
-}
-
-variable "enable_azure_backup" {
-  type        = bool
-  default     = false
-  description = "Flag to determine whether to enable azure backup on this VM. Requires the backup configuration variable to be populated."
-}
-
-variable "azure_backup_configuration" {
-  type = object({
-    recovery_vault_resource_group_name = string
-    recovery_vault_name                = string
-    backup_policy_resource_id          = optional(string)
-    exclude_disk_luns                  = optional(list(number))
-    include_disk_luns                  = optional(list(number))
-    protection_state                   = optional(string)
-  })
-  default     = null
-  description = <<AZURE_BACKUP_CONFIGURATION
-  Configuration details for the Azure backup policy that this VM will use.
-  object({
-    recovery_vault_resource_group_name = (Required) - The resource group name of the recovery services vault.  Allows the vault to existing in a different resource group. 
-    recovery_vault_name                = (Required) - The name of the recovery services vault to use for the backup.  
-    backup_policy_resource_id          = (Optional/Required) - The Azure Resource ID of the backup policy to use for the backup of this VM. Required in creation or when `protection_stopped` is not specified.
-    exclude_disk_luns                  = (Optional) - A list of Disks' Logical Unit Numbers(LUN) to be excluded for VM Protection.
-    include_disk_luns                  = (Optional) - A list of Disks' Logical Unit Numbers(LUN) to be included for VM Protection.
-    protection_state                   = (Optional) Specifies Protection state of the backup. Possible values are Invalid, IRPending, Protected, ProtectionStopped, ProtectionError and ProtectionPaused.
-  }
-
-  Example Inputs:
-
-  ```terraform
-    #Simple Standard Configuration
-    azure_backup_configuration = {
-      recovery_vault_resource_group_name = "test_resource_group_name"
-      recovery_vault_name                = "test_recovery_services_vault"
-      backup_policy_resource_id          = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test_resource_group_name/providers/Microsoft.RecoveryServices/vaults/test_recovery_services_vault/backupPolicies/DefaultPolicy"
-    }
-
-    #full sample
-    azure_backup_configuration = {
-      recovery_vault_resource_group_name = "test_resource_group_name"
-      recovery_vault_name                = "test_recovery_services_vault"
-      backup_policy_resource_id          = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test_resource_group_name/providers/Microsoft.RecoveryServices/vaults/test_recovery_services_vault/backupPolicies/DefaultPolicy"
-      exclude_disk_luns                  = [2,3]
-      include_disk_luns                  = [0,1]
-      protection_state                   = "Protected"
-    }
-  ```
-  AZURE_BACKUP_CONFIGURATION
-
-}
 
 #Future work to complete
 variable "append_name_string_suffix" {

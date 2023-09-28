@@ -1,6 +1,18 @@
 locals {
+  #set the resource deployment location. Default to the resource group location
+  location = coalesce(var.location, data.azurerm_resource_group.virtualmachine_deployment.location)
+
+  #merge the resource group tags if tag inheritance is on
+  tags = var.inherit_tags ? merge(data.azurerm_resource_group.virtualmachine_deployment.tags, var.tags) : var.tags
+
+  #create a string to help with naming uniqueness when resource names are re-used
+  name_string = var.append_name_string_suffix ? "-${substr(sha256(var.name), 0, var.name_string_suffix_length)}" : ""
+  
   #get the vm id value depending on whether the vm is linux or windows
   virtualmachine_resource_id = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azurerm_linux_virtual_machine.this[0].id
+
+  #concat the input variable with the simple list going forward - this is a placeholder so that we can continue to reference the local source image reference value when it includes the simpleOS option.
+  source_image_reference = var.source_image_reference
 
   #get the first system managed identity id if it is provisioned and depending on whether the vm type is linux or windows
   system_managed_identity_id = var.managed_identities.system_assigned ? ((lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : azurerm_linux_virtual_machine.this[0].identity[0].principal_id) : null
@@ -31,45 +43,28 @@ locals {
   #concat the ssh key values list 
   admin_ssh_keys = concat(var.admin_ssh_keys, local.admin_ssh_key)
 
-  #concat the input variable with the simple list going forward
-  source_image_reference = var.source_image_reference
-
-  #create a string to help with naming uniqueness when resource names are re-used
-  name_string = var.append_name_string_suffix ? "-${substr(sha256(var.virtualmachine_name), 0, var.name_string_suffix_length)}" : ""
-
-  #create an object that can be converted to JSON for the AMA agent's identity setting
-  azure_monitor_agent_authentication_user_assigned_identity_settings = {
-    authentication = {
-      managedIdentity = {
-        identifier-name  = "mi_res_id"
-        identifier-value = var.azure_monitor_agent_extension_settings.user_assigned_managed_identity_resource_id
-      }
-    }
-  }
-
-  #create an object that can be converted to JSON for the domain join extension
-  domain_join_extension_settings = var.domain_join_the_windows_vm ? {
-    Name    = var.domain_join_extension_values.domain_name
-    OUpath  = var.domain_join_extension_values.domain_join_ou_path_for_vm
-    User    = "${var.domain_join_extension_values.domain_join_user_name}\\${var.domain_join_extension_values.domain_name}"
-    Restart = var.domain_join_extension_values.domain_join_restart
-    Options = var.domain_join_extension_values.domain_join_options
-  } : null
-
-  domain_join_extension_protected_settings = var.domain_join_the_windows_vm ? {
-    Password = local.domain_join_user_password
-  } : null
-
   #set the admin password to either a generated value or the entered value
   admin_password = var.generate_admin_password_or_ssh_key ? random_password.admin_password.result : coalesce(var.admin_password, (data.azurerm_key_vault_secret.admin_password[0].value))
 
-  #set the domain join user password to either the manually entered value or the value from a vault
-  domain_join_user_password = var.domain_join_the_windows_vm ? coalesce(var.domain_join_extension_values.domain_join_user_password, data.azurerm_key_vault_secret.domain_join_user_password[0].value) : null
 
-  #set the resource deployment location. Default to the resource group location
-  location = coalesce(var.location, data.azurerm_resource_group.virtualmachine_deployment.location)
+  linux_virtual_machine_output_map = (lower(var.virtualmachine_os_type) == "linux") ? {
+    id                   = azurerm_linux_virtual_machine.this[0].id
+    identity             = azurerm_linux_virtual_machine.this[0].identity
+    private_ip_address   = azurerm_linux_virtual_machine.this[0].private_ip_address
+    private_ip_addresses = azurerm_linux_virtual_machine.this[0].private_ip_addresses
+    public_ip_address    = azurerm_linux_virtual_machine.this[0].public_ip_address
+    public_ip_addresses  = azurerm_linux_virtual_machine.this[0].public_ip_addresses
+    virtual_machine_id   = azurerm_linux_virtual_machine.this[0].virtual_machine_id
+  } : null
 
-  #merge the resource group tags if tag inheritance is on
-  tags = var.inherit_tags ? merge(data.azurerm_resource_group.virtualmachine_deployment.tags, var.tags) : var.tags
+  windows_virtual_machine_output_map = (lower(var.virtualmachine_os_type) == "windows") ? {
+    id                   = azurerm_windows_virtual_machine.this[0].id
+    identity             = azurerm_windows_virtual_machine.this[0].identity
+    private_ip_address   = azurerm_windows_virtual_machine.this[0].private_ip_address
+    private_ip_addresses = azurerm_windows_virtual_machine.this[0].private_ip_addresses
+    public_ip_address    = azurerm_windows_virtual_machine.this[0].public_ip_address
+    public_ip_addresses  = azurerm_windows_virtual_machine.this[0].public_ip_addresses
+    virtual_machine_id   = azurerm_windows_virtual_machine.this[0].virtual_machine_id
+  } : null
 
 }
