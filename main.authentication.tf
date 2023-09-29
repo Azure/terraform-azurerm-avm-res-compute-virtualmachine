@@ -59,7 +59,7 @@ resource "azurerm_role_assignment" "system_managed_identity" {
 
 #assign permissions to the virtual machine if enabled and role assignments included
 resource "azurerm_role_assignment" "this_virtual_machine" {
-  for_each = {for key, value in var.role_assignments : key => key if value.assign_to_system_assigned_managed_identity == false }
+  for_each = {for key, value in var.role_assignments : key => value if value.assign_to_system_assigned_managed_identity == false }
 
   scope                                  = local.virtualmachine_resource_id
   principal_id                           = each.value.principal_id

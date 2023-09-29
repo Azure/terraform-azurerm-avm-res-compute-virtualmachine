@@ -1,7 +1,8 @@
 resource "azurerm_managed_disk" "this" {
-  for_each = (length(var.data_disk_managed_disks) > 0) ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
+  #for_each = (length(var.data_disk_managed_disks) > 0) ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
+  for_each = var.data_disk_managed_disks
 
-  name                              = each.key
+  name                              = each.value.name
   location                          = local.location
   resource_group_name               = data.azurerm_resource_group.virtualmachine_deployment.name
   storage_account_type              = each.value.storage_account_type
@@ -24,17 +25,16 @@ resource "azurerm_managed_disk" "this" {
   security_type                     = each.value.security_type
   secure_vm_disk_encryption_set_id  = each.value.secure_vm_disk_encryption_set_resource_id
   on_demand_bursting_enabled        = each.value.on_demand_bursting_enabled
-  #tags                              = each.value.inherit_tags? merge(local.tags, each.value.tags) : each.value.tags
-  tags                          = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
-  zone                          = each.value.zone
-  network_access_policy         = each.value.network_access_policy
-  disk_access_id                = each.value.disk_access_resource_id
-  public_network_access_enabled = each.value.public_network_access_enabled
-  disk_iops_read_write          = each.value.disk_iops_read_write
-  disk_mbps_read_write          = each.value.disk_mbps_read_write
-  disk_iops_read_only           = each.value.disk_iops_read_only
-  disk_mbps_read_only           = each.value.disk_mbps_read_only
-  logical_sector_size           = each.value.logical_sector_size
+  zone                              = each.value.zone
+  network_access_policy             = each.value.network_access_policy
+  disk_access_id                    = each.value.disk_access_resource_id
+  public_network_access_enabled     = each.value.public_network_access_enabled
+  disk_iops_read_write              = each.value.disk_iops_read_write
+  disk_mbps_read_write              = each.value.disk_mbps_read_write
+  disk_iops_read_only               = each.value.disk_iops_read_only
+  disk_mbps_read_only               = each.value.disk_mbps_read_only
+  logical_sector_size               = each.value.logical_sector_size
+  tags                              = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
 
   dynamic "encryption_settings" {
     for_each = each.value.encryption_settings
@@ -54,12 +54,14 @@ resource "azurerm_managed_disk" "this" {
   }
 
   #disk_encryption_set_id = disk_encryption_set_resource_id #preview feature to be activated at a later date
+  #tags                              = each.value.inherit_tags? merge(local.tags, each.value.tags) : each.value.tags
 
 }
 
 #attach the disk(s) to the virtual machine
 resource "azurerm_virtual_machine_data_disk_attachment" "this_linux" {
-  for_each                  = (length(var.data_disk_managed_disks) > 0) && (lower(var.virtualmachine_os_type) == "linux") ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
+  #for_each                  = (length(var.data_disk_managed_disks) > 0) && (lower(var.virtualmachine_os_type) == "linux") ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
+  for_each = { for disk, values in var.data_disk_managed_disks : disk => values if (lower(var.virtualmachine_os_type) == "linux") }
   managed_disk_id           = azurerm_managed_disk.this[each.key].id
   virtual_machine_id        = azurerm_linux_virtual_machine.this[0].id
   lun                       = each.value.lun
@@ -69,7 +71,8 @@ resource "azurerm_virtual_machine_data_disk_attachment" "this_linux" {
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "this_windows" {
-  for_each                  = (length(var.data_disk_managed_disks) > 0) && (lower(var.virtualmachine_os_type) == "windows") ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
+  #for_each                  = (length(var.data_disk_managed_disks) > 0) && (lower(var.virtualmachine_os_type) == "windows") ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
+  for_each = { for disk, values in var.data_disk_managed_disks : disk => values if (lower(var.virtualmachine_os_type) == "windows") }
   managed_disk_id           = azurerm_managed_disk.this[each.key].id
   virtual_machine_id        = azurerm_windows_virtual_machine.this[0].id
   lun                       = each.value.lun
@@ -80,7 +83,8 @@ resource "azurerm_virtual_machine_data_disk_attachment" "this_windows" {
 
 #configure resource locks on each Data Disk if the lock values are set. Set explicit dependencies on the attachments and vm's to ensure provisioning is complete prior to setting resource locks
 resource "azurerm_management_lock" "this-disk" {
-  for_each = (length(var.data_disk_managed_disks) > 0) ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk if coalesce(disk.lock, var.lock.kind) != "None" } : {}
+  #for_each = (length(var.data_disk_managed_disks) > 0) ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk if coalesce(disk.lock, var.lock.kind) != "None" } : {}
+  for_each = { for disk, diskvalues in var.data_disk_managed_disks : disk => diskvalues if coalesce(diskvalues.lock, var.lock.kind) != "None"  }
 
   name       = "${each.key}-${each.value.lock_name_suffix}"
   scope      = azurerm_managed_disk.this[each.key].id
@@ -93,11 +97,11 @@ resource "azurerm_management_lock" "this-disk" {
     azurerm_linux_virtual_machine.this
   ]
 }
-/*
+
 #assign permissions to the virtual machine if enabled and role assignments included
 resource "azurerm_role_assignment" "disks" {
   for_each                               = local.disks_role_assignments
-  scope                                  = azurerm_key_vault_key.this[each.value.key_key].resource_versionless_id
+  scope                                  = azurerm_managed_disk.this[each.value.disk_key].id
   role_definition_id                     = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? each.value.role_assignment.role_definition_id_or_name : null
   role_definition_name                   = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? null : each.value.role_assignment.role_definition_id_or_name
   principal_id                           = each.value.role_assignment.principal_id
@@ -106,4 +110,3 @@ resource "azurerm_role_assignment" "disks" {
   skip_service_principal_aad_check       = each.value.role_assignment.skip_service_principal_aad_check
   delegated_managed_identity_resource_id = each.value.role_assignment.delegated_managed_identity_resource_id
 }
-*/

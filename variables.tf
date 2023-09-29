@@ -324,7 +324,7 @@ variable "os_disk" {
 
 ##Variables describing the data disk configurations
 variable "data_disk_managed_disks" {
-  type = list(object({
+  type = map(object({
     name                                      = string
     storage_account_type                      = string
     lun                                       = number
@@ -382,7 +382,7 @@ variable "data_disk_managed_disks" {
     #disk_encryption_set_resource_id = optional(string) #this is currently a preview feature in the provider 
 
   }))
-  default     = []
+  default     = {}
   description = <<DATA_DISK_MANAGED_DISKS
   This variable is used to define one or more data disks for creation and attachment to the virtual machine. 
     list(object({
@@ -435,15 +435,15 @@ variable "data_disk_managed_disks" {
 
   ```terraform
   #Create a new empty disk and attach it as lun 0
-  data_disk_managed_disks = [
-    {
+  data_disk_managed_disks = {
+    disk1 = {
       name                 = "testdisk1-win-lun0"
       storage_account_type = "StandardSSD_LRS"
       lun                  = 0
       caching              = "ReadWrite"
       disk_size_gb         = 32
     }
-  ]
+  }
   ```
   DATA_DISK_MANAGED_DISKS
 }

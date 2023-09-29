@@ -58,7 +58,7 @@ locals {
   } : null
 
   #flatten the role assignments for the disks
-  disks_role_assignments = flatten([
+  disks_role_assignments = { for ra in flatten([
     for dk, dv in var.data_disk_managed_disks : [
       for rk, rv in dv.role_assignments : {
         disk_key        = dk
@@ -66,8 +66,9 @@ locals {
         role_assignment = rv
       }
     ]
-  ])
+  ]) : "${ra.disk_key}-${ra.ra_key}" => ra }
 
+  #flatten the role assignments for the nics
   nics_role_assignments =   { for ra in flatten([
     for nk, nv in var.network_interfaces : [
       for rk, rv in nv.role_assignments : {
