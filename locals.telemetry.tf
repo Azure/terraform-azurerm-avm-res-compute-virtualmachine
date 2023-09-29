@@ -9,8 +9,6 @@ locals {
   # TODO: Change this. Should be either `res` or `ptn`
   module_type = "res"
 
-  module_version = "0.1.0"
-
   # This ensures we don't get errors if telemetry is disabled.
   telem_random_hex = can(random_id.telem[0].hex) ? random_id.telem[0].hex : ""
 
