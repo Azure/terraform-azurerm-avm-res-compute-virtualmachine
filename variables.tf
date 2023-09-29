@@ -32,7 +32,7 @@ variable "name" {
   nullable    = false
   validation {
     condition     = can(regex("^.{1,64}$", var.name))
-    error_message = "virtual machine names for linux must be between 1 and 64 characters in length. Admin name for windows must be between 1 and 20 characters in length."
+    error_message = "virtual machine names for linux must be between 1 and 64 characters in length. Virtual machine name for windows must be between 1 and 20 characters in length."
   }
 }
 
@@ -108,6 +108,13 @@ variable "admin_password_key_vault_secret_name" {
   type        = string
   description = "The name of the key vault secret which should be used for the admin password"
   default     = null
+}
+
+variable "admin_generated_ssh_key_vault_secret_name" {
+  type        = string
+  description = "Use this to provide a custom name for the key vault secret when using the generate an admin ssh key option."
+  default     = null
+
 }
 
 variable "disable_password_authentication" {
@@ -361,8 +368,8 @@ variable "data_disk_managed_disks" {
     network_access_policy                     = optional(string)
     disk_access_resource_id                   = optional(string)
     public_network_access_enabled             = optional(bool)
-    lock                                      = optional(string)
-    lock_name_suffix                          = optional(string, "lock")
+    lock_level                                = optional(string)
+    lock_name                                 = optional(string)
     encryption_settings = optional(list(object({
       disk_encryption_key_vault_secret_url  = optional(string)
       disk_encryption_key_vault_resource_id = optional(string)
@@ -385,7 +392,7 @@ variable "data_disk_managed_disks" {
   default     = {}
   description = <<DATA_DISK_MANAGED_DISKS
   This variable is used to define one or more data disks for creation and attachment to the virtual machine. 
-    list(object({
+    map(object({
     name                                      = (Required) - Specifies the name of the Managed Disk. Changing this forces a new resource to be created.
     storage_account_type                      = (Required) - The type of storage to use for the managed disk. Possible values are Standard_LRS, StandardSSD_ZRS, Premium_LRS, PremiumV2_LRS, Premium_ZRS, StandardSSD_LRS or UltraSSD_LRS
     lun                                       = (Required) - The Logical Unit Number of the Data Disk, which needs to be unique within the Virtual Machine. Changing this forces a new resource to be created.
@@ -422,8 +429,8 @@ variable "data_disk_managed_disks" {
     network_access_policy                     = (Optional) - Policy for accessing the disk via network. Allowed values are AllowAll, AllowPrivate, and DenyAll.
     disk_access_resource_id                   = (Optional) - The ID of the disk access resource for using private endpoints on disks. disk_access_resource_id is only supported when network_access_policy is set to AllowPrivate.
     public_network_access_enabled             = (Optional) - Whether it is allowed to access the disk via public network. Defaults to true.
-    lock                                      = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-    lock_name_suffix                          = (Optional) - The name suffix to append to the nic name for use as the lock name.  Defaults to lock.
+    lock_level                                = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+    lock_name                                 = (Optional) - The name for the lock on this disk
     encryption_settings = optional(list(object({
       disk_encryption_key_vault_secret_url  = (Required) - The URL to the Key Vault Secret used as the Disk Encryption Key. This can be found as id on the azurerm_key_vault_secret resource.
       disk_encryption_key_vault_resource_id = (Required) - The ID of the source Key Vault. This can be found as id on the azurerm_key_vault resource.
@@ -464,8 +471,7 @@ variable "public_ip_configuration_details" {
     sku_tier                = optional(string, "Regional")
     inherit_tags            = optional(bool, false)
     tags                    = optional(map(any))
-    lock                    = optional(string)
-    lock_name_suffix        = optional(string, "lock")
+    lock_level              = optional(string)
   })
   default = {
     allocation_method       = "Static"
@@ -486,9 +492,8 @@ variable "public_ip_configuration_details" {
     sku_tier                = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Basic. Changing this forces a new resource to be created. When sku_tier is set to Global, sku must be set to Standard.
     tags                    = (Optional) - A mapping of tags to assign to the resource.
     inherit_tags            = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. - Future functionality leaving in.
-    lock                    = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-    lock_name_suffix        = (Optional) - The name suffix to append to the pip name for use as the lock name.  Defaults to lock.
-
+    lock_level              = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+    
     Example Inputs:
 
     ```terraform
@@ -527,7 +532,7 @@ variable "network_interfaces" {
     internal_dns_name_label        = optional(string)
     tags                           = optional(map(any))
     inherit_tags                   = optional(bool, false)
-    lock                           = optional(string)
+    lock_level                     = optional(string)
     lock_name                      = optional(string)
 
     role_assignments = optional(map(object({
@@ -544,26 +549,26 @@ variable "network_interfaces" {
   }))
   default = {
     ipconfig_1 = {
-    name = "default-ipv4-ipconfig"
-    ip_configurations = {
-      ip_config_1 = {
-        name                                                        = "ipv4-ipconfig"
-        private_ip_address                                          = null
-        private_ip_address_version                                  = "IPv4"
-        private_ip_address_allocation                               = "Dynamic"
-        private_ip_subnet_resource_id                               = null
-        public_ip_address_resource_id                               = null
-        is_primary_ipconfiguration                                  = true
-        gateway_load_balancer_frontend_ip_configuration_resource_id = null
+      name = "default-ipv4-ipconfig"
+      ip_configurations = {
+        ip_config_1 = {
+          name                                                        = "ipv4-ipconfig"
+          private_ip_address                                          = null
+          private_ip_address_version                                  = "IPv4"
+          private_ip_address_allocation                               = "Dynamic"
+          private_ip_subnet_resource_id                               = null
+          public_ip_address_resource_id                               = null
+          is_primary_ipconfiguration                                  = true
+          gateway_load_balancer_frontend_ip_configuration_resource_id = null
+        }
       }
-    }
-    dns_servers                    = null
-    edge_zone                      = null
-    accelerated_networking_enabled = true
-    ip_forwarding_enabled          = false
-    internal_dns_name_label        = null
-    tags                           = {}
-  }}
+      dns_servers                    = null
+      edge_zone                      = null
+      accelerated_networking_enabled = true
+      ip_forwarding_enabled          = false
+      internal_dns_name_label        = null
+      tags                           = {}
+  } }
   description = <<NETWORK_INTERFACES
     map(object({
     name = (Required) The name of the Network Interface. Changing this forces a new resource to be created.
@@ -585,8 +590,8 @@ variable "network_interfaces" {
     internal_dns_name_label        = (Optional) - The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network.
     tags                           = (Optional) - A mapping of tags to assign to the resource.
     inherit_tags                   = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is potential future functionality and is currently ignored.
-    lock                           = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-    lock_name_suffix               = (Optional) - The name suffix to append to the nic name for use as the lock name.  Defaults to lock.
+    lock_level                     = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+    lock_name                      = (Optional) - The name for the lock on this nic
   }))
 
   Example Inputs:

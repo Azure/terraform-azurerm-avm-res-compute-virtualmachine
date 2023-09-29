@@ -52,11 +52,11 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
 
 #configure locks on each public IP that has been created if lock values are set.  
 resource "azurerm_management_lock" "this-public-ip" {
-  for_each = {  for key, values in local.nics_ip_configs : key => values if ((values.ipconfig.create_public_ip_address == true ) && (coalesce(var.public_ip_configuration_details.lock, var.lock.kind) != "None"))}
+  for_each = {  for key, values in local.nics_ip_configs : key => values if ((values.ipconfig.create_public_ip_address == true ) && (coalesce(var.public_ip_configuration_details.lock_level, var.lock.kind) != "None"))}
 
   name       = coalesce(each.value.ipconfig.public_ip_address_lock_name, "${each.key}-lock")
   scope      = azurerm_public_ip.virtualmachine_public_ips[each.key].id
-  lock_level = coalesce(var.public_ip_configuration_details.lock, var.lock.kind)
+  lock_level = coalesce(var.public_ip_configuration_details.lock_level, var.lock.kind)
 
   depends_on = [ 
     azurerm_network_interface.virtualmachine_network_interfaces,
@@ -68,11 +68,11 @@ resource "azurerm_management_lock" "this-public-ip" {
 
 #configure resource locks on each NIC if the lock values are set
 resource "azurerm_management_lock" "this-nic" {
-  for_each = { for nic, nicvalues in var.network_interfaces : nic => nicvalues  if coalesce(nicvalues.lock, var.lock.kind) != "None"}
+  for_each = { for nic, nicvalues in var.network_interfaces : nic => nicvalues  if coalesce(nicvalues.lock_level, var.lock.kind) != "None"}
 
-  name       = coalesce(each.value.lock_name, "${each.key}")
+  name       = coalesce(each.value.lock_name, "${each.key}-lock")
   scope      = azurerm_network_interface.virtualmachine_network_interfaces[each.key].id
-  lock_level = coalesce(each.value.lock, var.lock.kind)
+  lock_level = coalesce(each.value.lock_level, var.lock.kind)
 
     depends_on = [ 
     azurerm_network_interface.virtualmachine_network_interfaces,
