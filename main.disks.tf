@@ -1,5 +1,4 @@
 resource "azurerm_managed_disk" "this" {
-  #for_each = (length(var.data_disk_managed_disks) > 0) ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
   for_each = var.data_disk_managed_disks
 
   name                              = each.value.name
@@ -60,8 +59,8 @@ resource "azurerm_managed_disk" "this" {
 
 #attach the disk(s) to the virtual machine
 resource "azurerm_virtual_machine_data_disk_attachment" "this_linux" {
-  #for_each                  = (length(var.data_disk_managed_disks) > 0) && (lower(var.virtualmachine_os_type) == "linux") ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
   for_each = { for disk, values in var.data_disk_managed_disks : disk => values if (lower(var.virtualmachine_os_type) == "linux") }
+
   managed_disk_id           = azurerm_managed_disk.this[each.key].id
   virtual_machine_id        = azurerm_linux_virtual_machine.this[0].id
   lun                       = each.value.lun
@@ -71,8 +70,8 @@ resource "azurerm_virtual_machine_data_disk_attachment" "this_linux" {
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "this_windows" {
-  #for_each                  = (length(var.data_disk_managed_disks) > 0) && (lower(var.virtualmachine_os_type) == "windows") ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk } : {}
   for_each = { for disk, values in var.data_disk_managed_disks : disk => values if (lower(var.virtualmachine_os_type) == "windows") }
+
   managed_disk_id           = azurerm_managed_disk.this[each.key].id
   virtual_machine_id        = azurerm_windows_virtual_machine.this[0].id
   lun                       = each.value.lun
@@ -83,7 +82,6 @@ resource "azurerm_virtual_machine_data_disk_attachment" "this_windows" {
 
 #configure resource locks on each Data Disk if the lock values are set. Set explicit dependencies on the attachments and vm's to ensure provisioning is complete prior to setting resource locks
 resource "azurerm_management_lock" "this-disk" {
-  #for_each = (length(var.data_disk_managed_disks) > 0) ? { for disk in var.data_disk_managed_disks : "${disk.name}${local.name_string}" => disk if coalesce(disk.lock, var.lock.kind) != "None" } : {}
   for_each = { for disk, diskvalues in var.data_disk_managed_disks : disk => diskvalues if coalesce(diskvalues.lock, var.lock.kind) != "None"  }
 
   name       = "${each.key}-${each.value.lock_name_suffix}"

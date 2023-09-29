@@ -1,7 +1,5 @@
 #create public ip(s) - Assumes each ip configuration has a unique name
 resource "azurerm_public_ip" "virtualmachine_public_ips" {
-  #for_each = { for pub_ip in local.flattened_nics : pub_ip.ip_config_name => pub_ip if pub_ip.create_public_ip_address }
-  #for_each = { for key in local.nics_ip_configs : "${key.nic_key}-${key.ipconfig_key}" => key if key.ipconfig.create_public_ip_address == true }
   for_each = { for key, values in local.nics_ip_configs : key => values if values.ipconfig.create_public_ip_address == true }
 
   name                    = each.value.ipconfig.public_ip_address_name
@@ -15,9 +13,9 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
   edge_zone               = var.public_ip_configuration_details.edge_zone
   idle_timeout_in_minutes = var.public_ip_configuration_details.idle_timeout_in_minutes
   ip_version              = var.public_ip_configuration_details.ip_version
-  sku_tier                = var.public_ip_configuration_details.sku_tier
-  #tags                    = var.public_ip_configuration_details.inherit_tags ? merge(local.tags, var.public_ip_configuration_details.tags) : var.public_ip_configuration_details.tags
+  sku_tier                = var.public_ip_configuration_details.sku_tier  
   tags                    = var.public_ip_configuration_details.tags != null && var.public_ip_configuration_details != {} ? var.public_ip_configuration_details.tags : local.tags
+  #tags                    = var.public_ip_configuration_details.inherit_tags ? merge(local.tags, var.public_ip_configuration_details.tags) : var.public_ip_configuration_details.tags
 }
 
 
@@ -31,9 +29,9 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
   edge_zone                     = each.value.edge_zone
   enable_accelerated_networking = each.value.accelerated_networking_enabled
   enable_ip_forwarding          = each.value.ip_forwarding_enabled
-  internal_dns_name_label       = each.value.internal_dns_name_label
-  #tags                          = each.value.inherit_tags ? merge(local.tags, each.value.tags) : each.value.tags
+  internal_dns_name_label       = each.value.internal_dns_name_label  
   tags                          = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
+  #tags                          = each.value.inherit_tags ? merge(local.tags, each.value.tags) : each.value.tags
 
 
   dynamic "ip_configuration" {
@@ -54,8 +52,6 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
 
 #configure locks on each public IP that has been created if lock values are set.  
 resource "azurerm_management_lock" "this-public-ip" {
-  #for_each = { for pub_ip in local.flattened_nics : pub_ip.ip_config_name => pub_ip if(pub_ip.create_public_ip_address && (coalesce(var.public_ip_configuration_details.lock, var.lock.kind) != "None")) }
-  #for_each = { for key in local.nics_ip_configs : "${key.nic_key}-${key.ipconfig_key}" => key if ((key.ipconfig.create_public_ip_address == true) && (coalesce(var.public_ip_configuration_details.lock, var.lock.kind) != "None"))}
   for_each = {  for key, values in local.nics_ip_configs : key => values if ((values.ipconfig.create_public_ip_address == true ) && (coalesce(var.public_ip_configuration_details.lock, var.lock.kind) != "None"))}
 
   name       = coalesce(each.value.ipconfig.public_ip_address_lock_name, "${each.key}-lock")
