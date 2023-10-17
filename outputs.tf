@@ -36,6 +36,12 @@ output "data_disks" {
   description = "The full ARM object map associated with any deployed data disk(s). Exporting this in the event that a disk property not exposed as part of the azurerm vm export is required."
 }
 
-output "testoutput" {
-  value = length(split("/", "Storage Blob Data Contributor"))
+output "generated_password" {
+
 }
+
+output "generated_ssh_key" {
+  
+}
+
+
