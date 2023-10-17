@@ -94,14 +94,14 @@ module "testvm" {
   source = "../../"
 
   resource_group_name                    = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type                 = "Linux"
+  virtualmachine_os_type                 = "Windows"
   name                                   = module.naming.virtual_machine.name_unique
   admin_credential_key_vault_resource_id = module.avm-res-keyvault-vault.resource.id
 
   source_image_reference = {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-focal"
-    sku       = "20_04-lts"
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2019-Datacenter"
     version   = "latest"
   }
 
