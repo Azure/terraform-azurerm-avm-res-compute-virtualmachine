@@ -36,12 +36,16 @@ output "data_disks" {
   description = "The full ARM object map associated with any deployed data disk(s). Exporting this in the event that a disk property not exposed as part of the azurerm vm export is required."
 }
 
-output "generated_password" {
-
+output "admin_password" {
+  value       = local.admin_password
+  sensitive   = true
+  description = "Returns the admin password if installation is configured to use the password.  Otherwise returns null"
 }
 
-output "generated_ssh_key" {
-  
+output "admin_ssh_keys" {
+  value       = local.admin_ssh_keys
+  sensitive   = true
+  description = "Returns a list containing all of the provided or generated ssh keys. This is a single key if the generation option is selected and no additional keys are provided."
 }
 
 

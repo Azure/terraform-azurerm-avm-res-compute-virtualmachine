@@ -37,14 +37,14 @@ resource "tls_private_key" "this" {
 #Store the created ssh key in the secrets key vault
 resource "azurerm_key_vault_secret" "admin_ssh_key" {
   count        = ((var.generate_admin_password_or_ssh_key == true) && (lower(var.virtualmachine_os_type) == "linux")) ? 1 : 0
-  name         = coalesce(var.admin_generated_ssh_key_vault_secret_name,"${var.name}-${var.admin_username}-ssh-private-key")
+  name         = coalesce(var.admin_generated_ssh_key_vault_secret_name, "${var.name}-${var.admin_username}-ssh-private-key")
   value        = tls_private_key.this[0].private_key_pem
   key_vault_id = var.admin_credential_key_vault_resource_id
 }
 
 #assign permissions to the managed identity if enabled and role assignments included
 resource "azurerm_role_assignment" "system_managed_identity" {
-  for_each = local.system_managed_identity_id != null ? {for key, value in var.role_assignments : key => key if value.assign_to_system_assigned_managed_identity == true }: {}
+  for_each = local.system_managed_identity_id != null ? { for key, value in var.role_assignments : key => key if value.assign_to_system_assigned_managed_identity == true } : {}
 
   scope                                  = each.value.scope_resource_id
   principal_id                           = local.system_managed_identity_id
@@ -59,7 +59,7 @@ resource "azurerm_role_assignment" "system_managed_identity" {
 
 #assign permissions to the virtual machine if enabled and role assignments included
 resource "azurerm_role_assignment" "this_virtual_machine" {
-  for_each = {for key, value in var.role_assignments : key => value if value.assign_to_system_assigned_managed_identity == false }
+  for_each = { for key, value in var.role_assignments : key => value if value.assign_to_system_assigned_managed_identity == false }
 
   scope                                  = local.virtualmachine_resource_id
   principal_id                           = each.value.principal_id

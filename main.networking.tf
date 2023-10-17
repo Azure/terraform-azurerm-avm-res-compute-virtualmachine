@@ -13,7 +13,7 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
   edge_zone               = var.public_ip_configuration_details.edge_zone
   idle_timeout_in_minutes = var.public_ip_configuration_details.idle_timeout_in_minutes
   ip_version              = var.public_ip_configuration_details.ip_version
-  sku_tier                = var.public_ip_configuration_details.sku_tier  
+  sku_tier                = var.public_ip_configuration_details.sku_tier
   tags                    = var.public_ip_configuration_details.tags != null && var.public_ip_configuration_details != {} ? var.public_ip_configuration_details.tags : local.tags
   #tags                    = var.public_ip_configuration_details.inherit_tags ? merge(local.tags, var.public_ip_configuration_details.tags) : var.public_ip_configuration_details.tags
 }
@@ -29,7 +29,7 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
   edge_zone                     = each.value.edge_zone
   enable_accelerated_networking = each.value.accelerated_networking_enabled
   enable_ip_forwarding          = each.value.ip_forwarding_enabled
-  internal_dns_name_label       = each.value.internal_dns_name_label  
+  internal_dns_name_label       = each.value.internal_dns_name_label
   tags                          = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
   #tags                          = each.value.inherit_tags ? merge(local.tags, each.value.tags) : each.value.tags
 
@@ -52,38 +52,38 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
 
 #configure locks on each public IP that has been created if lock values are set.  
 resource "azurerm_management_lock" "this_public_ip" {
-  for_each = {  for key, values in local.nics_ip_configs : key => values if ((values.ipconfig.create_public_ip_address == true ) && (coalesce(var.public_ip_configuration_details.lock_level, var.lock.kind) != "None"))}
+  for_each = { for key, values in local.nics_ip_configs : key => values if((values.ipconfig.create_public_ip_address == true) && (coalesce(var.public_ip_configuration_details.lock_level, var.lock.kind) != "None")) }
 
   name       = coalesce(each.value.ipconfig.public_ip_address_lock_name, "${each.key}-lock")
   scope      = azurerm_public_ip.virtualmachine_public_ips[each.key].id
   lock_level = coalesce(var.public_ip_configuration_details.lock_level, var.lock.kind)
 
-  depends_on = [ 
+  depends_on = [
     azurerm_network_interface.virtualmachine_network_interfaces,
     azurerm_public_ip.virtualmachine_public_ips,
     azurerm_linux_virtual_machine.this,
     azurerm_windows_virtual_machine.this
-   ]
+  ]
 }
 
 #configure resource locks on each NIC if the lock values are set
 resource "azurerm_management_lock" "this_nic" {
-  for_each = { for nic, nicvalues in var.network_interfaces : nic => nicvalues  if coalesce(nicvalues.lock_level, var.lock.kind) != "None"}
+  for_each = { for nic, nicvalues in var.network_interfaces : nic => nicvalues if coalesce(nicvalues.lock_level, var.lock.kind) != "None" }
 
   name       = coalesce(each.value.lock_name, "${each.key}-lock")
   scope      = azurerm_network_interface.virtualmachine_network_interfaces[each.key].id
   lock_level = coalesce(each.value.lock_level, var.lock.kind)
 
-    depends_on = [ 
+  depends_on = [
     azurerm_network_interface.virtualmachine_network_interfaces,
     azurerm_public_ip.virtualmachine_public_ips,
     azurerm_linux_virtual_machine.this,
     azurerm_windows_virtual_machine.this
-   ]
+  ]
 }
 
 #assign permissions to the network interface and/or public ip if enabled and role assignments included
-resource "azurerm_role_assignment" "this_network_interface" {  
+resource "azurerm_role_assignment" "this_network_interface" {
   for_each                               = local.nics_role_assignments
   scope                                  = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
   role_definition_id                     = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? each.value.role_assignment.role_definition_id_or_name : null

@@ -1,9 +1,9 @@
-locals{
-    os_map = {
-        ubuntu = {
-            publisher = "Canonical"
-            v1_offer = "UbuntuServer"
-            
-        }
+locals {
+  os_map = {
+    ubuntu = {
+      publisher = "Canonical"
+      v1_offer  = "UbuntuServer"
+
     }
+  }
 }

@@ -20,7 +20,7 @@ variable "location" {
   default     = null
 }
 
-variable "resource_group" {
+variable "resource_group_name" {
   type        = string
   description = "The resource group name of the resource group where the vm resources will be deployed."
   nullable    = false
@@ -76,13 +76,6 @@ variable "lock" {
     condition     = contains(["CanNotDelete", "ReadOnly", "None"], var.lock.kind)
     error_message = "The lock level must be one of: 'None', 'CanNotDelete', or 'ReadOnly'."
   }
-}
-
-#potential future functionality.  Ignore for now
-variable "inherit_tags" {
-  type        = bool
-  default     = false
-  description = "Apply tags from the resource group to resources in the module that support tags.  Set this to false to disable the merging of the resource group tags. This is future functionality and can currently be ignored."
 }
 
 variable "tags" {
@@ -1202,7 +1195,12 @@ variable "name_string_suffix_length" {
   default     = 6
 }
 
-
+#potential future functionality.  Ignore for now
+variable "inherit_tags" {
+  type        = bool
+  default     = false
+  description = "Apply tags from the resource group to resources in the module that support tags.  Set this to false to disable the merging of the resource group tags. This is future functionality and can currently be ignored."
+}
 
 
 

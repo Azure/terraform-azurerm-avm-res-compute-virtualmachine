@@ -20,8 +20,6 @@ locals {
   #set the type value for the managed identity that is used by azurerm
   managed_identity_type = var.managed_identities.system_assigned ? ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "SystemAssigned, UserAssigned" : "SystemAssigned") : ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "UserAssigned" : null)
 
-
-
   #format the admin ssh key so it can be concat'ed to the other keys.
   admin_ssh_key = (((var.generate_admin_password_or_ssh_key == true) && (lower(var.virtualmachine_os_type) == "linux")) ?
     [{
@@ -34,7 +32,7 @@ locals {
   admin_ssh_keys = concat(var.admin_ssh_keys, local.admin_ssh_key)
 
   #set the admin password to either a generated value or the entered value
-  admin_password = var.generate_admin_password_or_ssh_key ? random_password.admin_password.result : coalesce(var.admin_password, (data.azurerm_key_vault_secret.admin_password[0].value))
+  admin_password = var.generate_admin_password_or_ssh_key ? random_password.admin_password.result : try(coalesce(var.admin_password, (data.azurerm_key_vault_secret.admin_password[0].value)), null)
 
 
   linux_virtual_machine_output_map = (lower(var.virtualmachine_os_type) == "linux") ? {
@@ -69,7 +67,7 @@ locals {
   ]) : "${ra.disk_key}-${ra.ra_key}" => ra }
 
   #flatten the role assignments for the nics
-  nics_role_assignments =   { for ra in flatten([
+  nics_role_assignments = { for ra in flatten([
     for nk, nv in var.network_interfaces : [
       for rk, rv in nv.role_assignments : {
         nic_key         = nk
@@ -79,18 +77,18 @@ locals {
     ]
   ]) : "${ra.nic_key}-${ra.ra_key}" => ra }
 
-  nics_ip_configs =   { for ip_config in flatten([
+  nics_ip_configs = { for ip_config in flatten([
     for nk, nv in var.network_interfaces : [
       for ipck, ipcv in nv.ip_configurations : {
-        nic_key         = nk
-        ipconfig_key    = ipck
-        ipconfig        = ipcv
+        nic_key      = nk
+        ipconfig_key = ipck
+        ipconfig     = ipcv
       }
     ]
   ]) : "${ip_config.nic_key}-${ip_config.ipconfig_key}" => ip_config }
 
   #flatten the network interface vars to properly create public ips that can be referenced in the ipconfig
-  flattened_nics = {for pub_ip in flatten([for nic_key, nic in var.network_interfaces : [
+  flattened_nics = { for pub_ip in flatten([for nic_key, nic in var.network_interfaces : [
     for ip_config_key, ip_config in nic.ip_configurations : {
       nic_key                  = nic_key
       ip_config_key            = ip_config_key
