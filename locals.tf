@@ -77,6 +77,17 @@ locals {
     ]
   ]) : "${ra.nic_key}-${ra.ra_key}" => ra }
 
+  #flatten the diag settings for the nics
+  nics_diag_settings = { for ds in flatten([
+    for nk, nv in var.network_interfaces : [
+      for dk, dv in nv.diagnostic_settings : {
+        nic_key            = nk
+        ds_key             = dk
+        diagnostic_setting = dv
+      }
+    ]
+  ]) : "${ds.nic_key}-${ds.ds_key}" => ds }
+
   nics_ip_configs = { for ip_config in flatten([
     for nk, nv in var.network_interfaces : [
       for ipck, ipcv in nv.ip_configurations : {

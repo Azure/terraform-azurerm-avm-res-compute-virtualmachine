@@ -95,3 +95,31 @@ resource "azurerm_role_assignment" "this_network_interface" {
   delegated_managed_identity_resource_id = each.value.role_assignment.delegated_managed_identity_resource_id
 }
 
+resource "azurerm_monitor_diagnostic_setting" "this_nic_diags" {
+  for_each = local.nics_diag_settings
+
+  name                           = each.value.diagnostic_setting.name
+  target_resource_id             = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  log_analytics_workspace_id     = each.value.diagnostic_setting.workspace_resource_id
+  storage_account_id             = each.value.diagnostic_setting.storage_account_resource_id
+  eventhub_authorization_rule_id = each.value.diagnostic_setting.event_hub_authorization_rule_resource_id
+  partner_solution_id            = each.value.diagnostic_setting.marketplace_partner_resource_id
+  log_analytics_destination_type = each.value.diagnostic_setting.log_analytics_destination_type
+
+  dynamic "enabled_log" {
+    for_each = each.value.diagnostic_setting.log_categories_and_groups
+
+    content {
+      category_group = enabled_log.value
+    }
+  }
+
+  dynamic "metric" {
+    for_each = each.value.diagnostic_setting.metric_categories
+
+    content {
+      category = metric.value
+    }
+  }
+}
+

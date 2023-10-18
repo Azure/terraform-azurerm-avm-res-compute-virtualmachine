@@ -185,3 +185,5 @@ resource "azurerm_management_lock" "this_windows_virtualmachine" {
     azurerm_linux_virtual_machine.this
   ]
 }
+
+

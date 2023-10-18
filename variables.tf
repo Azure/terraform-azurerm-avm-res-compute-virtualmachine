@@ -539,6 +539,18 @@ variable "network_interfaces" {
       assign_to_child_public_ip_addresses    = optional(bool, true)
     })), {})
 
+    diagnostic_settings = optional(map(object({
+      name                                     = optional(string, null)
+      log_categories_and_groups                = optional(set(string), [])
+      metric_categories                        = optional(set(string), ["AllMetrics"])
+      log_analytics_destination_type           = optional(string, null)
+      workspace_resource_id                    = optional(string, null)
+      storage_account_resource_id              = optional(string, null)
+      event_hub_authorization_rule_resource_id = optional(string, null)
+      event_hub_name                           = optional(string, null)
+      marketplace_partner_resource_id          = optional(string, null)
+    })), {})
+
   }))
   default = {
     ipconfig_1 = {
@@ -1179,6 +1191,26 @@ For more information see https://aka.ms/avm/telemetry.
 If it is set to false, then no telemetry will be collected.
 DESCRIPTION
 }
+
+
+
+#Diagnostic Settings
+variable "diagnostic_settings" {
+  type = map(object({
+    name                                     = optional(string, null)
+    log_categories_and_groups                = optional(set(string), [])
+    metric_categories                        = optional(set(string), ["AllMetrics"])
+    log_analytics_destination_type           = optional(string, null)
+    workspace_resource_id                    = optional(string, null)
+    storage_account_resource_id              = optional(string, null)
+    event_hub_authorization_rule_resource_id = optional(string, null)
+    event_hub_name                           = optional(string, null)
+    marketplace_partner_resource_id          = optional(string, null)
+  }))
+  default  = {}
+  nullable = false
+}
+
 
 
 
