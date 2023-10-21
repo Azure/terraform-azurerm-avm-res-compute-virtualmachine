@@ -48,4 +48,3 @@ output "admin_ssh_keys" {
   description = "Returns a list containing all of the provided or generated ssh keys. This is a single key if the generation option is selected and no additional keys are provided."
 }
 
-

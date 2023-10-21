@@ -15,7 +15,7 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
   ip_version              = var.public_ip_configuration_details.ip_version
   sku_tier                = var.public_ip_configuration_details.sku_tier
   tags                    = var.public_ip_configuration_details.tags != null && var.public_ip_configuration_details != {} ? var.public_ip_configuration_details.tags : local.tags
-  #tags                    = var.public_ip_configuration_details.inherit_tags ? merge(local.tags, var.public_ip_configuration_details.tags) : var.public_ip_configuration_details.tags
+
 }
 
 
@@ -31,8 +31,6 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
   enable_ip_forwarding          = each.value.ip_forwarding_enabled
   internal_dns_name_label       = each.value.internal_dns_name_label
   tags                          = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
-  #tags                          = each.value.inherit_tags ? merge(local.tags, each.value.tags) : each.value.tags
-
 
   dynamic "ip_configuration" {
     for_each = each.value.ip_configurations

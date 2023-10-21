@@ -53,20 +53,55 @@ resource "azurerm_virtual_network" "this_vnet" {
 }
 
 resource "azurerm_subnet" "this_subnet_1" {
-  name                 = module.naming.subnet.name_unique
+  name                 = "${module.naming.subnet.name_unique}-1"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
   address_prefixes     = ["10.0.1.0/24"]
 }
 
 resource "azurerm_subnet" "this_subnet_2" {
-  name                 = module.naming.subnet.name_unique
+  name                 = "${module.naming.subnet.name_unique}-2"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
+  address_prefixes     = ["10.0.2.0/24"]
 }
 
+/* Uncomment this section if you would like to include a bastion resource with this example.
+resource "azurerm_subnet" "bastion_subnet" {
+  name                 = "AzureBastionSubnet"
+  resource_group_name  = azurerm_resource_group.this_rg.name
+  virtual_network_name = azurerm_virtual_network.this_vnet.name
+  address_prefixes     = ["10.0.3.0/24"]
+}
+
+resource "azurerm_public_ip" "bastionpip" {
+  name                = module.naming.public_ip.name_unique
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+resource "azurerm_bastion_host" "bastion" {
+  name                = module.naming.bastion_host.name_unique
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+
+  ip_configuration {
+    name                 = "${module.naming.bastion_host.name_unique}-ipconf"
+    subnet_id            = azurerm_subnet.bastion_subnet.id
+    public_ip_address_id = azurerm_public_ip.bastionpip.id
+  }
+}
+*/
+
 data "azurerm_client_config" "current" {}
+
+resource "azurerm_user_assigned_identity" "example_identity" {
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.user_assigned_identity.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+}
 
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm-res-keyvault-vault" {
@@ -82,12 +117,11 @@ module "avm-res-keyvault-vault" {
 
   role_assignments = {
     deployment_user_secrets = {
-      role_definition_id_or_name = "Key Vault Administrator"
+      role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
     }
   }
 }
-
 
 #create the virtual machine
 module "testvm" {
@@ -97,12 +131,18 @@ module "testvm" {
   virtualmachine_os_type                 = "Windows"
   name                                   = module.naming.virtual_machine.name_unique
   admin_credential_key_vault_resource_id = module.avm-res-keyvault-vault.resource.id
+  virtualmachine_sku_size                = "Standard_D2as_v4"
 
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
-    sku       = "2019-Datacenter"
+    sku       = "2022-Datacenter"
     version   = "latest"
+  }
+
+  managed_identities  = {
+    system_assigned            = true
+    user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
   }
 
   network_interfaces = {
@@ -114,6 +154,21 @@ module "testvm" {
           private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
         }
       }
+    }
+  }
+
+  role_assignments = {
+    role_assignment_1 = {
+      scope_resource_id                          = module.avm-res-keyvault-vault.resource.id
+      role_definition_id_or_name                 = "Key Vault Secrets Officer"
+      description                                = "Assign the Key Vault Secrets Officer role to the virtual machine's system managed identity"
+      assign_to_system_assigned_managed_identity = true
+    },
+    role_assignment_2 = {
+      principal_id                               = data.azurerm_client_config.current.client_id
+      role_definition_id_or_name                 = "Virtual Machine Contributor"
+      description                                = "Assign the Virtual Machine Contributor role to the deployment user on this virtual machine resource scope."
+      assign_to_system_assigned_managed_identity = false
     }
   }
 

@@ -88,6 +88,7 @@ variable "tags" {
 variable "admin_credential_key_vault_resource_id" {
   type        = string
   description = "The Azure resource ID for the key vault that stores admin credential information"
+  default     = null
 }
 
 variable "admin_password" {
@@ -154,7 +155,7 @@ variable "admin_ssh_keys" {
 variable "managed_identities" {
   type = object({
     system_assigned            = optional(bool, false)
-    user_assigned_resource_ids = optional(set(string), [])
+    user_assigned_resource_ids = optional(list(string), [])
   })
   default     = {}
   description = <<IDENTITY
@@ -173,12 +174,12 @@ variable "managed_identities" {
   }
   #user assigned managed identity only
   managed_identities           = {
-    user_assigned_resource_ids = ["<azure resource ID of a user assigned managed identity>]
+    user_assigned_resource_ids = ["<azure resource ID of a user assigned managed identity>"]
   }
   #user assigned and system assigned managed identities
-  identity = {
+  managed_identities  = {
     system_assigned            = true
-    user_assigned_resource_ids = ["<azure resource ID of a user assigned managed identity>]
+    user_assigned_resource_ids = ["<azure resource ID of a user assigned managed identity>"]
   }
   ```
   IDENTITY
@@ -332,6 +333,7 @@ variable "data_disk_managed_disks" {
     create_option                             = optional(string, "Empty")
     disk_attachment_create_option             = optional(string)
     write_accelerator_enabled                 = optional(bool)
+    disk_encryption_set_resource_id           = optional(string) #this is currently a preview feature in the provider 
     disk_iops_read_write                      = optional(number, null)
     disk_mbps_read_write                      = optional(number, null)
     disk_iops_read_only                       = optional(number, null)
@@ -379,7 +381,7 @@ variable "data_disk_managed_disks" {
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
     })), {})
-    #disk_encryption_set_resource_id = optional(string) #this is currently a preview feature in the provider 
+
 
   }))
   default     = {}
@@ -597,6 +599,30 @@ variable "network_interfaces" {
     inherit_tags                   = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is potential future functionality and is currently ignored.
     lock_level                     = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
     lock_name                      = (Optional) - The name for the lock on this nic
+
+    diagnostic_settings =  map(object({
+      name                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
+      log_categories_and_groups                = (Optional) - List of strings used to define log categories and groups. Currently not valid for the VM resource
+      metric_categories                        = (Optional) - List of strings used to define metric categories. Currently only AllMetrics is valid
+      log_analytics_destination_type           = (Optional) - Valid values are null, AzureDiagnostics, and Dedicated.  Defaults to null
+      workspace_resource_id                    = (Optional) - The Log Analytics Workspace Azure Resource ID when sending logs or metrics to a Log Analytics Workspace
+      storage_account_resource_id              = (Optional) - The Storage Account Azure Resource ID when sending logs or metrics to a Storage Account
+      event_hub_authorization_rule_resource_id = (Optional) - The Event Hub Namespace Authorization Rule Resource ID when sending logs or metrics to an Event Hub Namespace
+      event_hub_name                           = (Optional) - The Event Hub name when sending logs or metrics to an Event Hub
+      marketplace_partner_resource_id          = (Optional) - The marketplace partner solution Azure Resource ID when sending logs or metrics to a partner integration
+    }))
+
+    role_assignments = list(object({      
+      principal_id                               = (optional) - The ID of the Principal (User, Group or Service Principal) to assign the Role Definition to. Changing this forces a new resource to be created.
+      role_definition_id_or_name                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name 
+      condition                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
+      condition_version                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
+      description                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.
+      skip_service_principal_aad_check           = (Optional) - If the principal_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal_id is a Service Principal identity. Defaults to true.
+      delegated_managed_identity_resource_id     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.
+      assign_to_child_public_ip_addresses        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.
+    }))
+
   }))
 
   Example Inputs:
@@ -1207,12 +1233,32 @@ variable "diagnostic_settings" {
     event_hub_name                           = optional(string, null)
     marketplace_partner_resource_id          = optional(string, null)
   }))
-  default  = {}
-  nullable = false
+  default     = {}
+  nullable    = false
+  description = <<DIAGNOSTIC_SETTINGS
+  This map object is used to define the diagnostic settings on the virtual machine.  This functionality does not implement the diagnostic settings extension, but instead can be used to configure sending the vm metrics to one of the standard targets.
+  map(object({
+    name                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
+    log_categories_and_groups                = (Optional) - List of strings used to define log categories and groups. Currently not valid for the VM resource
+    metric_categories                        = (Optional) - List of strings used to define metric categories. Currently only AllMetrics is valid
+    log_analytics_destination_type           = (Optional) - Valid values are null, AzureDiagnostics, and Dedicated.  Defaults to null
+    workspace_resource_id                    = (Optional) - The Log Analytics Workspace Azure Resource ID when sending logs or metrics to a Log Analytics Workspace
+    storage_account_resource_id              = (Optional) - The Storage Account Azure Resource ID when sending logs or metrics to a Storage Account
+    event_hub_authorization_rule_resource_id = (Optional) - The Event Hub Namespace Authorization Rule Resource ID when sending logs or metrics to an Event Hub Namespace
+    event_hub_name                           = (Optional) - The Event Hub name when sending logs or metrics to an Event Hub
+    marketplace_partner_resource_id          = (Optional) - The marketplace partner solution Azure Resource ID when sending logs or metrics to a partner integration
+  }))
+
+  Example Input:
+    diagnostic_settings = {
+      nic_diags = {
+        name                  = module.naming.monitor_diagnostic_setting.name_unique
+        workspace_resource_id = azurerm_log_analytics_workspace.this_workspace.id
+        metric_categories     = ["AllMetrics"]
+      }
+    }
+  DIAGNOSTIC_SETTINGS
 }
-
-
-
 
 #Future work to complete
 variable "append_name_string_suffix" {

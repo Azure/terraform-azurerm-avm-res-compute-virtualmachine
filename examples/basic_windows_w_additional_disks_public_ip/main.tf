@@ -53,18 +53,47 @@ resource "azurerm_virtual_network" "this_vnet" {
 }
 
 resource "azurerm_subnet" "this_subnet_1" {
-  name                 = module.naming.subnet.name_unique
+  name                 = "${module.naming.subnet.name_unique}-1"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
   address_prefixes     = ["10.0.1.0/24"]
 }
 
 resource "azurerm_subnet" "this_subnet_2" {
-  name                 = module.naming.subnet.name_unique
+  name                 = "${module.naming.subnet.name_unique}-2"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
+  address_prefixes     = ["10.0.2.0/24"]
 }
+
+/* Uncomment this section if you would like to include a bastion resource with this example.
+resource "azurerm_subnet" "bastion_subnet" {
+  name                 = "AzureBastionSubnet"
+  resource_group_name  = azurerm_resource_group.this_rg.name
+  virtual_network_name = azurerm_virtual_network.this_vnet.name
+  address_prefixes     = ["10.0.3.0/24"]
+}
+
+resource "azurerm_public_ip" "bastionpip" {
+  name                = module.naming.public_ip.name_unique
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+resource "azurerm_bastion_host" "bastion" {
+  name                = module.naming.bastion_host.name_unique
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+
+  ip_configuration {
+    name                 = "${module.naming.bastion_host.name_unique}-ipconf"
+    subnet_id            = azurerm_subnet.bastion_subnet.id
+    public_ip_address_id = azurerm_public_ip.bastionpip.id
+  }
+}
+*/
 
 data "azurerm_client_config" "current" {}
 
@@ -82,19 +111,10 @@ module "avm-res-keyvault-vault" {
 
   role_assignments = {
     deployment_user_secrets = {
-      role_definition_id_or_name = "Key Vault Administrator"
+      role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
     }
   }
-}
-
-#create a log analytics workspace as a diag settings and/or AMA destination.
-resource "azurerm_log_analytics_workspace" "this_workspace" {
-  name                = module.naming.log_analytics_workspace.name_unique
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
 }
 
 
@@ -106,11 +126,12 @@ module "testvm" {
   virtualmachine_os_type                 = "Windows"
   name                                   = module.naming.virtual_machine.name_unique
   admin_credential_key_vault_resource_id = module.avm-res-keyvault-vault.resource.id
+  virtualmachine_sku_size                = "Standard_D2as_v4"
 
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
-    sku       = "2019-Datacenter"
+    sku       = "2022-Datacenter"
     version   = "latest"
   }
 
@@ -121,24 +142,20 @@ module "testvm" {
         ip_configuration_1 = {
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
           private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
-        }
-      }
-
-      diagnostic_settings = {
-        nic_diags = {
-          name                  = module.naming.monitor_diagnostic_setting.name_unique
-          workspace_resource_id = azurerm_log_analytics_workspace.this_workspace.id
-          metric_categories     = ["AllMetrics"]
+          create_public_ip_address      = true
+          public_ip_address_name        = module.naming.public_ip.name_unique
         }
       }
     }
   }
 
-  diagnostic_settings = {
-    vm_diags = {
-      name                  = module.naming.monitor_diagnostic_setting.name_unique
-      workspace_resource_id = azurerm_log_analytics_workspace.this_workspace.id
-      metric_categories     = ["AllMetrics"]
+  data_disk_managed_disks = {
+    disk1 = {
+      name                 = "${module.naming.managed_disk.name_unique}-lun0"
+      storage_account_type = "StandardSSD_LRS"
+      lun                  = 0
+      caching              = "ReadWrite"
+      disk_size_gb         = 32
     }
   }
 

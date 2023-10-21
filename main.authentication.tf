@@ -44,7 +44,7 @@ resource "azurerm_key_vault_secret" "admin_ssh_key" {
 
 #assign permissions to the managed identity if enabled and role assignments included
 resource "azurerm_role_assignment" "system_managed_identity" {
-  for_each = local.system_managed_identity_id != null ? { for key, value in var.role_assignments : key => key if value.assign_to_system_assigned_managed_identity == true } : {}
+  for_each = var.managed_identities.system_assigned ? { for key, value in var.role_assignments : key => value if value.assign_to_system_assigned_managed_identity == true } : {}
 
   scope                                  = each.value.scope_resource_id
   principal_id                           = local.system_managed_identity_id
