@@ -97,17 +97,4 @@ locals {
       }
     ]
   ]) : "${ip_config.nic_key}-${ip_config.ipconfig_key}" => ip_config }
-
-  #flatten the network interface vars to properly create public ips that can be referenced in the ipconfig
-  flattened_nics = { for pub_ip in flatten([for nic_key, nic in var.network_interfaces : [
-    for ip_config_key, ip_config in nic.ip_configurations : {
-      nic_key                  = nic_key
-      ip_config_key            = ip_config_key
-      nic_name                 = nic.name
-      ip_config_name           = ip_config.name
-      create_public_ip_address = ip_config.create_public_ip_address
-    }
-    ]
-  ]) : "${pub_ip.nic_key}-${pub_ip.ip_config_key}" => pub_ip }
-
 }
