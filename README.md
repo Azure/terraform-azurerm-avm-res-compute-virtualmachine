@@ -1,18 +1,14 @@
 <!-- BEGIN_TF_DOCS -->
-# terraform-azurerm-avm-template
+# terraform-azurerm-avm-res-compute-virtualmachine
 
-This is a template repo for Terraform Azure Verified Modules.
-
-TODO: Provide instructions or links to spec to explain how to use this template.
+This is the virtual machine resource module for the Azure Verified Modules library.  This module deploys Windows and/or Linux virtual machines along with their associated resources.  It is based on number of AzureRM resources and sets a number of initial defaults to minimize the overall inputs for simple configurations.
 
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.0.0)
-
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (>=1.9.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.6.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71.0)
 
@@ -1499,5 +1495,8 @@ Description:     The default attributes exported by the azurerm provider.  These
 
 No modules.
 
+<!-- markdownlint-disable-next-line MD041 -->
+## Data Collection
 
+The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the repository. There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
 <!-- END_TF_DOCS -->

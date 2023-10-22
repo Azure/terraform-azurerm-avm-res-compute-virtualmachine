@@ -140,7 +140,7 @@ module "testvm" {
     version   = "latest"
   }
 
-  managed_identities  = {
+  managed_identities = {
     system_assigned            = true
     user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
   }
