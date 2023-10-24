@@ -213,14 +213,3 @@ output "vm" {
   value     = module.testvm.virtual_machine
   sensitive = true
 }
-
-module "avm-res-keyvault-vault" {
-  source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "0.3.1"
-
-  name                = "avm-keyvault-${random_string.name_string.result}"
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  tenant_id           = data.azuread_client_config.current.tenant_id
-
-}
