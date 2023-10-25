@@ -77,7 +77,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: 0.3.1
+Version: 0.3.0
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
