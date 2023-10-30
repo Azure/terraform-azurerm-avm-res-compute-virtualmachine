@@ -2,8 +2,9 @@ locals {
   #set the resource deployment location. Default to the resource group location
   location = coalesce(var.location, data.azurerm_resource_group.virtualmachine_deployment.location)
 
-  #merge the resource group tags if tag inheritance is on
-  tags = var.inherit_tags ? merge(data.azurerm_resource_group.virtualmachine_deployment.tags, var.tags) : var.tags
+  #merge the resource group tags if tag inheritance is on.  Add this back in if agreed, passing through the resource tags for now.
+  #tags = var.inherit_tags ? merge(data.azurerm_resource_group.virtualmachine_deployment.tags, var.tags) : var.tags
+  tags = var.tags
 
   #create a string to help with naming uniqueness when resource names are re-used
   name_string = var.append_name_string_suffix ? "-${substr(sha256(var.name), 0, var.name_string_suffix_length)}" : ""

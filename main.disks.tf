@@ -52,7 +52,7 @@ resource "azurerm_managed_disk" "this" {
     }
   }
 
-  #disk_encryption_set_id = disk_encryption_set_resource_id #preview feature to be activated at a later date
+  disk_encryption_set_id = each.value.disk_encryption_set_resource_id #preview feature to be activated at a later date
   #tags                              = each.value.inherit_tags? merge(local.tags, each.value.tags) : each.value.tags
 
 }

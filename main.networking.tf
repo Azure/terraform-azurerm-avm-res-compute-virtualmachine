@@ -105,7 +105,15 @@ resource "azurerm_monitor_diagnostic_setting" "this_nic_diags" {
   log_analytics_destination_type = each.value.diagnostic_setting.log_analytics_destination_type
 
   dynamic "enabled_log" {
-    for_each = each.value.diagnostic_setting.log_categories_and_groups
+    for_each = each.value.diagnostic_setting.log_categories
+
+    content {
+      category = enabled_log.value
+    }
+  }
+
+  dynamic "enabled_log" {
+    for_each = each.value.diagnostic_setting.log_groups
 
     content {
       category_group = enabled_log.value

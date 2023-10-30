@@ -50,7 +50,6 @@ variable "virtualmachine_os_type" {
 variable "virtualmachine_sku_size" {
   type        = string
   description = "The sku value to use for this virtual machine"
-  default     = "Standard_D2as_v4"
   nullable    = false
 }
 
@@ -543,7 +542,8 @@ variable "network_interfaces" {
 
     diagnostic_settings = optional(map(object({
       name                                     = optional(string, null)
-      log_categories_and_groups                = optional(set(string), [])
+      log_categories                           = optional(set(string), [])
+      log_groups                               = optional(set(string), [])
       metric_categories                        = optional(set(string), ["AllMetrics"])
       log_analytics_destination_type           = optional(string, null)
       workspace_resource_id                    = optional(string, null)
@@ -1053,7 +1053,7 @@ variable "secrets" {
 
 #extension related settings
 variable "extensions" {
-  type = set(object({
+  type = map(object({
     name                        = string
     publisher                   = string
     type                        = string
@@ -1065,17 +1065,16 @@ variable "extensions" {
     protected_settings          = optional(string)
     provision_after_extensions  = optional(list(string), [])
     tags                        = optional(map(any))
-    inherit_tags                = optional(bool, false)
     protected_settings_from_key_vault = optional(object({
       secret_url      = string
       source_vault_id = string
     }))
   }))
   # tflint-ignore: terraform_sensitive_variable_no_default
-  default     = []
+  default     = {}
   description = <<EXTENSIONS
     Argument to create any additional `azurerm_virtual_machine_extension` resource, the argument descriptions could be found at [the document](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension).
-    set(object({
+    map(object({
       name                           = (Required) - Set a custom name on this value if you want the guest configuration extension to have a custom name
       publisher                      = (Required) - Configure the publisher for the extension to be deployed. The Publisher and Type of Virtual Machine Extensions can be found using the Azure CLI, via: az vm extension image list --location westus -o table
       type                           = (Required) - Configure the type value for the extension to be deployed. 
@@ -1092,8 +1091,7 @@ variable "extensions" {
         secret_url      = (Required) - The Secret URL of a Key Vault Certificate. This can be sourced from the `secret_id` field within the `azurerm_key_vault_certificate` Resource.
         source_vault_id = (Required) - the Azure resource ID of the key vault holding the secret
       }))
-      tags                           = (Optional) - A mapping of tags to assign to the resource.
-      inherit_tags                   = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is future functionality and is currently ignored.
+      tags                           = (Optional) - A mapping of tags to assign to the extension resource.
     }))
 
     Example Inputs:
@@ -1224,7 +1222,8 @@ DESCRIPTION
 variable "diagnostic_settings" {
   type = map(object({
     name                                     = optional(string, null)
-    log_categories_and_groups                = optional(set(string), [])
+    log_categories                           = optional(set(string), [])
+    log_groups                               = optional(set(string), [])
     metric_categories                        = optional(set(string), ["AllMetrics"])
     log_analytics_destination_type           = optional(string, null)
     workspace_resource_id                    = optional(string, null)
