@@ -101,6 +101,8 @@ resource "azurerm_log_analytics_workspace" "this_workspace" {
 #create the virtual machine
 module "testvm" {
   source = "../../"
+  #source = "Azure/avm-res-compute-virtualmachine/azurerm"
+  #version = "0.1.0"
 
   resource_group_name                    = azurerm_resource_group.this_rg.name
   virtualmachine_os_type                 = "Windows"

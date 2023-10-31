@@ -182,7 +182,10 @@ resource "azurerm_management_lock" "this_windows_virtualmachine" {
     azurerm_role_assignment.system_managed_identity,
     azurerm_virtual_machine_data_disk_attachment.this_linux,
     azurerm_virtual_machine_data_disk_attachment.this_windows,
-    azurerm_linux_virtual_machine.this
+    azurerm_linux_virtual_machine.this,
+    azurerm_monitor_diagnostic_setting.this_nic_diags,
+    azurerm_monitor_diagnostic_setting.this_vm_diags,
+    azurerm_virtual_machine_extension.this_extension
   ]
 }
 
