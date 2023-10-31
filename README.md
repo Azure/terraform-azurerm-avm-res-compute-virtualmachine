@@ -48,6 +48,7 @@ The following resources are used by this module:
 - [azurerm_role_assignment.this_virtual_machine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_windows](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
+- [azurerm_virtual_machine_extension.this_extension](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
 - [azurerm_windows_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/windows_virtual_machine) (resource)
 - [random_id.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
@@ -69,6 +70,12 @@ Type: `string`
 ### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
 
 Description: The resource group name of the resource group where the vm resources will be deployed.
+
+Type: `string`
+
+### <a name="input_virtualmachine_sku_size"></a> [virtualmachine\_sku\_size](#input\_virtualmachine\_sku\_size)
+
+Description: The sku value to use for this virtual machine
 
 Type: `string`
 
@@ -458,7 +465,8 @@ Type:
 ```hcl
 map(object({
     name                                     = optional(string, null)
-    log_categories_and_groups                = optional(set(string), [])
+    log_categories                           = optional(set(string), [])
+    log_groups                               = optional(set(string), [])
     metric_categories                        = optional(set(string), ["AllMetrics"])
     log_analytics_destination_type           = optional(string, null)
     workspace_resource_id                    = optional(string, null)
@@ -524,7 +532,7 @@ Default: `null`
 ### <a name="input_extensions"></a> [extensions](#input\_extensions)
 
 Description:     Argument to create any additional `azurerm_virtual_machine_extension` resource, the argument descriptions could be found at [the document](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension).  
-    set(object({  
+    map(object({  
       name                           = (Required) - Set a custom name on this value if you want the guest configuration extension to have a custom name  
       publisher                      = (Required) - Configure the publisher for the extension to be deployed. The Publisher and Type of Virtual Machine Extensions can be found using the Azure CLI, via: az vm extension image list --location westus -o table  
       type                           = (Required) - Configure the type value for the extension to be deployed.   
@@ -541,8 +549,7 @@ Description:     Argument to create any additional `azurerm_virtual_machine_exte
         secret\_url      = (Required) - The Secret URL of a Key Vault Certificate. This can be sourced from the `secret_id` field within the `azurerm_key_vault_certificate` Resource.  
         source\_vault\_id = (Required) - the Azure resource ID of the key vault holding the secret
       }))  
-      tags                           = (Optional) - A mapping of tags to assign to the resource.  
-      inherit\_tags                   = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is future functionality and is currently ignored.
+      tags                           = (Optional) - A mapping of tags to assign to the extension resource.
     }))
 
     Example Inputs:
@@ -594,7 +601,7 @@ Description:     Argument to create any additional `azurerm_virtual_machine_exte
 Type:
 
 ```hcl
-set(object({
+map(object({
     name                        = string
     publisher                   = string
     type                        = string
@@ -606,7 +613,6 @@ set(object({
     protected_settings          = optional(string)
     provision_after_extensions  = optional(list(string), [])
     tags                        = optional(map(any))
-    inherit_tags                = optional(bool, false)
     protected_settings_from_key_vault = optional(object({
       secret_url      = string
       source_vault_id = string
@@ -614,7 +620,7 @@ set(object({
   }))
 ```
 
-Default: `[]`
+Default: `{}`
 
 ### <a name="input_extensions_time_budget"></a> [extensions\_time\_budget](#input\_extensions\_time\_budget)
 
@@ -898,7 +904,8 @@ map(object({
 
     diagnostic_settings = optional(map(object({
       name                                     = optional(string, null)
-      log_categories_and_groups                = optional(set(string), [])
+      log_categories                           = optional(set(string), [])
+      log_groups                               = optional(set(string), [])
       metric_categories                        = optional(set(string), ["AllMetrics"])
       log_analytics_destination_type           = optional(string, null)
       workspace_resource_id                    = optional(string, null)
@@ -1373,14 +1380,6 @@ Description: The base OS type of the vm to be built.  Valid answers are Windows 
 Type: `string`
 
 Default: `"Windows"`
-
-### <a name="input_virtualmachine_sku_size"></a> [virtualmachine\_sku\_size](#input\_virtualmachine\_sku\_size)
-
-Description: The sku value to use for this virtual machine
-
-Type: `string`
-
-Default: `"Standard_D2as_v4"`
 
 ### <a name="input_vm_additional_capabilities"></a> [vm\_additional\_capabilities](#input\_vm\_additional\_capabilities)
 
