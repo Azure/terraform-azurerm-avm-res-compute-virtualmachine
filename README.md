@@ -1162,7 +1162,6 @@ Default: `null`
 
 Description:   A list of role definitions and scopes to be assigned as part of this resources implementation.  Two forms are supported. Assignments against this virtual machine resource scope and assignments to external resource scopes using the system managed identity.  
   list(object({  
-    scope\_resource\_id                          = (optional) - The scope at which the System Managed Identity Role Assignment applies to, such as /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333, /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup, or /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup/providers/Microsoft.Compute/virtualMachines/myVM, or /providers/Microsoft.Management/managementGroups/myMG. Changing this forces a new resource to be created.  
     principal\_id                               = (optional) - The ID of the Principal (User, Group or Service Principal) to assign the Role Definition to. Changing this forces a new resource to be created.  
     role\_definition\_id\_or\_name                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role\_definition\_name   
     condition                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.  
@@ -1170,8 +1169,6 @@ Description:   A list of role definitions and scopes to be assigned as part of t
     description                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.  
     skip\_service\_principal\_aad\_check           = (Optional) - If the principal\_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal\_id is a Service Principal identity. Defaults to true.  
     delegated\_managed\_identity\_resource\_id     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.  
-    assign\_to\_system\_assigned\_managed\_identity = (Optional) - Set this to true if the assignment principal ID should be the system assigned managed identity.
-
   }))
 
   Example Inputs:
@@ -1180,19 +1177,58 @@ Description:   A list of role definitions and scopes to be assigned as part of t
     #typical assignment example. It is also common for the scope resource ID to be a terraform resource reference like azurerm_resource_group.example.id
     role_assignments = {
       role_assignment_1 = {
-        #assign a built-in role to the system assigned managed identity
-        scope_resource_id                          = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test_resource_group/providers/Microsoft.Storage/storageAccounts/examplestorageacct"
-        role_definition_id_or_name                 = "Storage Blob Data Contributor"
-        description                                = "Example for assigning a role to the vm system managed identity"
-        assign_to_system_assigned_managed_identity = true
-      },
-      role_assignment_2 = {
         #assign a built-in role to the virtual machine
         role_definition_id_or_name                 = "Storage Blob Data Contributor"
         principal_id                               = data.azuread_client_config.current.object_id
         description                                = "Example for assigning a role to an existing principal for the virtual machine scope"        
       }
     }
+```
+
+Type:
+
+```hcl
+map(object({
+    role_definition_id_or_name                 = string
+    principal_id                               = optional(string)
+    condition                                  = optional(string)
+    condition_version                          = optional(string)
+    description                                = optional(string)
+    skip_service_principal_aad_check           = optional(bool, true)
+    delegated_managed_identity_resource_id     = optional(string)
+    }
+  ))
+```
+
+Default: `{}`
+
+### <a name="input_role_assignments_system_managed_identity"></a> [role\_assignments\_system\_managed\_identity](#input\_role\_assignments\_system\_managed\_identity)
+
+Description:   A list of role definitions and scopes to be assigned as part of this resources implementation.  Two forms are supported. Assignments against this virtual machine resource scope and assignments to external resource scopes using the system managed identity.  
+  list(object({  
+    scope\_resource\_id                          = (optional) - The scope at which the System Managed Identity Role Assignment applies to, such as /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333, /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup, or /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup/providers/Microsoft.Compute/virtualMachines/myVM, or /providers/Microsoft.Management/managementGroups/myMG. Changing this forces a new resource to be created.  
+    principal\_id                               = (optional) - The ID of the Principal (User, Group or Service Principal) to assign the Role Definition to. Changing this forces a new resource to be created.  
+    role\_definition\_id\_or\_name                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role\_definition\_name   
+    condition                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.  
+    condition\_version                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.  
+    description                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.  
+    skip\_service\_principal\_aad\_check           = (Optional) - If the principal\_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal\_id is a Service Principal identity. Defaults to true.  
+    delegated\_managed\_identity\_resource\_id     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.
+
+  }))
+
+  Example Inputs:
+
+  ```terraform
+    #typical assignment example. It is also common for the scope resource ID to be a terraform resource reference like azurerm_resource_group.example.id
+    role_assignments_system_managed_identity = {
+      role_assignment_1 = {
+        #assign a built-in role to the system assigned managed identity
+        scope_resource_id                          = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test_resource_group/providers/Microsoft.Storage/storageAccounts/examplestorageacct"
+        role_definition_id_or_name                 = "Storage Blob Data Contributor"
+        description                                = "Example for assigning a role to the vm system managed identity"
+
+      }
 ```
 
 Type:
@@ -1207,7 +1243,6 @@ map(object({
     description                                = optional(string)
     skip_service_principal_aad_check           = optional(bool, true)
     delegated_managed_identity_resource_id     = optional(string)
-    assign_to_system_assigned_managed_identity = optional(bool, false)
     }
   ))
 ```

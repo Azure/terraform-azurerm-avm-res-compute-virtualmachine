@@ -159,18 +159,19 @@ module "testvm" {
     }
   }
 
-  role_assignments = {
+  role_assignments_system_managed_identity = {
     role_assignment_1 = {
-      scope_resource_id                          = module.avm-res-keyvault-vault.resource.id
-      role_definition_id_or_name                 = "Key Vault Secrets Officer"
-      description                                = "Assign the Key Vault Secrets Officer role to the virtual machine's system managed identity"
-      assign_to_system_assigned_managed_identity = true
-    },
+      scope_resource_id          = module.avm-res-keyvault-vault.resource.id
+      role_definition_id_or_name = "Key Vault Secrets Officer"
+      description                = "Assign the Key Vault Secrets Officer role to the virtual machine's system managed identity"
+    }
+  }
+
+  role_assignments = {
     role_assignment_2 = {
-      principal_id                               = data.azurerm_client_config.current.client_id
-      role_definition_id_or_name                 = "Virtual Machine Contributor"
-      description                                = "Assign the Virtual Machine Contributor role to the deployment user on this virtual machine resource scope."
-      assign_to_system_assigned_managed_identity = false
+      principal_id               = data.azurerm_client_config.current.client_id
+      role_definition_id_or_name = "Virtual Machine Contributor"
+      description                = "Assign the Virtual Machine Contributor role to the deployment user on this virtual machine resource scope."
     }
   }
 
