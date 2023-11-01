@@ -1189,13 +1189,13 @@ Type:
 
 ```hcl
 map(object({
-    role_definition_id_or_name                 = string
-    principal_id                               = optional(string)
-    condition                                  = optional(string)
-    condition_version                          = optional(string)
-    description                                = optional(string)
-    skip_service_principal_aad_check           = optional(bool, true)
-    delegated_managed_identity_resource_id     = optional(string)
+    role_definition_id_or_name             = string
+    principal_id                           = optional(string)
+    condition                              = optional(string)
+    condition_version                      = optional(string)
+    description                            = optional(string)
+    skip_service_principal_aad_check       = optional(bool, true)
+    delegated_managed_identity_resource_id = optional(string)
     }
   ))
 ```
@@ -1235,14 +1235,14 @@ Type:
 
 ```hcl
 map(object({
-    role_definition_id_or_name                 = string
-    scope_resource_id                          = optional(string)
-    principal_id                               = optional(string)
-    condition                                  = optional(string)
-    condition_version                          = optional(string)
-    description                                = optional(string)
-    skip_service_principal_aad_check           = optional(bool, true)
-    delegated_managed_identity_resource_id     = optional(string)
+    role_definition_id_or_name             = string
+    scope_resource_id                      = optional(string)
+    principal_id                           = optional(string)
+    condition                              = optional(string)
+    condition_version                      = optional(string)
+    description                            = optional(string)
+    skip_service_principal_aad_check       = optional(bool, true)
+    delegated_managed_identity_resource_id = optional(string)
     }
   ))
 ```
