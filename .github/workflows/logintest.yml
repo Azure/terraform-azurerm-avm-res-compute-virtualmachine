@@ -16,4 +16,4 @@ jobs:
     steps:
     - name: 'Run Azure CLI commands'
       run: |
-          echo ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          echo "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
