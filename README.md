@@ -252,39 +252,6 @@ Type: `string`
 
 Default: `null`
 
-### <a name="input_customer_managed_key"></a> [customer\_managed\_key](#input\_customer\_managed\_key)
-
-Description:     Defines a customer managed key to use for encryption.
-
-    object({  
-      key\_vault\_resource\_id              = (Required) - The full Azure Resource ID of the key\_vault where the customer managed key will be referenced from.  
-      key\_name                           = (Required) - The key name for the customer managed key in the key vault.  
-      key\_version                        = (Optional) - The version of the key to use  
-      user\_assigned\_identity\_resource\_id = (Optional) - The user assigned identity to use when access the key vault
-    })
-
-    Example Inputs:
-    ```terraform
-    customer_managed_key = {
-      key_vault_resource_id = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test-resource-group/providers/Microsoft.KeyVault/vaults/example-key-vault"
-      key_name              = "sample-customer-key"
-    }
-    
-```
-
-Type:
-
-```hcl
-object({
-    key_vault_resource_id              = string
-    key_name                           = string
-    key_version                        = optional(string, null)
-    user_assigned_identity_resource_id = optional(string, null)
-  })
-```
-
-Default: `null`
-
 ### <a name="input_data_disk_managed_disks"></a> [data\_disk\_managed\_disks](#input\_data\_disk\_managed\_disks)
 
 Description:   This variable is used to define one or more data disks for creation and attachment to the virtual machine.   

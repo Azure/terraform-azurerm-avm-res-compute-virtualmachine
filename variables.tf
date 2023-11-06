@@ -184,6 +184,7 @@ variable "managed_identities" {
   IDENTITY
 }
 
+/*
 variable "customer_managed_key" {
   type = object({
     key_vault_resource_id              = string
@@ -212,7 +213,7 @@ variable "customer_managed_key" {
 
     CUSTOMER_MANAGED_KEY
 }
-
+*/
 
 
 
