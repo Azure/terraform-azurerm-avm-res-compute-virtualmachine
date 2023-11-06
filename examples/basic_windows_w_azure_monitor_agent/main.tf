@@ -98,6 +98,12 @@ resource "azurerm_bastion_host" "bastion" {
 
 data "azurerm_client_config" "current" {}
 
+resource "azurerm_user_assigned_identity" "example_identity" {
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.user_assigned_identity.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+}
+
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm-res-keyvault-vault" {
   source              = "Azure/avm-res-keyvault-vault/azurerm"
@@ -115,6 +121,14 @@ module "avm-res-keyvault-vault" {
       role_definition_id_or_name = "Key Vault Administrator"
       principal_id               = data.azurerm_client_config.current.object_id
     }
+  }
+
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
+  }
+
+  tags = {
+    scenario = "windows_w_azure_monitor_agent"
   }
 }
 
@@ -143,12 +157,13 @@ module "testvm" {
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
-    sku       = "2019-Datacenter"
+    sku       = "2022-datacenter-g2"
     version   = "latest"
   }
 
   managed_identities = {
-    system_assigned = true
+    system_assigned            = true
+    user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
   }
 
   network_interfaces = {
@@ -189,6 +204,10 @@ module "testvm" {
       automatic_upgrade_enabled  = true
       settings                   = null
     }
+  }
+
+  tags = {
+    scenario = "windows_w_azure_monitor_agent"
   }
 
   depends_on = [

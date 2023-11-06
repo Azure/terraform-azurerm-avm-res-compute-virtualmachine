@@ -1,4 +1,5 @@
 #Future functionality for aliasing common OS versions
+/*
 locals {
   os_map = {
     ubuntu = {
@@ -8,3 +9,4 @@ locals {
     }
   }
 }
+*/

@@ -115,6 +115,14 @@ module "avm-res-keyvault-vault" {
       principal_id               = data.azurerm_client_config.current.object_id
     }
   }
+
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
+  }
+
+  tags = {
+    scenario = "windows_w_data_disk_and_public_ip"
+  }
 }
 
 
@@ -133,7 +141,7 @@ module "testvm" {
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
-    sku       = "2022-Datacenter"
+    sku       = "2022-datacenter-g2"
     version   = "latest"
   }
 
@@ -159,6 +167,10 @@ module "testvm" {
       caching              = "ReadWrite"
       disk_size_gb         = 32
     }
+  }
+
+  tags = {
+    scenario = "windows_w_data_disk_and_public_ip"
   }
 
   depends_on = [

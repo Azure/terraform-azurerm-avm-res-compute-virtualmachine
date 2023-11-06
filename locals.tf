@@ -7,7 +7,7 @@ locals {
   tags = var.tags
 
   #create a string to help with naming uniqueness when resource names are re-used
-  name_string = var.append_name_string_suffix ? "-${substr(sha256(var.name), 0, var.name_string_suffix_length)}" : ""
+  #name_string = var.append_name_string_suffix ? "-${substr(sha256(var.name), 0, var.name_string_suffix_length)}" : ""
 
   #get the vm id value depending on whether the vm is linux or windows
   virtualmachine_resource_id = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azurerm_linux_virtual_machine.this[0].id

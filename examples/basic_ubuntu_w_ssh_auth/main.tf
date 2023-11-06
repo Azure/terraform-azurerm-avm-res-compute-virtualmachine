@@ -116,6 +116,14 @@ module "avm-res-keyvault-vault" {
       principal_id               = data.azurerm_client_config.current.object_id
     }
   }
+
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
+  }
+
+  tags = {
+    scenario = "Ubuntu_w_ssh"
+  }
 }
 
 
@@ -134,7 +142,7 @@ module "testvm" {
   source_image_reference = {
     publisher = "Canonical"
     offer     = "0001-com-ubuntu-server-focal"
-    sku       = "20_04-lts"
+    sku       = "20_04-lts-gen2"
     version   = "latest"
   }
 
@@ -148,6 +156,10 @@ module "testvm" {
         }
       }
     }
+  }
+
+  tags = {
+    scenario = "Ubuntu_w_ssh"
   }
 
   depends_on = [

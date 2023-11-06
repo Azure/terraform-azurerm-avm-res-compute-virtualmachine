@@ -1288,6 +1288,7 @@ variable "diagnostic_settings" {
   DIAGNOSTIC_SETTINGS
 }
 
+/*
 #Future work to complete
 variable "append_name_string_suffix" {
   type        = bool
@@ -1302,11 +1303,12 @@ variable "name_string_suffix_length" {
 }
 
 #potential future functionality.  Ignore for now
+
 variable "inherit_tags" {
   type        = bool
   default     = false
   description = "Apply tags from the resource group to resources in the module that support tags.  Set this to false to disable the merging of the resource group tags. This is future functionality and can currently be ignored."
 }
-
+*/
 
 

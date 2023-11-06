@@ -14,6 +14,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
 
+- <a name="requirement_tls"></a> [tls](#requirement\_tls) (>=4.0.0)
+
 ## Providers
 
 The following providers are used by this module:
@@ -22,7 +24,7 @@ The following providers are used by this module:
 
 - <a name="provider_random"></a> [random](#provider\_random) (>= 3.5.0)
 
-- <a name="provider_tls"></a> [tls](#provider\_tls)
+- <a name="provider_tls"></a> [tls](#provider\_tls) (>=4.0.0)
 
 ## Resources
 
@@ -193,14 +195,6 @@ Description: (Optional) Should Extension Operations be allowed on this Virtual M
 Type: `bool`
 
 Default: `true`
-
-### <a name="input_append_name_string_suffix"></a> [append\_name\_string\_suffix](#input\_append\_name\_string\_suffix)
-
-Description: Disable this to remove the partial hash value used to ensure sub-resource naming uniqueness
-
-Type: `bool`
-
-Default: `false`
 
 ### <a name="input_availability_set_resource_id"></a> [availability\_set\_resource\_id](#input\_availability\_set\_resource\_id)
 
@@ -678,14 +672,6 @@ Type: `bool`
 
 Default: `false`
 
-### <a name="input_inherit_tags"></a> [inherit\_tags](#input\_inherit\_tags)
-
-Description: Apply tags from the resource group to resources in the module that support tags.  Set this to false to disable the merging of the resource group tags. This is future functionality and can currently be ignored.
-
-Type: `bool`
-
-Default: `false`
-
 ### <a name="input_license_type"></a> [license\_type](#input\_license\_type)
 
 Description: (Optional) For Linux virtual machine specifies the BYOL Type for this Virtual Machine, possible values are `RHEL_BYOS` and `SLES_BYOS`. For Windows virtual machine specifies the type of on-premise license (also known as [Azure Hybrid Use Benefit](https://docs.microsoft.com/windows-server/get-started/azure-hybrid-benefit)) which should be used for this Virtual Machine, possible values are `None`, `Windows_Client` and `Windows_Server`.
@@ -770,14 +756,6 @@ Description: (Optional) The maximum price you're willing to pay for this Virtual
 Type: `number`
 
 Default: `-1`
-
-### <a name="input_name_string_suffix_length"></a> [name\_string\_suffix\_length](#input\_name\_string\_suffix\_length)
-
-Description: The length of the partial hash value to include in the name string
-
-Type: `number`
-
-Default: `6`
 
 ### <a name="input_network_interfaces"></a> [network\_interfaces](#input\_network\_interfaces)
 
