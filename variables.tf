@@ -340,7 +340,6 @@ variable "data_disk_managed_disks" {
     disk_mbps_read_only                       = optional(number, null)
     upload_size_bytes                         = optional(number, null)
     disk_size_gb                              = optional(number, 128)
-    edge_zone                                 = optional(string)
     hyper_v_generation                        = optional(string)
     image_reference_resource_id               = optional(string)
     gallery_image_reference_resource_id       = optional(string)
@@ -359,7 +358,6 @@ variable "data_disk_managed_disks" {
     on_demand_bursting_enabled                = optional(bool)
     tags                                      = optional(map(any))
     inherit_tags                              = optional(bool, true)
-    zone                                      = optional(string)
     network_access_policy                     = optional(string)
     disk_access_resource_id                   = optional(string)
     public_network_access_enabled             = optional(bool)
@@ -395,13 +393,13 @@ variable "data_disk_managed_disks" {
     create_option                             = (Required) - The method to use when creating the managed disk. Changing this forces a new resource to be created. Possible values include: 1. Import - Import a VHD file in to the managed disk (VHD specified with source_uri). 2.ImportSecure - Securely import a VHD file in to the managed disk (VHD specified with source_uri). 3. Empty - Create an empty managed disk. 4. Copy - Copy an existing managed disk or snapshot (specified with source_resource_id). 5. FromImage - Copy a Platform Image (specified with image_reference_id) 6. Restore - Set by Azure Backup or Site Recovery on a restored disk (specified with source_resource_id). 7. Upload - Upload a VHD disk with the help of SAS URL (to be used with upload_size_bytes).
     disk_attachment_create_option             = (Optional) - The disk attachment create Option of the Data Disk, such as Empty or Attach. Defaults to Attach. Changing this forces a new resource to be created.    
     write_accelerator_enabled                 = (Optional) - Specifies if Write Accelerator is enabled on the disk. This can only be enabled on Premium_LRS managed disks with no caching and M-Series VMs. Defaults to false.
+    disk_encryption_set_resource_id           = (Optional) - The resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk.
     disk_iops_read_write                      = (Optional) - The number of IOPS allowed for this disk; only settable for UltraSSD disks and PremiumV2 disks. One operation can transfer between 4k and 256k bytes.
     disk_mbps_read_write                      = (Optional) - The bandwidth allowed for this disk; only settable for UltraSSD disks and PremiumV2 disks. MBps means millions of bytes per second.
     disk_iops_read_only                       = (Optional) - The number of IOPS allowed across all VMs mounting the shared disk as read-only; only settable for UltraSSD disks and PremiumV2 disks with shared disk enabled. One operation can transfer between 4k and 256k bytes.
     disk_mbps_read_only                       = (Optional) - The bandwidth allowed across all VMs mounting the shared disk as read-only; only settable for UltraSSD disks and PremiumV2 disks with shared disk enabled. MBps means millions of bytes per second.
     upload_size_bytes                         = (Optional) - Specifies the size of the managed disk to create in bytes. Required when create_option is Upload. The value must be equal to the source disk to be copied in bytes. Source disk size could be calculated with ls -l or wc -c. More information can be found at Copy a managed disk. Changing this forces a new resource to be created.
     disk_size_gb                              = (Optional, Required for a new managed disk) - Specifies the size of the managed disk to create in gigabytes. If create_option is Copy or FromImage, then the value must be equal to or greater than the source's size. The size can only be increased.If No Downtime Resizing is not available, be aware that changing this value is disruptive if the disk is attached to a Virtual Machine. The VM will be shut down and de-allocated as required by Azure to action the change. Terraform will attempt to start the machine again after the update if it was in a running state when the apply was started. When upgrading disk_size_gb from value less than 4095 to a value greater than 4095, the disk will be detached from its associated Virtual Machine as required by Azure to action the change. Terraform will attempt to reattach the disk again after the update.
-    edge_zone                                 = (Optional) - Specifies the Edge Zone within the Azure Region where this Managed Disk should exist. Changing this forces a new Managed Disk to be created.
     hyper_v_generation                        = (Optional) - The HyperV Generation of the Disk when the source of an Import or Copy operation targets a source that contains an operating system. Possible values are V1 and V2. For ImportSecure it must be set to V2. Changing this forces a new resource to be created.
     image_reference_resource_id               = (Optional) - ID of an existing platform/marketplace disk image to copy when create_option is FromImage. This field cannot be specified if gallery_image_reference_resource_id is specified. Changing this forces a new resource to be created.
     gallery_image_reference_resource_id       = (Optional) - ID of a Gallery Image Version to copy when create_option is FromImage. This field cannot be specified if image_reference_id is specified. Changing this forces a new resource to be created.
@@ -420,7 +418,6 @@ variable "data_disk_managed_disks" {
     on_demand_bursting_enabled                = (Optional) - Specifies if On-Demand Bursting is enabled for the Managed Disk.
     tags                                      = (Optional) - A mapping of tags to assign to the resource.
     inherit_tags                              = (Optional) - Defaults to true.  Set this to false if only the tags defined on this resource should be applied.
-    zone                                      = (Optional) - Specifies the Availability Zone in which this Managed Disk should be located. Changing this property forces a new resource to be created. Availability Zones are only supported in select regions at this time.
     network_access_policy                     = (Optional) - Policy for accessing the disk via network. Allowed values are AllowAll, AllowPrivate, and DenyAll.
     disk_access_resource_id                   = (Optional) - The ID of the disk access resource for using private endpoints on disks. disk_access_resource_id is only supported when network_access_policy is set to AllowPrivate.
     public_network_access_enabled             = (Optional) - Whether it is allowed to access the disk via public network. Defaults to true.
@@ -456,14 +453,13 @@ variable "data_disk_managed_disks" {
 variable "public_ip_configuration_details" {
   type = object({
     allocation_method       = optional(string, "Static")
-    zones                   = optional(list(string))
     ddos_protection_mode    = optional(string, "VirtualNetworkInherited")
     ddos_protection_plan_id = optional(string)
     domain_name_label       = optional(string)
-    edge_zone               = optional(string)
     idle_timeout_in_minutes = optional(number, 30)
     ip_version              = optional(string, "IPv4")
     sku_tier                = optional(string, "Regional")
+    sku                     = optional(string, "Standard")
     inherit_tags            = optional(bool, false)
     tags                    = optional(map(any))
     lock_level              = optional(string)
@@ -474,17 +470,17 @@ variable "public_ip_configuration_details" {
     idle_timeout_in_minutes = 30
     ip_version              = "IPv4"
     sku_tier                = "Regional"
+    sku                     = "Standard"
   }
   description = <<PUBLIC_IP_CONFIGURATION_DETAILS
     allocation_method       = (Required) - Defines the allocation method for this IP address. Possible values are Static or Dynamic.
-    zones                   = (Optional) - A collection containing the availability zone to allocate the Public IP in. Changing this forces a new resource to be created.
     ddos_protection_mode    = (Optional) - The DDoS protection mode of the public IP. Possible values are Disabled, Enabled, and VirtualNetworkInherited. Defaults to VirtualNetworkInherited.
     ddos_protection_plan_id = (Optional) - The ID of DDoS protection plan associated with the public IP. ddos_protection_plan_id can only be set when ddos_protection_mode is Enabled
     domain_name_label       = (Optional) - Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system.
-    edge_zone               = (Optional) - Specifies the Edge Zone within the Azure Region where this Public IP should exist. Changing this forces a new Public IP to be created.
     idle_timeout_in_minutes = (Optional) - Specifies the timeout for the TCP idle connection. The value can be set between 4 and 30 minutes.
     ip_version              = (Optional) - The IP Version to use, IPv6 or IPv4. Changing this forces a new resource to be created. Only static IP address allocation is supported for IPv6.
-    sku_tier                = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Basic. Changing this forces a new resource to be created. When sku_tier is set to Global, sku must be set to Standard.
+    sku                     = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Standard to support zones by default. Changing this forces a new resource to be created. When sku_tier is set to Global, sku must be set to Standard.
+    sku_tier                = (Optional) - The SKU tier of the Public IP. Accepted values are Global and Regional. Defaults to Regional
     tags                    = (Optional) - A mapping of tags to assign to the resource.
     inherit_tags            = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. - Future functionality leaving in.
     lock_level              = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
@@ -499,6 +495,7 @@ variable "public_ip_configuration_details" {
       idle_timeout_in_minutes = 30
       ip_version              = "IPv4"
       sku_tier                = "Regional"
+      sku                     = "Standard"
     }
     ```
   PUBLIC_IP_CONFIGURATION_DETAILS
@@ -521,7 +518,6 @@ variable "network_interfaces" {
       public_ip_address_lock_name                                 = optional(string)
     }))
     dns_servers                    = optional(list(string))
-    edge_zone                      = optional(string)
     accelerated_networking_enabled = optional(bool, false)
     ip_forwarding_enabled          = optional(bool, false)
     internal_dns_name_label        = optional(string)
@@ -571,7 +567,6 @@ variable "network_interfaces" {
         }
       }
       dns_servers                    = null
-      edge_zone                      = null
       accelerated_networking_enabled = true
       ip_forwarding_enabled          = false
       internal_dns_name_label        = null
@@ -592,7 +587,6 @@ variable "network_interfaces" {
       create_public_ip_address                                    = (Optional) - Select true here to have the module create the public IP address for this IP Configuration
     }))
     dns_servers                    = (Optional) - A list of IP Addresses defining the DNS Servers which should be used for this Network Interface.
-    edge_zone                      = (Optional) - Specifies the Edge Zone within the Azure Region where this Network Interface should exist. Changing this forces a new Network Interface to be created.
     accelerated_networking_enabled = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.
     ip_forwarding_enabled          = (Optional) - Should IP Forwarding be enabled? Defaults to false
     internal_dns_name_label        = (Optional) - The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network.
@@ -910,7 +904,7 @@ variable "termination_notification" {
 variable "timezone" {
   type        = string
   default     = null
-  description = "(Optional) Specifies the Time Zone which should be used by the Virtual Machine, [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/). Changing this forces a new resource to be created."
+  description = "(Optional) Specifies the Time Zone which should be used by the Windows Virtual Machine, [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/). Changing this forces a new resource to be created."
 }
 
 variable "user_data" {

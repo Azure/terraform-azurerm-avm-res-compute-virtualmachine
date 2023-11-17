@@ -6,13 +6,14 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
   resource_group_name     = data.azurerm_resource_group.virtualmachine_deployment.name
   location                = local.location
   allocation_method       = var.public_ip_configuration_details.allocation_method
-  zones                   = var.public_ip_configuration_details.zones
+  zones                   = var.zone != null ? [var.zone] : [] #var.public_ip_configuration_details.zones
   ddos_protection_mode    = var.public_ip_configuration_details.ddos_protection_mode
   ddos_protection_plan_id = var.public_ip_configuration_details.ddos_protection_plan_id
   domain_name_label       = var.public_ip_configuration_details.domain_name_label
-  edge_zone               = var.public_ip_configuration_details.edge_zone
+  edge_zone               = var.edge_zone #var.public_ip_configuration_details.edge_zone
   idle_timeout_in_minutes = var.public_ip_configuration_details.idle_timeout_in_minutes
   ip_version              = var.public_ip_configuration_details.ip_version
+  sku                     = var.public_ip_configuration_details.sku
   sku_tier                = var.public_ip_configuration_details.sku_tier
   tags                    = var.public_ip_configuration_details.tags != null && var.public_ip_configuration_details != {} ? var.public_ip_configuration_details.tags : local.tags
 
@@ -26,7 +27,7 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
   location                      = local.location
   resource_group_name           = data.azurerm_resource_group.virtualmachine_deployment.name
   dns_servers                   = each.value.dns_servers
-  edge_zone                     = each.value.edge_zone
+  edge_zone                     = var.edge_zone #each.value.edge_zone
   enable_accelerated_networking = each.value.accelerated_networking_enabled
   enable_ip_forwarding          = each.value.ip_forwarding_enabled
   internal_dns_name_label       = each.value.internal_dns_name_label
