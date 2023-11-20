@@ -12,12 +12,7 @@ terraform {
   }
 }
 
-# This picks a random region from the list of regions.
-resource "random_integer" "region_index" {
-  min = 0
-  max = length(local.azure_regions) - 1
-}
-
+#toggle telemetry on or off
 variable "enable_telemetry" {
   type        = bool
   default     = true
@@ -35,14 +30,31 @@ provider "azurerm" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  version = ">= 0.3.0"
+}
+
+module "regions" {
+  source  = "Azure/regions/azurerm"
+  version = ">= 0.4.0"
+}
+
+# This allows us to randomize the region for the resource group.
+resource "random_integer" "region_index" {
+  min = 0
+  max = length(module.regions.regions) - 1
+}
+
+resource "random_integer" "zone_index" {
+  min = 1
+  max = length(module.regions.regions[random_integer.region_index.result].zones)
 }
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this_rg" {
   name     = module.naming.resource_group.name_unique
-  location = local.azure_regions[random_integer.region_index.result]
+  location = module.regions.regions[random_integer.region_index.result].name
 }
+
 
 # Create a virtual network and subnets for the deployment
 resource "azurerm_virtual_network" "this_vnet" {
@@ -107,7 +119,7 @@ resource "azurerm_user_assigned_identity" "test" {
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm-res-keyvault-vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "0.4.0"
+  version                     = ">= 0.5.0"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -185,7 +197,9 @@ module "testvm" {
   virtualmachine_os_type                 = "Windows"
   name                                   = module.naming.virtual_machine.name_unique
   admin_credential_key_vault_resource_id = module.avm-res-keyvault-vault.resource.id
-  virtualmachine_sku_size                = "Standard_D2as_v4"
+  virtualmachine_sku_size                = "Standard_D2ds_v4"
+  encryption_at_host_enabled             = true
+  zone                                   = random_integer.zone_index.result
 
 
   os_disk = {

@@ -8,7 +8,7 @@ resource "azurerm_managed_disk" "this" {
   create_option                     = each.value.create_option
   upload_size_bytes                 = each.value.upload_size_bytes
   disk_size_gb                      = each.value.disk_size_gb
-  edge_zone                         = each.value.edge_zone
+  edge_zone                         = var.edge_zone #each.value.edge_zone
   hyper_v_generation                = each.value.hyper_v_generation
   image_reference_id                = each.value.image_reference_resource_id
   gallery_image_reference_id        = each.value.gallery_image_reference_resource_id
@@ -24,7 +24,7 @@ resource "azurerm_managed_disk" "this" {
   security_type                     = each.value.security_type
   secure_vm_disk_encryption_set_id  = each.value.secure_vm_disk_encryption_set_resource_id
   on_demand_bursting_enabled        = each.value.on_demand_bursting_enabled
-  zone                              = each.value.zone
+  zone                              = var.zone
   network_access_policy             = each.value.network_access_policy
   disk_access_id                    = each.value.disk_access_resource_id
   public_network_access_enabled     = each.value.public_network_access_enabled
