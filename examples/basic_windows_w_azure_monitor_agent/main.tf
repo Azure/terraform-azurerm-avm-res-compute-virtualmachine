@@ -9,6 +9,10 @@ terraform {
       source  = "hashicorp/random"
       version = ">= 3.5.0, < 4.0.0"
     }
+    azapi = {
+      source  = "Azure/azapi"
+      version = ">=1.9.0"
+    }
   }
 }
 
@@ -38,21 +42,67 @@ module "regions" {
   version = ">= 0.4.0"
 }
 
+#seed the test regions 
+locals {
+  test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
+}
+
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
   min = 0
-  max = length(module.regions.regions) - 1
+  max = length(local.test_regions) - 1
 }
 
 resource "random_integer" "zone_index" {
   min = 1
-  max = length(module.regions.regions[random_integer.region_index.result].zones)
+  max = length(module.regions.regions_by_name[local.test_regions[random_integer.region_index.result]].zones)
+}
+
+### this segment of code gets valid vm skus for deployment in the current subscription
+data "azurerm_subscription" "current" {
+}
+
+#get the full sku list (azapi doesn't currently have a good way to filter the api call)
+data "azapi_resource_list" "example" {
+  type                   = "Microsoft.Compute/skus@2021-07-01"
+  parent_id              = data.azurerm_subscription.current.id
+  response_export_values = ["*"]
+}
+
+locals {
+  #filter the location output for the current region, virtual machine resources, and filter out entries that don't include the capabilities list
+  location_valid_vms = [
+    for location in jsondecode(data.azapi_resource_list.example.output).value : location
+    if contains(location.locations, local.test_regions[random_integer.region_index.result]) && #if the sku location field matches the selected location
+    length(location.restrictions) < 1 &&                                                       #and there are no restrictions on deploying the sku (i.e. allowed for deployment)
+    location.resourceType == "virtualMachines" &&                                              #and the sku is a virtual machine
+    !strcontains(location.name, "C") &&                                                        #no confidential vm skus
+    !strcontains(location.name, "B") &&                                                        #no B skus
+    try(location.capabilities, []) != []                                                       #avoid skus where the capabilities list isn't defined
+  ]
+
+  #filter the region virtual machines by desired capabilities (v1/v2 support, 2 cpu, and encryption at host)
+  deploy_skus = [
+    for sku in local.location_valid_vms : sku
+    if length([
+      for capability in sku.capabilities : capability
+      if(capability.name == "HyperVGenerations" && capability.value == "V1,V2") ||
+      (capability.name == "vCPUs" && capability.value == "2") ||
+      (capability.name == "EncryptionAtHostSupported" && capability.value == "True") ||
+      (capability.name == "CpuArchitectureType" && capability.value == "x64")
+    ]) == 4
+  ]
+}
+
+resource "random_integer" "deploy_sku" {
+  min = 0
+  max = length(local.deploy_skus) - 1
 }
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this_rg" {
   name     = module.naming.resource_group.name_unique
-  location = module.regions.regions[random_integer.region_index.result].name
+  location = local.test_regions[random_integer.region_index.result]
 }
 
 # Create a virtual network and subnets for the deployment
@@ -163,7 +213,7 @@ module "testvm" {
   virtualmachine_os_type                 = "Windows"
   name                                   = module.naming.virtual_machine.name_unique
   admin_credential_key_vault_resource_id = module.avm-res-keyvault-vault.resource.id
-  virtualmachine_sku_size                = "Standard_D2ds_v4"
+  virtualmachine_sku_size                = local.deploy_skus[random_integer.deploy_sku.result].name
   zone                                   = random_integer.zone_index.result
 
   source_image_reference = {
