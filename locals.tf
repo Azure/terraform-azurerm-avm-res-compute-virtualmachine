@@ -33,7 +33,7 @@ locals {
   admin_ssh_keys = concat(var.admin_ssh_keys, local.admin_ssh_key)
 
   #set the admin password to either a generated value or the entered value
-  admin_password = var.generate_admin_password_or_ssh_key ? random_password.admin_password.result : try(coalesce(var.admin_password, (data.azurerm_key_vault_secret.admin_password[0].value)), null)
+  admin_password = var.generate_admin_password_or_ssh_key ? random_password.admin_password.result : (var.admin_password != null ? var.admin_password : data.azurerm_key_vault_secret.admin_password[0].value)
 
 
   linux_virtual_machine_output_map = (lower(var.virtualmachine_os_type) == "linux") ? {
