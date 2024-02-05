@@ -154,8 +154,13 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 }
 
+moved {
+  from = azurerm_management_lock.this-linux-virtualmachine
+  to   = azurerm_management_lock.this_linux_virtualmachine
+}
+
 #set explicit dependencies on all the child resources to ensure that they have finished update and modification prior to locking the vm
-resource "azurerm_management_lock" "this-linux-virtualmachine" {
+resource "azurerm_management_lock" "this_linux_virtualmachine" {
   count      = var.lock.kind != "None" && !(lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
   name       = coalesce(var.lock.name, "lock-${var.name}")
   scope      = azurerm_linux_virtual_machine.this[0].id

@@ -1,20 +1,4 @@
-terraform {
-  required_version = ">= 1.6.0"
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = ">= 3.7.0, < 4.0.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.5.0, < 4.0.0"
-    }
-    azapi = {
-      source  = "Azure/azapi"
-      version = ">=1.9.0"
-    }
-  }
-}
+# tflint-ignore: terraform_output_separate
 variable "enable_telemetry" {
   type        = bool
   default     = true
@@ -25,6 +9,7 @@ If it is set to false, then no telemetry will be collected.
 DESCRIPTION
 }
 
+# tflint-ignore: terraform_module_provider_declaration, terraform_output_separate, terraform_variable_separate
 provider "azurerm" {
   features {}
 }
@@ -76,7 +61,7 @@ locals {
     location.resourceType == "virtualMachines" &&                                              #and the sku is a virtual machine
     !strcontains(location.name, "C") &&                                                        #no confidential vm skus
     !strcontains(location.name, "B") &&                                                        #no B skus
-    try(location.capabilities, []) != []                                                       #avoid skus where the capabilities list isn't defined
+    length(try(location.capabilities, [])) > 1                                                 #avoid skus where the capabilities list isn't defined
   ]
 
   #filter the region virtual machines by desired capabilities (v1/v2 support, 2 cpu, and encryption at host)
@@ -90,6 +75,10 @@ locals {
       (capability.name == "CpuArchitectureType" && capability.value == "x64")
     ]) == 4
   ]
+
+  tags = {
+    scenario = "windows_w_data_disk_and_public_ip"
+  }
 }
 
 resource "random_integer" "deploy_sku" {
@@ -101,6 +90,7 @@ resource "random_integer" "deploy_sku" {
 resource "azurerm_resource_group" "this_rg" {
   name     = module.naming.resource_group.name_unique
   location = local.test_regions[random_integer.region_index.result]
+  tags     = local.tags
 }
 
 # Create a virtual network and subnets for the deployment
@@ -109,6 +99,7 @@ resource "azurerm_virtual_network" "this_vnet" {
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
+  tags                = local.tags
 }
 
 resource "azurerm_subnet" "this_subnet_1" {
@@ -157,7 +148,7 @@ resource "azurerm_bastion_host" "bastion" {
 data "azurerm_client_config" "current" {}
 
 #create a keyvault for storing the credential with RBAC for the deployment user
-module "avm-res-keyvault-vault" {
+module "avm_res_keyvault_vault" {
   source              = "Azure/avm-res-keyvault-vault/azurerm"
   version             = ">= 0.5.0"
   tenant_id           = data.azurerm_client_config.current.tenant_id
@@ -179,9 +170,7 @@ module "avm-res-keyvault-vault" {
     create = "60s"
   }
 
-  tags = {
-    scenario = "windows_w_data_disk_and_public_ip"
-  }
+  tags = local.tags
 }
 
 
@@ -191,10 +180,11 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.1.0"
 
+  location                               = azurerm_resource_group.this_rg.location
   resource_group_name                    = azurerm_resource_group.this_rg.name
   virtualmachine_os_type                 = "Windows"
   name                                   = module.naming.virtual_machine.name_unique
-  admin_credential_key_vault_resource_id = module.avm-res-keyvault-vault.resource.id
+  admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
   virtualmachine_sku_size                = local.deploy_skus[random_integer.deploy_sku.result].name
   zone                                   = random_integer.zone_index.result
 
@@ -240,6 +230,7 @@ module "testvm" {
 
 
 output "vm" {
-  value     = module.testvm.virtual_machine
-  sensitive = true
+  value       = module.testvm.virtual_machine
+  description = "The virtual machine object."
+  sensitive   = true
 }
