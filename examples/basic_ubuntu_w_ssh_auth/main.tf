@@ -3,6 +3,7 @@ provider "azurerm" {
   features {}
 }
 
+# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
 variable "enable_telemetry" {
   type        = bool
   default     = true
@@ -214,8 +215,7 @@ module "testvm" {
   ]
 }
 
-
-# tflint-ignore: terraform_output_separate
+# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
 output "vm" {
   value       = module.testvm.virtual_machine
   description = "The virtual machine object."

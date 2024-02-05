@@ -1,4 +1,4 @@
-# tflint-ignore: terraform_output_separate
+# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
 variable "enable_telemetry" {
   type        = bool
   default     = true
@@ -180,6 +180,7 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.1.0"
 
+  enable_telemetry                       = var.enable_telemetry
   location                               = azurerm_resource_group.this_rg.location
   resource_group_name                    = azurerm_resource_group.this_rg.name
   virtualmachine_os_type                 = "Windows"
@@ -228,7 +229,7 @@ module "testvm" {
   ]
 }
 
-
+# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
 output "vm" {
   value       = module.testvm.virtual_machine
   description = "The virtual machine object."

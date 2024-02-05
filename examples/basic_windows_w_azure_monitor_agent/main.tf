@@ -1,5 +1,5 @@
 #toggle telemetry on or off
-# tflint-ignore: terraform_output_separate
+# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
 variable "enable_telemetry" {
   type        = bool
   default     = true
@@ -268,8 +268,6 @@ module "testvm" {
   ]
 }
 
-data "azuread_client_config" "current" {}
-
 resource "azurerm_monitor_data_collection_rule" "test" {
   name                = "${module.testvm.virtual_machine.name}-dcr"
   resource_group_name = azurerm_resource_group.this_rg.name
@@ -412,7 +410,7 @@ resource "azurerm_monitor_data_collection_rule_association" "this_rule_associati
   description             = "test data collection rule association"
 }
 
-
+# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
 output "vm" {
   value       = module.testvm.virtual_machine
   description = "The virtual machine object."
