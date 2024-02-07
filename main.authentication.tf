@@ -18,6 +18,7 @@ resource "azurerm_key_vault_secret" "admin_password" {
   name         = coalesce(var.admin_password_key_vault_secret_name, "${var.name}-${var.admin_username}-password")
   value        = random_password.admin_password.result
   key_vault_id = var.admin_credential_key_vault_resource_id
+  tags         = var.tags
 }
 
 #if the password isn't being generated or input directly then get it from the key vault
@@ -40,6 +41,7 @@ resource "azurerm_key_vault_secret" "admin_ssh_key" {
   name         = coalesce(var.admin_generated_ssh_key_vault_secret_name, "${var.name}-${var.admin_username}-ssh-private-key")
   value        = tls_private_key.this[0].private_key_pem
   key_vault_id = var.admin_credential_key_vault_resource_id
+  tags         = var.tags
 }
 
 #assign permissions to the managed identity if enabled and role assignments included
