@@ -12,8 +12,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 1.12)
-
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.90)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
@@ -1462,7 +1460,7 @@ Description: The Azure resource id for the deployed virtual machine
 
 ### <a name="output_system_assigned_mi_principal_id"></a> [system\_assigned\_mi\_principal\_id](#output\_system\_assigned\_mi\_principal\_id)
 
-Description: n/a
+Description: The principal id of the system managed identity assigned to the virtual machine
 
 ### <a name="output_virtual_machine"></a> [virtual\_machine](#output\_virtual\_machine)
 

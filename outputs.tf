@@ -26,7 +26,7 @@ output "resource_id" {
 }
 
 output "system_assigned_mi_principal_id" {
-  value = var.managed_identities.system_assigned == true ? ((lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : azurerm_linux_virtual_machine.this[0].identity[0].principal_id) : ""
+  value       = var.managed_identities.system_assigned == true ? ((lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : azurerm_linux_virtual_machine.this[0].identity[0].principal_id) : ""
   description = "The principal id of the system managed identity assigned to the virtual machine"
 }
 
