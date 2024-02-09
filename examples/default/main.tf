@@ -1,4 +1,4 @@
-# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
+# tflint-ignore: terraform_variable_separate, terraform_standard_module_structure
 variable "enable_telemetry" {
   type        = bool
   default     = true

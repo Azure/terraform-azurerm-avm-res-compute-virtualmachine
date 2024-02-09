@@ -20,7 +20,7 @@ It includes the following resources in addition to the VM resource:
     - An optional subnet, public ip, and bastion which can be enabled by uncommenting the bastion resources when running the example.
 
 ```hcl
-# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
+# tflint-ignore: terraform_variable_separate, terraform_standard_module_structure
 variable "enable_telemetry" {
   type        = bool
   default     = true
@@ -31,7 +31,6 @@ If it is set to false, then no telemetry will be collected.
 DESCRIPTION
 }
 
-# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = ">= 0.3.0"
@@ -44,7 +43,7 @@ module "regions" {
 
 locals {
   tags = {
-    scenario = "Ubuntu_w_ssh"
+    scenario = "common_ubuntu_w_ssh"
   }
   test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
 }
@@ -212,7 +211,6 @@ resource "azurerm_disk_encryption_set" "this" {
   }
 }
 
-#create the virtual machine
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
@@ -305,7 +303,7 @@ output "vm" {
   description = "The virtual machine object."
   sensitive   = true
 }
-
+# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
 output "mi" {
   value       = module.testvm.system_assigned_mi_principal_id
   description = "The system managed identities principal ID"

@@ -16,7 +16,7 @@ It includes the following resources in addition to the VM resource:
     - An optional subnet, public ip, and bastion which can be enabled by uncommenting the bastion resources when running the example.
 
 ```hcl
-# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
+# tflint-ignore: terraform_variable_separate, terraform_standard_module_structure
 variable "enable_telemetry" {
   type        = bool
   default     = true
