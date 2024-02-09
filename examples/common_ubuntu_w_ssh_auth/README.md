@@ -31,7 +31,7 @@ If it is set to false, then no telemetry will be collected.
 DESCRIPTION
 }
 
-# This ensures we have unique CAF compliant names for our resources.
+# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = ">= 0.3.0"
@@ -307,7 +307,8 @@ output "vm" {
 }
 
 output "mi" {
-  value = module.testvm.system_assigned_mi_principal_id
+  value       = module.testvm.system_assigned_mi_principal_id
+  description = "The system managed identities principal ID"
 }
 ```
 
@@ -318,11 +319,11 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 1.12)
-
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.90)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
+
+- <a name="requirement_tls"></a> [tls](#requirement\_tls) (~> 4.0)
 
 ## Providers
 
@@ -332,7 +333,7 @@ The following providers are used by this module:
 
 - <a name="provider_random"></a> [random](#provider\_random) (~> 3.6)
 
-- <a name="provider_tls"></a> [tls](#provider\_tls)
+- <a name="provider_tls"></a> [tls](#provider\_tls) (~> 4.0)
 
 ## Resources
 
@@ -375,7 +376,7 @@ The following outputs are exported:
 
 ### <a name="output_mi"></a> [mi](#output\_mi)
 
-Description: n/a
+Description: The system managed identities principal ID
 
 ### <a name="output_vm"></a> [vm](#output\_vm)
 

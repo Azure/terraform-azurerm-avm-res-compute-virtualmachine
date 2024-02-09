@@ -196,10 +196,6 @@ output "vm" {
   description = "The virtual machine object."
   sensitive   = true
 }
-
-output "sku" {
-  value = module.get_valid_sku_for_deployment_region.sku
-}
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -208,8 +204,6 @@ output "sku" {
 The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
-
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 1.12)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.90)
 
@@ -257,10 +251,6 @@ Default: `true`
 ## Outputs
 
 The following outputs are exported:
-
-### <a name="output_sku"></a> [sku](#output\_sku)
-
-Description: n/a
 
 ### <a name="output_vm"></a> [vm](#output\_vm)
 

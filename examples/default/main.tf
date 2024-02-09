@@ -178,7 +178,3 @@ output "vm" {
   description = "The virtual machine object."
   sensitive   = true
 }
-
-output "sku" {
-  value = module.get_valid_sku_for_deployment_region.sku
-}

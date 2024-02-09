@@ -9,7 +9,7 @@ If it is set to false, then no telemetry will be collected.
 DESCRIPTION
 }
 
-# This ensures we have unique CAF compliant names for our resources.
+# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = ">= 0.3.0"
