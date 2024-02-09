@@ -10,7 +10,7 @@ module "regions" {
 
 locals {
   tags = {
-    scenario = "windows_w_rbac_and_managed_identity"
+    scenario = "common_ubuntu_w_ssh"
   }
   test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
 }
@@ -88,6 +88,7 @@ resource "azurerm_bastion_host" "bastion" {
 }
 */
 
+
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_user_assigned_identity" "example_identity" {
@@ -98,21 +99,35 @@ resource "azurerm_user_assigned_identity" "example_identity" {
 }
 
 module "avm_res_keyvault_vault" {
-  source              = "Azure/avm-res-keyvault-vault/azurerm"
-  version             = ">= 0.5.0"
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  name                = module.naming.key_vault.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  location            = azurerm_resource_group.this_rg.location
+  source                      = "Azure/avm-res-keyvault-vault/azurerm"
+  version                     = ">= 0.5.0"
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  name                        = module.naming.key_vault.name_unique
+  resource_group_name         = azurerm_resource_group.this_rg.name
+  location                    = azurerm_resource_group.this_rg.location
+  enabled_for_disk_encryption = true
   network_acls = {
     default_action = "Allow"
+    bypass         = "AzureServices"
   }
 
   role_assignments = {
-    deployment_user_secrets = {
+    deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
     }
+    deployment_user_keys = { #give the deployment user access to keys
+      role_definition_id_or_name = "Key Vault Crypto Officer"
+      principal_id               = data.azurerm_client_config.current.object_id
+    }
+    user_managed_identity_keys = { #give the user assigned managed identity for the disk encryption set access to keys
+      role_definition_id_or_name = "Key Vault Crypto Officer"
+      principal_id               = azurerm_user_assigned_identity.example_identity.principal_id
+    }
+  }
+
+  wait_for_rbac_before_key_operations = {
+    create = "60s"
   }
 
   wait_for_rbac_before_secret_operations = {
@@ -120,6 +135,47 @@ module "avm_res_keyvault_vault" {
   }
 
   tags = local.tags
+
+  keys = {
+    des_key = {
+      name     = "des-disk-key"
+      key_type = "RSA"
+      key_size = 2048
+
+      key_opts = [
+        "decrypt",
+        "encrypt",
+        "sign",
+        "unwrapKey",
+        "verify",
+        "wrapKey",
+      ]
+    }
+  }
+}
+
+resource "tls_private_key" "this" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "azurerm_key_vault_secret" "admin_ssh_key" {
+  name         = "azureuser-ssh-private-key"
+  value        = tls_private_key.this.private_key_pem
+  key_vault_id = module.avm_res_keyvault_vault.resource.id
+}
+
+resource "azurerm_disk_encryption_set" "this" {
+  name                = module.naming.disk_encryption_set.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  location            = azurerm_resource_group.this_rg.location
+  key_vault_key_id    = module.avm_res_keyvault_vault.resource_keys.des_key.id
+  tags                = local.tags
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.example_identity.id]
+  }
 }
 
 module "testvm" {
@@ -127,19 +183,32 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.1.0"
 
-  enable_telemetry                       = var.enable_telemetry
-  resource_group_name                    = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type                 = "Windows"
-  name                                   = module.naming.virtual_machine.name_unique
-  admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
-  virtualmachine_sku_size                = module.get_valid_sku_for_deployment_region.sku
-  zone                                   = random_integer.zone_index.result
+  admin_username                     = "azureuser"
+  enable_telemetry                   = var.enable_telemetry
+  encryption_at_host_enabled         = true
+  generate_admin_password_or_ssh_key = false
+  name                               = module.naming.virtual_machine.name_unique
+  resource_group_name                = azurerm_resource_group.this_rg.name
+  virtualmachine_os_type             = "Linux"
+  virtualmachine_sku_size            = module.get_valid_sku_for_deployment_region.sku
+  zone                               = random_integer.zone_index.result
 
-  source_image_reference = {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2022-datacenter-g2"
-    version   = "latest"
+  admin_ssh_keys = [
+    {
+      public_key = tls_private_key.this.public_key_openssh
+      username   = "azureuser" #the username must match the admin_username currently.
+    }
+  ]
+
+  data_disk_managed_disks = {
+    disk1 = {
+      name                   = "${module.naming.managed_disk.name_unique}-lun0"
+      storage_account_type   = "StandardSSD_LRS"
+      lun                    = 0
+      caching                = "ReadWrite"
+      disk_size_gb           = 32
+      disk_encryption_set_id = azurerm_disk_encryption_set.this.id
+    }
   }
 
   managed_identities = {
@@ -159,6 +228,12 @@ module "testvm" {
     }
   }
 
+  os_disk = {
+    caching                = "ReadWrite"
+    storage_account_type   = "StandardSSD_LRS"
+    disk_encryption_set_id = azurerm_disk_encryption_set.this.id
+  }
+
   role_assignments_system_managed_identity = {
     role_assignment_1 = {
       scope_resource_id          = module.avm_res_keyvault_vault.resource.id
@@ -175,9 +250,14 @@ module "testvm" {
     }
   }
 
-  tags = {
-    scenario = "windows_w_rbac_and_managed_identity"
+  source_image_reference = {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
+    version   = "latest"
   }
+
+  tags = local.tags
 
   depends_on = [
     module.avm_res_keyvault_vault

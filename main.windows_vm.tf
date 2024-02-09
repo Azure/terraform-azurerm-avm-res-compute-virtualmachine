@@ -2,7 +2,7 @@ resource "azurerm_windows_virtual_machine" "this" {
   count = (lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
 
   #required properties
-  admin_password        = local.admin_password
+  admin_password        = local.admin_password_windows
   admin_username        = var.admin_username
   location              = local.location
   name                  = var.name

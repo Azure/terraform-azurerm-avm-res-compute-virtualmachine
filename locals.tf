@@ -33,8 +33,16 @@ locals {
   admin_ssh_keys = concat(var.admin_ssh_keys, local.admin_ssh_key)
 
   #set the admin password to either a generated value or the entered value
-  admin_password = var.generate_admin_password_or_ssh_key ? random_password.admin_password.result : (var.admin_password != null ? var.admin_password : data.azurerm_key_vault_secret.admin_password[0].value)
+  admin_password_windows = (lower(var.virtualmachine_os_type) == "windows") ? (
+    var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : coalesce(var.admin_password, data.azurerm_key_vault_secret.admin_password[0].value) #use generated password, password variable, or vault reference (in order)
+  ) : null
 
+
+  admin_password_linux = (lower(var.virtualmachine_os_type) == "linux") ? (
+    var.disable_password_authentication == false ? (                                                                                                                          #if os is linux and password authentication is enabled
+      var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : coalesce(var.admin_password, data.azurerm_key_vault_secret.admin_password[0].value) #use generated password, password variable, or vault reference (in order)
+    ) : null
+  ) : null
 
   linux_virtual_machine_output_map = (lower(var.virtualmachine_os_type) == "linux") ? {
     id                   = azurerm_linux_virtual_machine.this[0].id
@@ -89,6 +97,7 @@ locals {
     ]
   ]) : "${ds.nic_key}-${ds.ds_key}" => ds }
 
+  #flatten the ip_configs for the nics
   nics_ip_configs = { for ip_config in flatten([
     for nk, nv in var.network_interfaces : [
       for ipck, ipcv in nv.ip_configurations : {

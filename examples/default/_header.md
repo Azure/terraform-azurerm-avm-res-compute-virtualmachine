@@ -1,4 +1,4 @@
-# Simple Ubuntu VM using an auto-generated SSH key for authentication
+# Default
 
 This example demonstrates the creation of a simple Ubuntu VM with the following features:
 

@@ -1,6 +1,22 @@
 ####Admin password related Resources
 #generate the initial admin password if requested
+
+#scenarios: 
+#Linux, password auth disabled, gen ssh - false
+#Linux, password auth enabled, gen ssh - true
+#Linux, Password auth disabled, no gen ssh - false
+#Linux, Password auth enabled, no gen ssh - false
+#Windows, password auth disabled (no action), gen password - true
+#Windows, password auth enabled (no action), gen password - true
+#Windows, Password auth disabled (no action), no gen password - false
+#Windows, password auth enabled (noaction), no gen password - false
 resource "random_password" "admin_password" {
+  count = (
+    (lower(var.virtualmachine_os_type) == "windows" && var.generate_admin_password_or_ssh_key == true) ? 1 : (
+      (lower(var.virtualmachine_os_type) == "linux") && var.generate_admin_password_or_ssh_key == true && var.disable_password_authentication == false ? 1 : 0
+    )
+  )
+
   length           = 22
   min_lower        = 2
   min_numeric      = 2
@@ -16,14 +32,14 @@ resource "azurerm_key_vault_secret" "admin_password" {
   count = (((var.generate_admin_password_or_ssh_key == true) && (lower(var.virtualmachine_os_type) == "windows")) ||
   ((var.generate_admin_password_or_ssh_key == true) && (lower(var.virtualmachine_os_type) == "linux") && (var.disable_password_authentication == false))) ? 1 : 0
   name         = coalesce(var.admin_password_key_vault_secret_name, "${var.name}-${var.admin_username}-password")
-  value        = random_password.admin_password.result
+  value        = random_password.admin_password[0].result
   key_vault_id = var.admin_credential_key_vault_resource_id
   tags         = var.tags
 }
 
 #if the password isn't being generated or input directly then get it from the key vault
 data "azurerm_key_vault_secret" "admin_password" {
-  count        = var.generate_admin_password_or_ssh_key == false && var.admin_password == null ? 1 : 0
+  count        = var.generate_admin_password_or_ssh_key == false && var.admin_password == null && var.disable_password_authentication == false ? 1 : 0
   name         = var.admin_password_key_vault_secret_name
   key_vault_id = var.admin_credential_key_vault_resource_id
 }

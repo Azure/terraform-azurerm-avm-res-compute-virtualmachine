@@ -30,7 +30,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 
   #optional properties
-  admin_password                                         = (var.disable_password_authentication ? null : local.admin_password)
+  admin_password                                         = (var.disable_password_authentication ? null : local.admin_password_linux)
   allow_extension_operations                             = var.allow_extension_operations
   availability_set_id                                    = var.availability_set_resource_id
   bypass_platform_safety_checks_on_user_schedule_enabled = var.bypass_platform_safety_checks_on_user_schedule_enabled
