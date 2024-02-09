@@ -173,7 +173,7 @@ variable "custom_data" {
 }
 
 variable "data_disk_managed_disks" {
-  type = map(object({    
+  type = map(object({
     caching                                   = string
     lun                                       = number
     name                                      = string
@@ -620,11 +620,11 @@ variable "network_interfaces" {
       is_primary_ipconfiguration                                  = optional(bool, true)
       private_ip_address                                          = optional(string)
       private_ip_address_allocation                               = optional(string, "Dynamic")
-      private_ip_address_version                                  = optional(string, "IPv4")      
+      private_ip_address_version                                  = optional(string, "IPv4")
       private_ip_subnet_resource_id                               = optional(string)
       public_ip_address_lock_name                                 = optional(string)
       public_ip_address_name                                      = optional(string)
-      public_ip_address_resource_id                               = optional(string)     
+      public_ip_address_resource_id                               = optional(string)
     }))
     accelerated_networking_enabled = optional(bool, false)
     dns_servers                    = optional(list(string))
@@ -632,7 +632,7 @@ variable "network_interfaces" {
     internal_dns_name_label        = optional(string)
     ip_forwarding_enabled          = optional(bool, false)
     lock_level                     = optional(string)
-    lock_name                      = optional(string)    
+    lock_name                      = optional(string)
     tags                           = optional(map(any))
 
     diagnostic_settings = optional(map(object({
@@ -655,8 +655,8 @@ variable "network_interfaces" {
       condition                              = optional(string, null)
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
-      description                            = optional(string, null)      
-      skip_service_principal_aad_check       = optional(bool, false)      
+      description                            = optional(string, null)
+      skip_service_principal_aad_check       = optional(bool, false)
     })), {})
   }))
   default = {
@@ -680,7 +680,7 @@ variable "network_interfaces" {
       internal_dns_name_label        = null
       tags                           = {}
   } }
-  nullable = false
+  nullable    = false
   description = <<NETWORK_INTERFACES
     map(object({
     name = (Required) The name of the Network Interface. Changing this forces a new resource to be created.
@@ -898,10 +898,10 @@ variable "public_ip_configuration_details" {
     idle_timeout_in_minutes = optional(number, 30)
     inherit_tags            = optional(bool, false)
     ip_version              = optional(string, "IPv4")
-    lock_level              = optional(string)    
-    sku                     = optional(string, "Standard")    
+    lock_level              = optional(string)
+    sku                     = optional(string, "Standard")
     sku_tier                = optional(string, "Regional")
-    tags                    = optional(map(any))    
+    tags                    = optional(map(any))
   })
   default = {
     allocation_method       = "Static"
@@ -938,7 +938,7 @@ variable "public_ip_configuration_details" {
     }
     ```
   PUBLIC_IP_CONFIGURATION_DETAILS
-  nullable = false
+  nullable    = false
 }
 
 variable "reboot_setting" {
@@ -958,8 +958,8 @@ variable "role_assignments" {
     delegated_managed_identity_resource_id = optional(string)
     }
   ))
-  default = {}
-  nullable = false
+  default     = {}
+  nullable    = false
   description = <<VIRTUAL_MACHINE_ROLE_ASSIGNMENTS
   A list of role definitions and scopes to be assigned as part of this resources implementation.  Two forms are supported. Assignments against this virtual machine resource scope and assignments to external resource scopes using the system managed identity.
   list(object({
@@ -1000,8 +1000,8 @@ variable "role_assignments_system_managed_identity" {
     delegated_managed_identity_resource_id = optional(string)
     }
   ))
-  default = {}
-  nullable = false
+  default     = {}
+  nullable    = false
   description = <<SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS
   A list of role definitions and scopes to be assigned as part of this resources implementation.  Two forms are supported. Assignments against this virtual machine resource scope and assignments to external resource scopes using the system managed identity.
   list(object({

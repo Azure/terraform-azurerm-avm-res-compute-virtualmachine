@@ -3,7 +3,7 @@ resource "azurerm_managed_disk" "this" {
 
   name                              = each.value.name
   location                          = local.location
-  resource_group_name               = try(each.value.resource_group_name, data.azurerm_resource_group.virtualmachine_deployment.name)
+  resource_group_name               = coalesce(each.value.resource_group_name, data.azurerm_resource_group.virtualmachine_deployment.name)
   storage_account_type              = each.value.storage_account_type
   create_option                     = each.value.create_option
   upload_size_bytes                 = each.value.upload_size_bytes

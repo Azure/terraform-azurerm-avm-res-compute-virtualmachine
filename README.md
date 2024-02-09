@@ -10,23 +10,25 @@ This is the virtual machine resource module for the Azure Verified Modules libra
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.6.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71.0)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 1.12)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.90)
 
-- <a name="requirement_tls"></a> [tls](#requirement\_tls) (>=4.0.0)
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
+
+- <a name="requirement_tls"></a> [tls](#requirement\_tls) (~> 4.0)
 
 ## Providers
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.71.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.90)
 
-- <a name="provider_random"></a> [random](#provider\_random) (>= 3.5.0)
+- <a name="provider_random"></a> [random](#provider\_random) (~> 3.6)
 
-- <a name="provider_tls"></a> [tls](#provider\_tls) (>=4.0.0)
+- <a name="provider_tls"></a> [tls](#provider\_tls) (~> 4.0)
 
 ## Resources
 
@@ -36,8 +38,8 @@ The following resources are used by this module:
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_linux_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine) (resource)
 - [azurerm_managed_disk.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/managed_disk) (resource)
-- [azurerm_management_lock.this-disk](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_management_lock.this-linux-virtualmachine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
+- [azurerm_management_lock.this_disk](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
+- [azurerm_management_lock.this_linux_virtualmachine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_management_lock.this_nic](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_management_lock.this_public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_management_lock.this_windows_virtualmachine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
@@ -258,43 +260,45 @@ Default: `null`
 
 Description:   This variable is used to define one or more data disks for creation and attachment to the virtual machine.   
     map(object({  
-    name                                      = (Required) - Specifies the name of the Managed Disk. Changing this forces a new resource to be created.  
-    storage\_account\_type                      = (Required) - The type of storage to use for the managed disk. Possible values are Standard\_LRS, StandardSSD\_ZRS, Premium\_LRS, PremiumV2\_LRS, Premium\_ZRS, StandardSSD\_LRS or UltraSSD\_LRS  
-    lun                                       = (Required) - The Logical Unit Number of the Data Disk, which needs to be unique within the Virtual Machine. Changing this forces a new resource to be created.  
     caching                                   = (Required) - Specifies the caching requirements for this Data Disk. Possible values include None, ReadOnly and ReadWrite  
-    create\_option                             = (Required) - The method to use when creating the managed disk. Changing this forces a new resource to be created. Possible values include: 1. Import - Import a VHD file in to the managed disk (VHD specified with source\_uri). 2.ImportSecure - Securely import a VHD file in to the managed disk (VHD specified with source\_uri). 3. Empty - Create an empty managed disk. 4. Copy - Copy an existing managed disk or snapshot (specified with source\_resource\_id). 5. FromImage - Copy a Platform Image (specified with image\_reference\_id) 6. Restore - Set by Azure Backup or Site Recovery on a restored disk (specified with source\_resource\_id). 7. Upload - Upload a VHD disk with the help of SAS URL (to be used with upload\_size\_bytes).  
-    disk\_attachment\_create\_option             = (Optional) - The disk attachment create Option of the Data Disk, such as Empty or Attach. Defaults to Attach. Changing this forces a new resource to be created.    
-    write\_accelerator\_enabled                 = (Optional) - Specifies if Write Accelerator is enabled on the disk. This can only be enabled on Premium\_LRS managed disks with no caching and M-Series VMs. Defaults to false.  
-    disk\_encryption\_set\_resource\_id           = (Optional) - The resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk.  
-    disk\_iops\_read\_write                      = (Optional) - The number of IOPS allowed for this disk; only settable for UltraSSD disks and PremiumV2 disks. One operation can transfer between 4k and 256k bytes.  
-    disk\_mbps\_read\_write                      = (Optional) - The bandwidth allowed for this disk; only settable for UltraSSD disks and PremiumV2 disks. MBps means millions of bytes per second.  
+    lun                                       = (Required) - The Logical Unit Number of the Data Disk, which needs to be unique within the Virtual Machine. Changing this forces a new resource to be created.  
+    name                                      = (Required) - Specifies the name of the Managed Disk. Changing this forces a new resource to be created.  
+    storage\_account\_type                      = (Required) - The type of storage to use for the managed disk. Possible values are Standard\_LRS, StandardSSD\_ZRS, Premium\_LRS, PremiumV2\_LRS, Premium\_ZRS, StandardSSD\_LRS or UltraSSD\_LRS    
+    create\_option                             = (Optional) - The method to use when creating the managed disk. Changing this forces a new resource to be created. Possible values include: 1. Import - Import a VHD file in to the managed disk (VHD specified with source\_uri). 2.ImportSecure - Securely import a VHD file in to the managed disk (VHD specified with source\_uri). 3. Empty - Create an empty managed disk. 4. Copy - Copy an existing managed disk or snapshot (specified with source\_resource\_id). 5. FromImage - Copy a Platform Image (specified with image\_reference\_id) 6. Restore - Set by Azure Backup or Site Recovery on a restored disk (specified with source\_resource\_id). 7. Upload - Upload a VHD disk with the help of SAS URL (to be used with upload\_size\_bytes).  
+    disk\_access\_resource\_id                   = (Optional) - The ID of the disk access resource for using private endpoints on disks. disk\_access\_resource\_id is only supported when network\_access\_policy is set to AllowPrivate.    
+    disk\_attachment\_create\_option             = (Optional) - The disk attachment create Option of the Data Disk, such as Empty or Attach. Defaults to Attach. Changing this forces a new resource to be created.   
+    disk\_encryption\_set\_resource\_id           = (Optional) - The resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk.   
     disk\_iops\_read\_only                       = (Optional) - The number of IOPS allowed across all VMs mounting the shared disk as read-only; only settable for UltraSSD disks and PremiumV2 disks with shared disk enabled. One operation can transfer between 4k and 256k bytes.  
+    disk\_iops\_read\_write                      = (Optional) - The number of IOPS allowed for this disk; only settable for UltraSSD disks and PremiumV2 disks. One operation can transfer between 4k and 256k bytes.  
     disk\_mbps\_read\_only                       = (Optional) - The bandwidth allowed across all VMs mounting the shared disk as read-only; only settable for UltraSSD disks and PremiumV2 disks with shared disk enabled. MBps means millions of bytes per second.  
-    upload\_size\_bytes                         = (Optional) - Specifies the size of the managed disk to create in bytes. Required when create\_option is Upload. The value must be equal to the source disk to be copied in bytes. Source disk size could be calculated with ls -l or wc -c. More information can be found at Copy a managed disk. Changing this forces a new resource to be created.  
-    disk\_size\_gb                              = (Optional, Required for a new managed disk) - Specifies the size of the managed disk to create in gigabytes. If create\_option is Copy or FromImage, then the value must be equal to or greater than the source's size. The size can only be increased.If No Downtime Resizing is not available, be aware that changing this value is disruptive if the disk is attached to a Virtual Machine. The VM will be shut down and de-allocated as required by Azure to action the change. Terraform will attempt to start the machine again after the update if it was in a running state when the apply was started. When upgrading disk\_size\_gb from value less than 4095 to a value greater than 4095, the disk will be detached from its associated Virtual Machine as required by Azure to action the change. Terraform will attempt to reattach the disk again after the update.  
+    disk\_mbps\_read\_write                      = (Optional) - The bandwidth allowed for this disk; only settable for UltraSSD disks and PremiumV2 disks. MBps means millions of bytes per second.  
+    disk\_size\_gb                              = (Optional) - (Required for a new managed disk) - Specifies the size of the managed disk to create in gigabytes. If create\_option is Copy or FromImage, then the value must be equal to or greater than the source's size. The size can only be increased.If No Downtime Resizing is not available, be aware that changing this value is disruptive if the disk is attached to a Virtual Machine. The VM will be shut down and de-allocated as required by Azure to action the change. Terraform will attempt to start the machine again after the update if it was in a running state when the apply was started. When upgrading disk\_size\_gb from value less than 4095 to a value greater than 4095, the disk will be detached from its associated Virtual Machine as required by Azure to action the change. Terraform will attempt to reattach the disk again after the update.  
+    gallery\_image\_reference\_resource\_id       = (Optional) - ID of a Gallery Image Version to copy when create\_option is FromImage. This field cannot be specified if image\_reference\_id is specified. Changing this forces a new resource to be created.  
     hyper\_v\_generation                        = (Optional) - The HyperV Generation of the Disk when the source of an Import or Copy operation targets a source that contains an operating system. Possible values are V1 and V2. For ImportSecure it must be set to V2. Changing this forces a new resource to be created.  
     image\_reference\_resource\_id               = (Optional) - ID of an existing platform/marketplace disk image to copy when create\_option is FromImage. This field cannot be specified if gallery\_image\_reference\_resource\_id is specified. Changing this forces a new resource to be created.  
-    gallery\_image\_reference\_resource\_id       = (Optional) - ID of a Gallery Image Version to copy when create\_option is FromImage. This field cannot be specified if image\_reference\_id is specified. Changing this forces a new resource to be created.  
+    inherit\_tags                              = (Optional) - Defaults to true.  Set this to false if only the tags defined on this resource should be applied.  
+    lock\_level                                = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.  
+    lock\_name                                 = (Optional) - The name for the lock on this disk  
     logical\_sector\_size                       = (Optional) - Logical Sector Size. Possible values are: 512 and 4096. Defaults to 4096. Changing this forces a new resource to be created. Setting logical sector size is supported only with UltraSSD\_LRS disks and PremiumV2\_LRS disks.  
+    max\_shares                                = (Optional) - The maximum number of VMs that can attach to the disk at the same time. Value greater than one indicates a disk that can be mounted on multiple VMs at the same time. Premium SSD maxShares limit: P15 and P20 disks: 2. P30,P40,P50 disks: 5. P60,P70,P80 disks: 10. For ultra disks the max\_shares minimum value is 1 and the maximum is 5.  
+    network\_access\_policy                     = (Optional) - Policy for accessing the disk via network. Allowed values are AllowAll, AllowPrivate, and DenyAll.  
+    on\_demand\_bursting\_enabled                = (Optional) - Specifies if On-Demand Bursting is enabled for the Managed Disk.  
     optimized\_frequent\_attach\_enabled         = (Optional) - Specifies whether this Managed Disk should be optimized for frequent disk attachments (where a disk is attached/detached more than 5 times in a day). Defaults to false. Setting optimized\_frequent\_attach\_enabled to true causes the disks to not align with the fault domain of the Virtual Machine, which can have operational implications.  
-    performance\_plus\_enabled                  = (Optional) - Specifies whether Performance Plus is enabled for this Managed Disk. Defaults to false. Changing this forces a new resource to be created. performance\_plus\_enabled can only be set to true when using a Managed Disk with an Ultra SSD.  
     os\_type                                   = (Optional) - Specify a value when the source of an Import, ImportSecure or Copy operation targets a source that contains an operating system. Valid values are Linux or Windows.  
+    performance\_plus\_enabled                  = (Optional) - Specifies whether Performance Plus is enabled for this Managed Disk. Defaults to false. Changing this forces a new resource to be created. performance\_plus\_enabled can only be set to true when using a Managed Disk with an Ultra SSD.  
+    public\_network\_access\_enabled             = (Optional) - Whether it is allowed to access the disk via public network. Defaults to true.  
+    resource\_group\_name                       = (Optional) - Specify a resource group name if the data disk should be created in a separate resource group from the virtual machine  
+    secure\_vm\_disk\_encryption\_set\_resource\_id = (Optional) - The ID of the Disk Encryption Set which should be used to Encrypt this OS Disk when the Virtual Machine is a Confidential VM. Conflicts with disk\_encryption\_set\_id. Changing this forces a new resource to be created. secure\_vm\_disk\_encryption\_set\_resource\_id can only be specified when security\_type is set to ConfidentialVM\_DiskEncryptedWithCustomerKey.  
+    security\_type                             = (Optional) - Security Type of the Managed Disk when it is used for a Confidential VM. Possible values are ConfidentialVM\_VMGuestStateOnlyEncryptedWithPlatformKey, ConfidentialVM\_DiskEncryptedWithPlatformKey and ConfidentialVM\_DiskEncryptedWithCustomerKey. Changing this forces a new resource to be created. When security\_type is set to ConfidentialVM\_DiskEncryptedWithCustomerKey the value of create\_option must be one of FromImage or ImportSecure. security\_type cannot be specified when trusted\_launch\_enabled is set to true. secure\_vm\_disk\_encryption\_set\_id must be specified when security\_type is set to ConfidentialVM\_DiskEncryptedWithCustomerKey.  
     source\_resource\_id                        = (Optional) - The ID of an existing Managed Disk or Snapshot to copy when create\_option is Copy or the recovery point to restore when create\_option is Restore. Changing this forces a new resource to be created.  
     source\_uri                                = (Optional) - URI to a valid VHD file to be used when create\_option is Import or ImportSecure. Changing this forces a new resource to be created.  
     storage\_account\_resource\_id               = (Optional) - The ID of the Storage Account where the source\_uri is located. Required when create\_option is set to Import or ImportSecure. Changing this forces a new resource to be created.  
-    tier                                      = (Optional) - The disk performance tier to use. Possible values are documented at https://docs.microsoft.com/azure/virtual-machines/disks-change-performance. This feature is currently supported only for premium SSDs.Changing this value is disruptive if the disk is attached to a Virtual Machine. The VM will be shut down and de-allocated as required by Azure to action the change. Terraform will attempt to start the machine again after the update if it was in a running state when the apply was started.  
-    max\_shares                                = (Optional) - The maximum number of VMs that can attach to the disk at the same time. Value greater than one indicates a disk that can be mounted on multiple VMs at the same time. Premium SSD maxShares limit: P15 and P20 disks: 2. P30,P40,P50 disks: 5. P60,P70,P80 disks: 10. For ultra disks the max\_shares minimum value is 1 and the maximum is 5.  
-    trusted\_launch\_enabled                    = (Optional) - Specifies if Trusted Launch is enabled for the Managed Disk. Changing this forces a new resource to be created. Trusted Launch can only be enabled when create\_option is FromImage or Import  
-    security\_type                             = (Optional) - Security Type of the Managed Disk when it is used for a Confidential VM. Possible values are ConfidentialVM\_VMGuestStateOnlyEncryptedWithPlatformKey, ConfidentialVM\_DiskEncryptedWithPlatformKey and ConfidentialVM\_DiskEncryptedWithCustomerKey. Changing this forces a new resource to be created. When security\_type is set to ConfidentialVM\_DiskEncryptedWithCustomerKey the value of create\_option must be one of FromImage or ImportSecure. security\_type cannot be specified when trusted\_launch\_enabled is set to true. secure\_vm\_disk\_encryption\_set\_id must be specified when security\_type is set to ConfidentialVM\_DiskEncryptedWithCustomerKey.  
-    secure\_vm\_disk\_encryption\_set\_resource\_id = (Optional) - The ID of the Disk Encryption Set which should be used to Encrypt this OS Disk when the Virtual Machine is a Confidential VM. Conflicts with disk\_encryption\_set\_id. Changing this forces a new resource to be created. secure\_vm\_disk\_encryption\_set\_resource\_id can only be specified when security\_type is set to ConfidentialVM\_DiskEncryptedWithCustomerKey.  
-    on\_demand\_bursting\_enabled                = (Optional) - Specifies if On-Demand Bursting is enabled for the Managed Disk.  
     tags                                      = (Optional) - A mapping of tags to assign to the resource.  
-    inherit\_tags                              = (Optional) - Defaults to true.  Set this to false if only the tags defined on this resource should be applied.  
-    network\_access\_policy                     = (Optional) - Policy for accessing the disk via network. Allowed values are AllowAll, AllowPrivate, and DenyAll.  
-    disk\_access\_resource\_id                   = (Optional) - The ID of the disk access resource for using private endpoints on disks. disk\_access\_resource\_id is only supported when network\_access\_policy is set to AllowPrivate.  
-    public\_network\_access\_enabled             = (Optional) - Whether it is allowed to access the disk via public network. Defaults to true.  
-    lock\_level                                = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.  
-    lock\_name                                 = (Optional) - The name for the lock on this disk  
+    tier                                      = (Optional) - The disk performance tier to use. Possible values are documented at https://docs.microsoft.com/azure/virtual-machines/disks-change-performance. This feature is currently supported only for premium SSDs.Changing this value is disruptive if the disk is attached to a Virtual Machine. The VM will be shut down and de-allocated as required by Azure to action the change. Terraform will attempt to start the machine again after the update if it was in a running state when the apply was started.  
+    trusted\_launch\_enabled                    = (Optional) - Specifies if Trusted Launch is enabled for the Managed Disk. Changing this forces a new resource to be created. Trusted Launch can only be enabled when create\_option is FromImage or Import  
+    upload\_size\_bytes                         = (Optional) - Specifies the size of the managed disk to create in bytes. Required when create\_option is Upload. The value must be equal to the source disk to be copied in bytes. Source disk size could be calculated with ls -l or wc -c. More information can be found at Copy a managed disk. Changing this forces a new resource to be created.  
+    write\_accelerator\_enabled                 = (Optional) - Specifies if Write Accelerator is enabled on the disk. This can only be enabled on Premium\_LRS managed disks with no caching and M-Series VMs. Defaults to false.    
+
     encryption\_settings = optional(list(object({  
       disk\_encryption\_key\_vault\_secret\_url  = (Required) - The URL to the Key Vault Secret used as the Disk Encryption Key. This can be found as id on the azurerm\_key\_vault\_secret resource.  
       disk\_encryption\_key\_vault\_resource\_id = (Required) - The ID of the source Key Vault. This can be found as id on the azurerm\_key\_vault resource.  
@@ -321,43 +325,45 @@ Type:
 
 ```hcl
 map(object({
+    caching                                   = string
+    lun                                       = number
     name                                      = string
     storage_account_type                      = string
-    lun                                       = number
-    caching                                   = string
     create_option                             = optional(string, "Empty")
+    disk_access_resource_id                   = optional(string)
     disk_attachment_create_option             = optional(string)
-    write_accelerator_enabled                 = optional(bool)
     disk_encryption_set_resource_id           = optional(string) #this is currently a preview feature in the provider
-    disk_iops_read_write                      = optional(number, null)
-    disk_mbps_read_write                      = optional(number, null)
     disk_iops_read_only                       = optional(number, null)
+    disk_iops_read_write                      = optional(number, null)
     disk_mbps_read_only                       = optional(number, null)
-    upload_size_bytes                         = optional(number, null)
+    disk_mbps_read_write                      = optional(number, null)
     disk_size_gb                              = optional(number, 128)
+    gallery_image_reference_resource_id       = optional(string)
     hyper_v_generation                        = optional(string)
     image_reference_resource_id               = optional(string)
-    gallery_image_reference_resource_id       = optional(string)
+    inherit_tags                              = optional(bool, true)
+    lock_level                                = optional(string)
+    lock_name                                 = optional(string)
     logical_sector_size                       = optional(number, null)
+    max_shares                                = optional(number)
+    network_access_policy                     = optional(string)
+    on_demand_bursting_enabled                = optional(bool)
     optimized_frequent_attach_enabled         = optional(bool, false)
-    performance_plus_enabled                  = optional(bool, false)
     os_type                                   = optional(string)
+    performance_plus_enabled                  = optional(bool, false)
+    public_network_access_enabled             = optional(bool)
+    resource_group_name                       = optional(string)
+    secure_vm_disk_encryption_set_resource_id = optional(string)
+    security_type                             = optional(string)
     source_resource_id                        = optional(string)
     source_uri                                = optional(string)
     storage_account_resource_id               = optional(string)
-    tier                                      = optional(string)
-    max_shares                                = optional(number)
-    trusted_launch_enabled                    = optional(bool)
-    security_type                             = optional(string)
-    secure_vm_disk_encryption_set_resource_id = optional(string)
-    on_demand_bursting_enabled                = optional(bool)
     tags                                      = optional(map(any))
-    inherit_tags                              = optional(bool, true)
-    network_access_policy                     = optional(string)
-    disk_access_resource_id                   = optional(string)
-    public_network_access_enabled             = optional(bool)
-    lock_level                                = optional(string)
-    lock_name                                 = optional(string)
+    tier                                      = optional(string)
+    trusted_launch_enabled                    = optional(bool)
+    upload_size_bytes                         = optional(number, null)
+    write_accelerator_enabled                 = optional(bool)
+
     encryption_settings = optional(list(object({
       disk_encryption_key_vault_secret_url  = optional(string)
       disk_encryption_key_vault_resource_id = optional(string)
@@ -374,7 +380,6 @@ map(object({
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
     })), {})
-
   }))
 ```
 
@@ -813,36 +818,25 @@ map(object({
     name = string
     ip_configurations = map(object({
       name                                                        = string
-      private_ip_address                                          = optional(string)
-      private_ip_address_version                                  = optional(string, "IPv4")
-      private_ip_address_allocation                               = optional(string, "Dynamic")
-      private_ip_subnet_resource_id                               = optional(string)
-      public_ip_address_resource_id                               = optional(string)
-      is_primary_ipconfiguration                                  = optional(bool, true)
-      gateway_load_balancer_frontend_ip_configuration_resource_id = optional(string)
       create_public_ip_address                                    = optional(bool, false)
-      public_ip_address_name                                      = optional(string)
+      gateway_load_balancer_frontend_ip_configuration_resource_id = optional(string)
+      is_primary_ipconfiguration                                  = optional(bool, true)
+      private_ip_address                                          = optional(string)
+      private_ip_address_allocation                               = optional(string, "Dynamic")
+      private_ip_address_version                                  = optional(string, "IPv4")
+      private_ip_subnet_resource_id                               = optional(string)
       public_ip_address_lock_name                                 = optional(string)
+      public_ip_address_name                                      = optional(string)
+      public_ip_address_resource_id                               = optional(string)
     }))
-    dns_servers                    = optional(list(string))
     accelerated_networking_enabled = optional(bool, false)
-    ip_forwarding_enabled          = optional(bool, false)
-    internal_dns_name_label        = optional(string)
-    tags                           = optional(map(any))
+    dns_servers                    = optional(list(string))
     inherit_tags                   = optional(bool, false)
+    internal_dns_name_label        = optional(string)
+    ip_forwarding_enabled          = optional(bool, false)
     lock_level                     = optional(string)
     lock_name                      = optional(string)
-
-    role_assignments = optional(map(object({
-      role_definition_id_or_name             = string
-      principal_id                           = string
-      description                            = optional(string, null)
-      skip_service_principal_aad_check       = optional(bool, false)
-      condition                              = optional(string, null)
-      condition_version                      = optional(string, null)
-      delegated_managed_identity_resource_id = optional(string, null)
-      assign_to_child_public_ip_addresses    = optional(bool, true)
-    })), {})
+    tags                           = optional(map(any))
 
     diagnostic_settings = optional(map(object({
       name                                     = optional(string, null)
@@ -857,6 +851,16 @@ map(object({
       marketplace_partner_resource_id          = optional(string, null)
     })), {})
 
+    role_assignments = optional(map(object({
+      principal_id                           = string
+      role_definition_id_or_name             = string
+      assign_to_child_public_ip_addresses    = optional(bool, true)
+      condition                              = optional(string, null)
+      condition_version                      = optional(string, null)
+      delegated_managed_identity_resource_id = optional(string, null)
+      description                            = optional(string, null)
+      skip_service_principal_aad_check       = optional(bool, false)
+    })), {})
   }))
 ```
 
@@ -1038,12 +1042,12 @@ Description:     allocation\_method       = (Required) - Defines the allocation 
     ddos\_protection\_plan\_id = (Optional) - The ID of DDoS protection plan associated with the public IP. ddos\_protection\_plan\_id can only be set when ddos\_protection\_mode is Enabled  
     domain\_name\_label       = (Optional) - Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system.  
     idle\_timeout\_in\_minutes = (Optional) - Specifies the timeout for the TCP idle connection. The value can be set between 4 and 30 minutes.  
+    inherit\_tags            = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. - Future functionality leaving in.  
     ip\_version              = (Optional) - The IP Version to use, IPv6 or IPv4. Changing this forces a new resource to be created. Only static IP address allocation is supported for IPv6.  
+    lock\_level              = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.  
     sku                     = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Standard to support zones by default. Changing this forces a new resource to be created. When sku\_tier is set to Global, sku must be set to Standard.  
     sku\_tier                = (Optional) - The SKU tier of the Public IP. Accepted values are Global and Regional. Defaults to Regional  
-    tags                    = (Optional) - A mapping of tags to assign to the resource.  
-    inherit\_tags            = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. - Future functionality leaving in.  
-    lock\_level              = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.  
+    tags                    = (Optional) - A mapping of tags to assign to the resource.    
 
     Example Inputs:
 
@@ -1069,12 +1073,12 @@ object({
     ddos_protection_plan_id = optional(string)
     domain_name_label       = optional(string)
     idle_timeout_in_minutes = optional(number, 30)
-    ip_version              = optional(string, "IPv4")
-    sku_tier                = optional(string, "Regional")
-    sku                     = optional(string, "Standard")
     inherit_tags            = optional(bool, false)
-    tags                    = optional(map(any))
+    ip_version              = optional(string, "IPv4")
     lock_level              = optional(string)
+    sku                     = optional(string, "Standard")
+    sku_tier                = optional(string, "Regional")
+    tags                    = optional(map(any))
   })
 ```
 
@@ -1300,7 +1304,7 @@ Default: `{}`
 ### <a name="input_termination_notification"></a> [termination\_notification](#input\_termination\_notification)
 
 Description:   object({  
-    enabled = (Required) - Should the termination notification be enabled on this Virtual Machine?  
+    enabled = (Optional) - Should the termination notification be enabled on this Virtual Machine? Defaults to false  
     timeout = (Optional) - Length of time (in minutes, between 5 and 15) a notification to be sent to the VM on the instance metadata server till the VM gets deleted. The time duration should be specified in ISO 8601 format. Defaults to PT5M.
   })
 
@@ -1318,7 +1322,7 @@ Type:
 
 ```hcl
 object({
-    enabled = bool
+    enabled = optional(bool, false)
     timeout = optional(string, "PT5M")
   })
 ```
@@ -1440,6 +1444,10 @@ Description: Returns a list containing all of the provided or generated ssh keys
 
 Description: The full ARM object map associated with any deployed data disk(s). Exporting this in the event that a disk property not exposed as part of the azurerm vm export is required.
 
+### <a name="output_name"></a> [name](#output\_name)
+
+Description: The name used for the virtual machines name.
+
 ### <a name="output_network_interfaces"></a> [network\_interfaces](#output\_network\_interfaces)
 
 Description: The full ARM object map associated with the deployed network interface(s). Exporting this in the event that a nic property not exposed as part of the azurerm vm export is required.
@@ -1447,6 +1455,14 @@ Description: The full ARM object map associated with the deployed network interf
 ### <a name="output_public_ips"></a> [public\_ips](#output\_public\_ips)
 
 Description: The full ARM object map associated with any deployed public ip(s). Exporting this in the event that a public ip property not exposed as part of the azurerm vm export is required.
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: The Azure resource id for the deployed virtual machine
+
+### <a name="output_system_assigned_mi_principal_id"></a> [system\_assigned\_mi\_principal\_id](#output\_system\_assigned\_mi\_principal\_id)
+
+Description: n/a
 
 ### <a name="output_virtual_machine"></a> [virtual\_machine](#output\_virtual\_machine)
 

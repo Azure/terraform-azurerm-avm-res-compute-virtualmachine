@@ -1,3 +1,45 @@
+output "admin_password" {
+  value       = (lower(var.virtualmachine_os_type) == "windows") ? local.admin_password_windows : local.admin_password_linux
+  sensitive   = true
+  description = "Returns the admin password if installation is configured to use the password.  Otherwise returns null"
+}
+
+output "admin_ssh_keys" {
+  value       = local.admin_ssh_keys
+  sensitive   = true
+  description = "Returns a list containing all of the provided or generated ssh keys. This is a single key if the generation option is selected and no additional keys are provided."
+}
+
+output "data_disks" {
+  value       = azurerm_managed_disk.this
+  description = "The full ARM object map associated with any deployed data disk(s). Exporting this in the event that a disk property not exposed as part of the azurerm vm export is required."
+}
+
+output "name" {
+  value       = var.name
+  description = "The name used for the virtual machines name."
+}
+
+output "resource_id" {
+  value       = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azurerm_linux_virtual_machine.this[0].id
+  description = "The Azure resource id for the deployed virtual machine"
+}
+
+output "system_assigned_mi_principal_id" {
+  value = var.managed_identities.system_assigned == true ? ((lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : azurerm_linux_virtual_machine.this[0].identity[0].principal_id) : ""
+}
+
+output "network_interfaces" {
+  value       = azurerm_network_interface.virtualmachine_network_interfaces
+  description = "The full ARM object map associated with the deployed network interface(s). Exporting this in the event that a nic property not exposed as part of the azurerm vm export is required."
+}
+
+output "public_ips" {
+  value       = azurerm_public_ip.virtualmachine_public_ips
+  description = "The full ARM object map associated with any deployed public ip(s). Exporting this in the event that a public ip property not exposed as part of the azurerm vm export is required."
+}
+
+
 output "virtual_machine" {
   value       = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0] : azurerm_linux_virtual_machine.this[0]
   description = "The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values"
@@ -21,30 +63,11 @@ output "virtual_machine_azurerm" {
     VIRTUAL_MACHINE_AZURERM
 }
 
-output "network_interfaces" {
-  value       = azurerm_network_interface.virtualmachine_network_interfaces
-  description = "The full ARM object map associated with the deployed network interface(s). Exporting this in the event that a nic property not exposed as part of the azurerm vm export is required."
-}
 
-output "public_ips" {
-  value       = azurerm_public_ip.virtualmachine_public_ips
-  description = "The full ARM object map associated with any deployed public ip(s). Exporting this in the event that a public ip property not exposed as part of the azurerm vm export is required."
-}
 
-output "data_disks" {
-  value       = azurerm_managed_disk.this
-  description = "The full ARM object map associated with any deployed data disk(s). Exporting this in the event that a disk property not exposed as part of the azurerm vm export is required."
-}
 
-output "admin_password" {
-  value       = local.admin_password
-  sensitive   = true
-  description = "Returns the admin password if installation is configured to use the password.  Otherwise returns null"
-}
 
-output "admin_ssh_keys" {
-  value       = local.admin_ssh_keys
-  sensitive   = true
-  description = "Returns a list containing all of the provided or generated ssh keys. This is a single key if the generation option is selected and no additional keys are provided."
-}
+
+
+
 

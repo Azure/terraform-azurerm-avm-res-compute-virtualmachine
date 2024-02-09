@@ -1,5 +1,5 @@
 <!-- BEGIN_TF_DOCS -->
-# Simple Ubuntu VM using an auto-generated SSH key for authentication
+# Default
 
 This example demonstrates the creation of a simple Ubuntu VM with the following features:
 
@@ -16,11 +16,6 @@ It includes the following resources in addition to the VM resource:
     - An optional subnet, public ip, and bastion which can be enabled by uncommenting the bastion resources when running the example.
 
 ```hcl
-# tflint-ignore: terraform_module_provider_declaration, terraform_output_separate, terraform_variable_separate
-provider "azurerm" {
-  features {}
-}
-
 # tflint-ignore: terraform_output_separate, terraform_standard_module_structure
 variable "enable_telemetry" {
   type        = bool
@@ -45,6 +40,9 @@ module "regions" {
 
 #seed the test regions 
 locals {
+  tags = {
+    scenario = "Ubuntu_w_ssh"
+  }
   test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
 }
 
@@ -59,49 +57,10 @@ resource "random_integer" "zone_index" {
   max = length(module.regions.regions_by_name[local.test_regions[random_integer.region_index.result]].zones)
 }
 
-### this segment of code gets valid vm skus for deployment in the current subscription
-data "azurerm_subscription" "current" {
-}
+module "get_valid_sku_for_deployment_region" {
+  source = "../../modules/sku_selector"
 
-#get the full sku list (azapi doesn't currently have a good way to filter the api call)
-data "azapi_resource_list" "example" {
-  type                   = "Microsoft.Compute/skus@2021-07-01"
-  parent_id              = data.azurerm_subscription.current.id
-  response_export_values = ["*"]
-}
-
-locals {
-  #filter the location output for the current region, virtual machine resources, and filter out entries that don't include the capabilities list
-  location_valid_vms = [
-    for location in jsondecode(data.azapi_resource_list.example.output).value : location
-    if contains(location.locations, local.test_regions[random_integer.region_index.result]) && #if the sku location field matches the selected location
-    length(location.restrictions) < 1 &&                                                       #and there are no restrictions on deploying the sku (i.e. allowed for deployment)
-    location.resourceType == "virtualMachines" &&                                              #and the sku is a virtual machine
-    !strcontains(location.name, "C") &&                                                        #no confidential vm skus
-    !strcontains(location.name, "B") &&                                                        #no B skus
-    length(try(location.capabilities, [])) > 1                                                 #avoid skus where the capabilities list isn't defined
-  ]
-
-  #filter the region virtual machines by desired capabilities (v1/v2 support, 2 cpu, and encryption at host)
-  deploy_skus = [
-    for sku in local.location_valid_vms : sku
-    if length([
-      for capability in sku.capabilities : capability
-      if(capability.name == "HyperVGenerations" && capability.value == "V1,V2") ||
-      (capability.name == "vCPUs" && capability.value == "2") ||
-      (capability.name == "EncryptionAtHostSupported" && capability.value == "True") ||
-      (capability.name == "CpuArchitectureType" && capability.value == "x64")
-    ]) == 4
-  ]
-
-  tags = {
-    scenario = "Ubuntu_w_ssh"
-  }
-}
-
-resource "random_integer" "deploy_sku" {
-  min = 0
-  max = length(local.deploy_skus) - 1
+  deployment_region = local.test_regions[random_integer.region_index.result]
 }
 
 # This is required for resource modules
@@ -192,8 +151,6 @@ module "avm_res_keyvault_vault" {
   tags = local.tags
 }
 
-
-#create the virtual machine
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
@@ -204,7 +161,7 @@ module "testvm" {
   virtualmachine_os_type                 = "Linux"
   name                                   = module.naming.virtual_machine.name_unique
   admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
-  virtualmachine_sku_size                = local.deploy_skus[random_integer.deploy_sku.result].name
+  virtualmachine_sku_size                = module.get_valid_sku_for_deployment_region.sku
   zone                                   = random_integer.zone_index.result
 
   source_image_reference = {
@@ -229,7 +186,7 @@ module "testvm" {
   tags = local.tags
 
   depends_on = [
-    module.avm-res-keyvault-vault
+    module.avm_res_keyvault_vault
   ]
 }
 
@@ -239,6 +196,10 @@ output "vm" {
   description = "The virtual machine object."
   sensitive   = true
 }
+
+output "sku" {
+  value = module.get_valid_sku_for_deployment_region.sku
+}
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -246,23 +207,21 @@ output "vm" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.6.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (>=1.9.0)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 1.12)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 4.0.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.90)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
 ## Providers
 
 The following providers are used by this module:
 
-- <a name="provider_azapi"></a> [azapi](#provider\_azapi) (>=1.9.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.90)
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.7.0, < 4.0.0)
-
-- <a name="provider_random"></a> [random](#provider\_random) (>= 3.5.0, < 4.0.0)
+- <a name="provider_random"></a> [random](#provider\_random) (~> 3.6)
 
 ## Resources
 
@@ -272,12 +231,9 @@ The following resources are used by this module:
 - [azurerm_subnet.this_subnet_1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.this_subnet_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.this_vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [random_integer.deploy_sku](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
-- [azapi_resource_list.example](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_list) (data source)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
-- [azurerm_subscription.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subscription) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -302,6 +258,10 @@ Default: `true`
 
 The following outputs are exported:
 
+### <a name="output_sku"></a> [sku](#output\_sku)
+
+Description: n/a
+
 ### <a name="output_vm"></a> [vm](#output\_vm)
 
 Description: The virtual machine object.
@@ -315,6 +275,12 @@ The following Modules are called:
 Source: Azure/avm-res-keyvault-vault/azurerm
 
 Version: >= 0.5.0
+
+### <a name="module_get_valid_sku_for_deployment_region"></a> [get\_valid\_sku\_for\_deployment\_region](#module\_get\_valid\_sku\_for\_deployment\_region)
+
+Source: ../../modules/sku_selector
+
+Version:
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
