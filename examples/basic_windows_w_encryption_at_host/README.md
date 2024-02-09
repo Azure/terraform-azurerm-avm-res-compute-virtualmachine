@@ -20,17 +20,6 @@ It includes the following resources in addition to the VM resource:
     - An optional subnet, public ip, and bastion which can be enabled by uncommenting the bastion resources when running the example.
 
 ```hcl
-# tflint-ignore: terraform_variable_separate, terraform_standard_module_structure
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetryinfo.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
-}
-
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = ">= 0.3.0"
@@ -258,14 +247,6 @@ module "testvm" {
   depends_on = [module.avm_res_keyvault_vault]
 
 }
-
-# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
-output "vm" {
-  value       = module.testvm.virtual_machine
-  description = "The virtual machine object."
-  sensitive   = true
-}
-
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -322,11 +303,7 @@ Default: `true`
 
 ## Outputs
 
-The following outputs are exported:
-
-### <a name="output_vm"></a> [vm](#output\_vm)
-
-Description: The virtual machine object.
+No outputs.
 
 ## Modules
 

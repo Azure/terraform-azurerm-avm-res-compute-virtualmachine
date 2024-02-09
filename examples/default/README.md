@@ -16,18 +16,6 @@ It includes the following resources in addition to the VM resource:
     - An optional subnet, public ip, and bastion which can be enabled by uncommenting the bastion resources when running the example.
 
 ```hcl
-# tflint-ignore: terraform_variable_separate, terraform_standard_module_structure
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetryinfo.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
-}
-
-# This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = ">= 0.3.0"
@@ -38,7 +26,6 @@ module "regions" {
   version = ">= 0.4.0"
 }
 
-#seed the test regions 
 locals {
   tags = {
     scenario = "Ubuntu_w_ssh"
@@ -46,7 +33,6 @@ locals {
   test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
 }
 
-# This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
   min = 0
   max = length(local.test_regions) - 1
@@ -63,14 +49,12 @@ module "get_valid_sku_for_deployment_region" {
   deployment_region = local.test_regions[random_integer.region_index.result]
 }
 
-# This is required for resource modules
 resource "azurerm_resource_group" "this_rg" {
   name     = module.naming.resource_group.name_unique
   location = local.test_regions[random_integer.region_index.result]
   tags     = local.tags
 }
 
-# Create a virtual network and subnets for the deployment
 resource "azurerm_virtual_network" "this_vnet" {
   name                = module.naming.virtual_network.name_unique
   address_space       = ["10.0.0.0/16"]
@@ -125,7 +109,6 @@ resource "azurerm_bastion_host" "bastion" {
 
 data "azurerm_client_config" "current" {}
 
-#create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source              = "Azure/avm-res-keyvault-vault/azurerm"
   version             = ">= 0.5.0"
@@ -189,13 +172,6 @@ module "testvm" {
     module.avm_res_keyvault_vault
   ]
 }
-
-# tflint-ignore: terraform_output_separate, terraform_standard_module_structure
-output "vm" {
-  value       = module.testvm.virtual_machine
-  description = "The virtual machine object."
-  sensitive   = true
-}
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -250,11 +226,7 @@ Default: `true`
 
 ## Outputs
 
-The following outputs are exported:
-
-### <a name="output_vm"></a> [vm](#output\_vm)
-
-Description: The virtual machine object.
+No outputs.
 
 ## Modules
 
