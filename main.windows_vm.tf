@@ -9,27 +9,6 @@ resource "azurerm_windows_virtual_machine" "this" {
   network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
   resource_group_name   = data.azurerm_resource_group.virtualmachine_deployment.name
   size                  = var.virtualmachine_sku_size
-
-  os_disk {
-    caching                          = var.os_disk.caching
-    storage_account_type             = var.os_disk.storage_account_type
-    disk_encryption_set_id           = var.os_disk.disk_encryption_set_id
-    disk_size_gb                     = var.os_disk.disk_size_gb
-    name                             = var.os_disk.name
-    secure_vm_disk_encryption_set_id = var.os_disk.secure_vm_disk_encryption_set_id
-    security_encryption_type         = var.os_disk.security_encryption_type
-    write_accelerator_enabled        = var.os_disk.write_accelerator_enabled
-
-    dynamic "diff_disk_settings" {
-      for_each = var.os_disk.diff_disk_settings == null ? [] : ["diff_disk_settings"]
-
-      content {
-        option    = var.os_disk.diff_disk_settings.option
-        placement = var.os_disk.diff_disk_settings.placement
-      }
-    }
-  }
-
   #optional properties
   allow_extension_operations                             = var.allow_extension_operations
   availability_set_id                                    = var.availability_set_resource_id
@@ -37,8 +16,8 @@ resource "azurerm_windows_virtual_machine" "this" {
   capacity_reservation_group_id                          = var.capacity_reservation_group_resource_id
   computer_name                                          = coalesce(var.computer_name, var.name)
   custom_data                                            = var.custom_data
-  dedicated_host_id                                      = var.dedicated_host_resource_id
   dedicated_host_group_id                                = var.dedicated_host_group_resource_id
+  dedicated_host_id                                      = var.dedicated_host_resource_id
   edge_zone                                              = var.edge_zone
   enable_automatic_updates                               = var.enable_automatic_updates
   encryption_at_host_enabled                             = var.encryption_at_host_enabled
@@ -63,6 +42,25 @@ resource "azurerm_windows_virtual_machine" "this" {
   vtpm_enabled                                           = var.vtpm_enabled
   zone                                                   = var.zone
 
+  os_disk {
+    caching                          = var.os_disk.caching
+    storage_account_type             = var.os_disk.storage_account_type
+    disk_encryption_set_id           = var.os_disk.disk_encryption_set_id
+    disk_size_gb                     = var.os_disk.disk_size_gb
+    name                             = var.os_disk.name
+    secure_vm_disk_encryption_set_id = var.os_disk.secure_vm_disk_encryption_set_id
+    security_encryption_type         = var.os_disk.security_encryption_type
+    write_accelerator_enabled        = var.os_disk.write_accelerator_enabled
+
+    dynamic "diff_disk_settings" {
+      for_each = var.os_disk.diff_disk_settings == null ? [] : ["diff_disk_settings"]
+
+      content {
+        option    = var.os_disk.diff_disk_settings.option
+        placement = var.os_disk.diff_disk_settings.placement
+      }
+    }
+  }
   dynamic "additional_capabilities" {
     for_each = var.vm_additional_capabilities == null ? [] : ["additional_capabilities"]
 
@@ -70,7 +68,6 @@ resource "azurerm_windows_virtual_machine" "this" {
       ultra_ssd_enabled = var.vm_additional_capabilities.ultra_ssd_enabled
     }
   }
-
   dynamic "additional_unattend_content" {
     for_each = {
       for content in var.additional_unattend_contents : sha256(content) => content
@@ -81,7 +78,6 @@ resource "azurerm_windows_virtual_machine" "this" {
       setting = additional_unattend_content.value.setting
     }
   }
-
   dynamic "boot_diagnostics" {
     for_each = var.boot_diagnostics ? ["boot_diagnostics"] : []
 
@@ -89,7 +85,6 @@ resource "azurerm_windows_virtual_machine" "this" {
       storage_account_uri = var.boot_diagnostics_storage_account_uri
     }
   }
-
   dynamic "gallery_application" {
     for_each = { for app in var.gallery_applications : app.version_id => app }
 
@@ -100,7 +95,6 @@ resource "azurerm_windows_virtual_machine" "this" {
       tag                    = gallery_application.value.tag
     }
   }
-
   dynamic "identity" {
     for_each = local.managed_identity_type == null ? [] : ["identity"]
     content {
@@ -108,7 +102,6 @@ resource "azurerm_windows_virtual_machine" "this" {
       identity_ids = var.managed_identities.user_assigned_resource_ids
     }
   }
-
   dynamic "plan" {
     for_each = var.plan == null ? [] : ["plan"]
 
@@ -118,7 +111,6 @@ resource "azurerm_windows_virtual_machine" "this" {
       publisher = var.plan.publisher
     }
   }
-
   dynamic "secret" {
     for_each = toset(var.secrets)
 
@@ -129,24 +121,22 @@ resource "azurerm_windows_virtual_machine" "this" {
         for_each = secret.value.certificate
 
         content {
-          url   = certificate.value.url
           store = certificate.value.store
+          url   = certificate.value.url
         }
       }
     }
   }
-
   dynamic "source_image_reference" {
     for_each = var.source_image_resource_id == null ? ["source_image_reference"] : []
 
     content {
-      publisher = local.source_image_reference.publisher
       offer     = local.source_image_reference.offer
+      publisher = local.source_image_reference.publisher
       sku       = local.source_image_reference.sku
       version   = local.source_image_reference.version
     }
   }
-
   dynamic "termination_notification" {
     for_each = var.termination_notification == null ? [] : [
       "termination_notification"
@@ -157,7 +147,6 @@ resource "azurerm_windows_virtual_machine" "this" {
       timeout = var.termination_notification.timeout
     }
   }
-
   dynamic "winrm_listener" {
     for_each = { for listener in var.winrm_listeners : sha256(listener) => listener }
 
@@ -166,14 +155,14 @@ resource "azurerm_windows_virtual_machine" "this" {
       certificate_url = winrm_listener.value.certificate_url
     }
   }
-
 }
 
 resource "azurerm_management_lock" "this_windows_virtualmachine" {
-  count      = var.lock.kind != "None" && (lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
+  count = var.lock.kind != "None" && (lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
+
+  lock_level = var.lock.kind
   name       = coalesce(var.lock.name, "lock-${var.name}")
   scope      = azurerm_windows_virtual_machine.this[0].id
-  lock_level = var.lock.kind
 
   depends_on = [
     azurerm_managed_disk.this,

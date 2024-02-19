@@ -22,41 +22,41 @@ module "get_valid_sku_for_deployment_region" {
 }
 
 resource "random_integer" "region_index" {
-  min = 0
   max = length(local.test_regions) - 1
+  min = 0
 }
 
 resource "random_integer" "zone_index" {
-  min = 1
   max = length(module.regions.regions_by_name[local.test_regions[random_integer.region_index.result]].zones)
+  min = 1
 }
 
 resource "azurerm_resource_group" "this_rg" {
-  name     = module.naming.resource_group.name_unique
   location = local.test_regions[random_integer.region_index.result]
+  name     = module.naming.resource_group.name_unique
   tags     = local.tags
 }
 
 resource "azurerm_virtual_network" "this_vnet" {
-  name                = module.naming.virtual_network.name_unique
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
   tags                = local.tags
 }
 
 resource "azurerm_subnet" "this_subnet_1" {
+  address_prefixes     = ["10.0.1.0/24"]
   name                 = "${module.naming.subnet.name_unique}-1"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
 }
 
 resource "azurerm_subnet" "this_subnet_2" {
+  address_prefixes     = ["10.0.2.0/24"]
   name                 = "${module.naming.subnet.name_unique}-2"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
-  address_prefixes     = ["10.0.2.0/24"]
 }
 
 
@@ -125,11 +125,11 @@ module "avm_res_keyvault_vault" {
 }
 
 resource "azurerm_log_analytics_workspace" "this_workspace" {
-  name                = module.naming.log_analytics_workspace.name_unique
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.log_analytics_workspace.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
-  sku                 = "PerGB2018"
   retention_in_days   = 30
+  sku                 = "PerGB2018"
   tags                = local.tags
 }
 
@@ -208,23 +208,23 @@ module "testvm" {
 }
 
 resource "azurerm_monitor_data_collection_rule" "test" {
+  location            = azurerm_resource_group.this_rg.location
   name                = "${module.testvm.virtual_machine.name}-dcr"
   resource_group_name = azurerm_resource_group.this_rg.name
-  location            = azurerm_resource_group.this_rg.location
   tags                = local.tags
-  data_sources {
-    windows_event_log {
-      streams = ["Microsoft-Event"]
-      name    = "eventLogsDataSource"
-      x_path_queries = ["Application!*[System[(Level=1 or Level=2 or Level=3)]]",
-        "Security!*[System[(band(Keywords,4503599627370496))]]",
-      "System!*[System[(Level=1 or Level=2 or Level=3)]]"]
-    }
 
+  data_flow {
+    destinations = [azurerm_log_analytics_workspace.this_workspace.name]
+    streams      = ["Microsoft-Event", "Microsoft-Perf"]
+  }
+  destinations {
+    log_analytics {
+      name                  = azurerm_log_analytics_workspace.this_workspace.name
+      workspace_resource_id = azurerm_log_analytics_workspace.this_workspace.id
+    }
+  }
+  data_sources {
     performance_counter {
-      name                          = "exampleCounters"
-      sampling_frequency_in_seconds = 60
-      streams                       = ["Microsoft-Perf"]
       counter_specifiers = [
         "\\Processor Information(_Total)\\% Processor Time",
         "\\Processor Information(_Total)\\% Privileged Time",
@@ -324,26 +324,23 @@ resource "azurerm_monitor_data_collection_rule" "test" {
         "System(*)\\CPUs",
         "\\PhysicalDisk(_Total)\\Avg. Disk Queue Length",
       ]
+      name                          = "exampleCounters"
+      sampling_frequency_in_seconds = 60
+      streams                       = ["Microsoft-Perf"]
     }
-  }
-
-  destinations {
-    log_analytics {
-      workspace_resource_id = azurerm_log_analytics_workspace.this_workspace.id
-      name                  = azurerm_log_analytics_workspace.this_workspace.name
+    windows_event_log {
+      name    = "eventLogsDataSource"
+      streams = ["Microsoft-Event"]
+      x_path_queries = ["Application!*[System[(Level=1 or Level=2 or Level=3)]]",
+        "Security!*[System[(band(Keywords,4503599627370496))]]",
+      "System!*[System[(Level=1 or Level=2 or Level=3)]]"]
     }
-  }
-
-  data_flow {
-    streams      = ["Microsoft-Event", "Microsoft-Perf"]
-    destinations = [azurerm_log_analytics_workspace.this_workspace.name]
   }
 }
 
 resource "azurerm_monitor_data_collection_rule_association" "this_rule_association" {
-
-  name                    = "${azurerm_monitor_data_collection_rule.test.name}-association"
   target_resource_id      = module.testvm.virtual_machine.id
   data_collection_rule_id = azurerm_monitor_data_collection_rule.test.id
   description             = "test data collection rule association"
+  name                    = "${azurerm_monitor_data_collection_rule.test.name}-association"
 }

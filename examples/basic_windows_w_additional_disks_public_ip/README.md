@@ -35,13 +35,13 @@ locals {
 }
 
 resource "random_integer" "region_index" {
-  min = 0
   max = length(local.test_regions) - 1
+  min = 0
 }
 
 resource "random_integer" "zone_index" {
-  min = 1
   max = length(module.regions.regions_by_name[local.test_regions[random_integer.region_index.result]].zones)
+  min = 1
 }
 
 module "get_valid_sku_for_deployment_region" {
@@ -51,31 +51,31 @@ module "get_valid_sku_for_deployment_region" {
 }
 
 resource "azurerm_resource_group" "this_rg" {
-  name     = module.naming.resource_group.name_unique
   location = local.test_regions[random_integer.region_index.result]
+  name     = module.naming.resource_group.name_unique
   tags     = local.tags
 }
 
 resource "azurerm_virtual_network" "this_vnet" {
-  name                = module.naming.virtual_network.name_unique
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
   tags                = local.tags
 }
 
 resource "azurerm_subnet" "this_subnet_1" {
+  address_prefixes     = ["10.0.1.0/24"]
   name                 = "${module.naming.subnet.name_unique}-1"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
 }
 
 resource "azurerm_subnet" "this_subnet_2" {
+  address_prefixes     = ["10.0.2.0/24"]
   name                 = "${module.naming.subnet.name_unique}-2"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
-  address_prefixes     = ["10.0.2.0/24"]
 }
 
 /* Uncomment this section if you would like to include a bastion resource with this example.
