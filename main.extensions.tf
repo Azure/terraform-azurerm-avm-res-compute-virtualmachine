@@ -21,4 +21,9 @@ resource "azurerm_virtual_machine_extension" "this_extension" {
       source_vault_id = var.extensions[each.key].protected_settings_from_key_vault.source_vault_id
     }
   }
+
+  depends_on = [
+    azurerm_virtual_machine_data_disk_attachment.this_linux,
+    azurerm_virtual_machine_data_disk_attachment.this_windows
+  ]
 }
