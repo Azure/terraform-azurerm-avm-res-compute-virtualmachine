@@ -3,6 +3,7 @@ variable "name" {
   type        = string
   description = "The name to use when creating the virtual machine."
   nullable    = false
+
   validation {
     condition     = can(regex("^.{1,64}$", var.name))
     error_message = "virtual machine names for linux must be between 1 and 64 characters in length. Virtual machine name for windows must be between 1 and 20 characters in length."
@@ -28,7 +29,6 @@ variable "additional_unattend_contents" {
     setting = string
   }))
   default     = []
-  nullable    = false
   description = <<ADDITIONAL_UNATTEND_CONTENTS
   list(object({
     content = "(Required) The XML formatted content that is added to the unattend.xml file for the specified path and component. Changing this forces a new resource to be created."
@@ -47,31 +47,32 @@ variable "additional_unattend_contents" {
   ]
   ```
   ADDITIONAL_UNATTEND_CONTENTS  
+  nullable    = false
 }
 
 variable "admin_credential_key_vault_resource_id" {
   type        = string
-  description = "The Azure resource ID for the key vault that stores admin credential information"
   default     = null
+  description = "The Azure resource ID for the key vault that stores admin credential information"
 }
 
 variable "admin_generated_ssh_key_vault_secret_name" {
   type        = string
-  description = "Use this to provide a custom name for the key vault secret when using the generate an admin ssh key option."
   default     = null
+  description = "Use this to provide a custom name for the key vault secret when using the generate an admin ssh key option."
 }
 
 variable "admin_password" {
   type        = string
-  description = "Password to use for the default admin account created for the virtual machine"
   default     = null
+  description = "Password to use for the default admin account created for the virtual machine"
   sensitive   = true
 }
 
 variable "admin_password_key_vault_secret_name" {
   type        = string
-  description = "The name of the key vault secret which should be used for the admin password"
   default     = null
+  description = "The name of the key vault secret which should be used for the admin password"
 }
 
 variable "admin_ssh_keys" {
@@ -105,9 +106,10 @@ variable "admin_ssh_keys" {
 
 variable "admin_username" {
   type        = string
-  description = "Name to use for the default admin account created for the virtual machine"
   default     = "azureuser"
+  description = "Name to use for the default admin account created for the virtual machine"
   nullable    = false
+
   validation {
     condition     = !can(regex("^(administrator|admin|user|user1|test|user2|test2|user3|admin1|1|123|a|actuser|adm|admin2|aspnet|backup|console|david|guest|john|owner|root|server|sql|support|support_388945a0|sys|test2|test3|user4|user5)$", lower(var.admin_username)))
     error_message = "Admin username may not contain any of the following reserved values. ( administrator, admin, user, user1, test, user2, test1, user3, admin1, 1, 123, a, actuser, adm, admin2, aspnet, backup, console, david, guest, john, owner, root, server, sql, support, support_388945a0, sys, test2, test3, user4, user5 )"
@@ -231,7 +233,6 @@ variable "data_disk_managed_disks" {
     })), {})
   }))
   default     = {}
-  nullable    = false
   description = <<DATA_DISK_MANAGED_DISKS
   This variable is used to define one or more data disks for creation and attachment to the virtual machine. 
     map(object({
@@ -296,18 +297,19 @@ variable "data_disk_managed_disks" {
   }
   ```
   DATA_DISK_MANAGED_DISKS
-}
-
-variable "dedicated_host_resource_id" {
-  type        = string
-  default     = null
-  description = "(Optional) The Azure Resource ID of the dedicated host where this virtual machine should run. Conflicts with dedicated_host_group_resource_id (dedicated_host_group_id on the azurerm provider)"
+  nullable    = false
 }
 
 variable "dedicated_host_group_resource_id" {
   type        = string
   default     = null
   description = "(Optional) The Azure Resource ID of the dedicated host group where this virtual machine should run. Conflicts with dedicated_host_resource_id (dedicated_host_group_id on the azurerm provider)"
+}
+
+variable "dedicated_host_resource_id" {
+  type        = string
+  default     = null
+  description = "(Optional) The Azure Resource ID of the dedicated host where this virtual machine should run. Conflicts with dedicated_host_group_resource_id (dedicated_host_group_id on the azurerm provider)"
 }
 
 variable "diagnostic_settings" {
@@ -324,7 +326,6 @@ variable "diagnostic_settings" {
     marketplace_partner_resource_id          = optional(string, null)
   }))
   default     = {}
-  nullable    = false
   description = <<DIAGNOSTIC_SETTINGS
   This map object is used to define the diagnostic settings on the virtual machine.  This functionality does not implement the diagnostic settings extension, but instead can be used to configure sending the vm metrics to one of the standard targets.
   map(object({
@@ -348,12 +349,13 @@ variable "diagnostic_settings" {
       }
     }
   DIAGNOSTIC_SETTINGS
+  nullable    = false
 }
 
 variable "disable_password_authentication" {
   type        = bool
-  description = "If true this value will disallow password authentication on linux vm's. This will require at least one public key to be configured."
   default     = true
+  description = "If true this value will disallow password authentication on linux vm's. This will require at least one public key to be configured."
 }
 
 variable "edge_zone" {
@@ -502,7 +504,6 @@ variable "gallery_applications" {
     tag                    = optional(string)
   }))
   default     = []
-  nullable    = false
   description = <<GALLERY_APPLICATIONS
   list(object({
     version_id             = "(Required) Specifies the Gallery Application Version resource ID."
@@ -521,12 +522,13 @@ variable "gallery_applications" {
   ]
   ```
   GALLERY_APPLICATIONS
+  nullable    = false
 }
 
 variable "generate_admin_password_or_ssh_key" {
   type        = bool
-  description = "Set this value to true if the deployment should create a strong password for the admin user."
   default     = true
+  description = "Set this value to true if the deployment should create a strong password for the admin user."
 }
 
 variable "hotpatching_enabled" {
@@ -543,8 +545,8 @@ variable "license_type" {
 
 variable "location" {
   type        = string
-  description = "The Azure region where this and supporting resources should be deployed.  Defaults to the Resource Groups location if undefined."
   default     = null
+  description = "The Azure region where this and supporting resources should be deployed.  Defaults to the Resource Groups location if undefined."
 }
 
 variable "lock" {
@@ -552,6 +554,7 @@ variable "lock" {
     name = optional(string, null)
     kind = optional(string, "None")
   })
+  default     = {}
   description = <<LOCK
     "The lock level to apply to this virtual machine and all of it's child resources. The default value is none. Possible values are `None`, `CanNotDelete`, and `ReadOnly`. Set the lock value on child resource values explicitly to override any inherited locks." 
 
@@ -563,8 +566,8 @@ variable "lock" {
     }
     ```
     LOCK
-  default     = {}
   nullable    = false
+
   validation {
     condition     = contains(["CanNotDelete", "ReadOnly", "None"], var.lock.kind)
     error_message = "The lock level must be one of: 'None', 'CanNotDelete', or 'ReadOnly'."
@@ -680,7 +683,6 @@ variable "network_interfaces" {
       internal_dns_name_label        = null
       tags                           = {}
   } }
-  nullable    = false
   description = <<NETWORK_INTERFACES
     map(object({
     name = (Required) The name of the Network Interface. Changing this forces a new resource to be created.
@@ -763,6 +765,7 @@ variable "network_interfaces" {
   ]
   ```
   NETWORK_INTERFACES
+  nullable    = false
 }
 
 variable "os_disk" {
@@ -780,12 +783,10 @@ variable "os_disk" {
       placement = optional(string, "CacheDisk")
     }), null)
   })
-  nullable = false
   default = {
     caching              = "ReadWrite"
     storage_account_type = "StandardSSD_LRS"
   }
-
   description = <<OS_DISK
   Configuration values for the OS disk on the virtual machine
     object({
@@ -822,6 +823,7 @@ variable "os_disk" {
   }
   ```
   OS_DISK  
+  nullable    = false
 }
 
 variable "patch_assessment_mode" {
@@ -887,7 +889,6 @@ variable "proximity_placement_group_resource_id" {
   default     = null
   description = "(Optional) The ID of the Proximity Placement Group which the Virtual Machine should be assigned to. Conflicts with `capacity_reservation_group_resource_id`."
 }
-
 
 variable "public_ip_configuration_details" {
   type = object({
@@ -959,7 +960,6 @@ variable "role_assignments" {
     }
   ))
   default     = {}
-  nullable    = false
   description = <<VIRTUAL_MACHINE_ROLE_ASSIGNMENTS
   A list of role definitions and scopes to be assigned as part of this resources implementation.  Two forms are supported. Assignments against this virtual machine resource scope and assignments to external resource scopes using the system managed identity.
   list(object({
@@ -986,6 +986,7 @@ variable "role_assignments" {
     }
   ```
   VIRTUAL_MACHINE_ROLE_ASSIGNMENTS
+  nullable    = false
 }
 
 variable "role_assignments_system_managed_identity" {
@@ -1001,7 +1002,6 @@ variable "role_assignments_system_managed_identity" {
     }
   ))
   default     = {}
-  nullable    = false
   description = <<SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS
   A list of role definitions and scopes to be assigned as part of this resources implementation.  Two forms are supported. Assignments against this virtual machine resource scope and assignments to external resource scopes using the system managed identity.
   list(object({
@@ -1030,6 +1030,7 @@ variable "role_assignments_system_managed_identity" {
       }
   ```
   SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS 
+  nullable    = false
 }
 
 variable "secrets" {
@@ -1041,7 +1042,6 @@ variable "secrets" {
     }))
   }))
   default     = []
-  nullable    = false
   description = <<SECRETS
   list(object({
     key_vault_id = "(Required) The ID of the Key Vault from which all Secrets should be sourced."
@@ -1067,6 +1067,7 @@ variable "secrets" {
   ]
   ```
   SECRETS
+  nullable    = false
 }
 
 variable "secure_boot_enabled" {
@@ -1112,13 +1113,12 @@ variable "source_image_reference" {
   }
   ```
   SOURCE_IMAGE_REFERENCE
-
 }
 
 variable "source_image_resource_id" {
   type        = string
-  description = "The Azure resource ID of the source image used to create the VM. Either source_image_resource_id or source_image_reference must be set and both can not be null at the same time."
   default     = null
+  description = "The Azure resource ID of the source image used to create the VM. Either source_image_resource_id or source_image_reference must be set and both can not be null at the same time."
 }
 
 variable "tags" {
@@ -1168,21 +1168,22 @@ variable "user_data" {
   }
 }
 
-variable "virtualmachine_os_type" {
-  type        = string
-  description = "The base OS type of the vm to be built.  Valid answers are Windows or Linux"
-  nullable    = false
-  default     = "Windows"
-  validation {
-    condition     = can(regex("^(windows|linux)$", lower(var.virtualmachine_os_type)))
-    error_message = "Valid OS type values are Windows or Linux."
-  }
-}
-
 variable "virtual_machine_scale_set_resource_id" {
   type        = string
   default     = null
   description = "(Optional) Specifies the Orchestrated Virtual Machine Scale Set that this Virtual Machine should be created within. Conflicts with `availability_set_id`. Changing this forces a new resource to be created."
+}
+
+variable "virtualmachine_os_type" {
+  type        = string
+  default     = "Windows"
+  description = "The base OS type of the vm to be built.  Valid answers are Windows or Linux"
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^(windows|linux)$", lower(var.virtualmachine_os_type)))
+    error_message = "Valid OS type values are Windows or Linux."
+  }
 }
 
 variable "vm_additional_capabilities" {
@@ -1217,7 +1218,6 @@ variable "winrm_listeners" {
     certificate_url = optional(string)
   }))
   default     = []
-  nullable    = false
   description = <<WINRM_LISTENERS
   set(object({
     protocol        = "(Required) Specifies Specifies the protocol of listener. Possible values are `Http` or `Https`"
@@ -1233,6 +1233,7 @@ variable "winrm_listeners" {
   }
   ```
   WINRM_LISTENERS
+  nullable    = false
 }
 
 variable "zone" {
@@ -1240,60 +1241,3 @@ variable "zone" {
   default     = null
   description = "(Optional) The Availability Zone which the Virtual Machine should be allocated in, only one zone would be accepted. If set then this module won't create `azurerm_availability_set` resource. Changing this forces a new resource to be created."
 }
-
-
-
-###### possible future functionality pending core team decisions.
-/*
-variable "customer_managed_key" {
-  type = object({
-    key_vault_resource_id              = string
-    key_name                           = string
-    key_version                        = optional(string, null)
-    user_assigned_identity_resource_id = optional(string, null)
-  })
-  default     = null
-  description = <<CUSTOMER_MANAGED_KEY
-    Defines a customer managed key to use for encryption.
-
-    object({
-      key_vault_resource_id              = (Required) - The full Azure Resource ID of the key_vault where the customer managed key will be referenced from.
-      key_name                           = (Required) - The key name for the customer managed key in the key vault.
-      key_version                        = (Optional) - The version of the key to use
-      user_assigned_identity_resource_id = (Optional) - The user assigned identity to use when access the key vault
-    })
-
-    Example Inputs:
-    ```terraform
-    customer_managed_key = {
-      key_vault_resource_id = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test-resource-group/providers/Microsoft.KeyVault/vaults/example-key-vault"
-      key_name              = "sample-customer-key"
-    }
-    ```
-
-    CUSTOMER_MANAGED_KEY
-}
-*/
-
-/*
-#Future work to complete
-variable "append_name_string_suffix" {
-  type        = bool
-  description = "Disable this to remove the partial hash value used to ensure sub-resource naming uniqueness"
-  default     = false
-}
-
-variable "name_string_suffix_length" {
-  type        = number
-  description = "The length of the partial hash value to include in the name string"
-  default     = 6
-}
-
-#potential future functionality.  Ignore for now
-
-variable "inherit_tags" {
-  type        = bool
-  default     = false
-  description = "Apply tags from the resource group to resources in the module that support tags.  Set this to false to disable the merging of the resource group tags. This is future functionality and can currently be ignored."
-}
-*/
