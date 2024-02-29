@@ -148,7 +148,7 @@ resource "azurerm_windows_virtual_machine" "this" {
     }
   }
   dynamic "winrm_listener" {
-    for_each = { for listener in var.winrm_listeners : sha256(listener) => listener }
+    for_each = { for listener in var.winrm_listeners : sha256(jsonencode(listener)) => listener }
 
     content {
       protocol        = winrm_listener.value.protocol
