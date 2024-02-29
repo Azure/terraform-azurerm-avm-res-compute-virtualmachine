@@ -100,14 +100,16 @@ resource "azurerm_user_assigned_identity" "example_identity" {
 
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
-  source              = "Azure/avm-res-keyvault-vault/azurerm"
-  version             = ">= 0.5.0"
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  name                = module.naming.key_vault.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  location            = azurerm_resource_group.this_rg.location
+  source                      = "Azure/avm-res-keyvault-vault/azurerm"
+  version                     = ">= 0.5.0"
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  name                        = module.naming.key_vault.name_unique
+  resource_group_name         = azurerm_resource_group.this_rg.name
+  location                    = azurerm_resource_group.this_rg.location
+  enabled_for_disk_encryption = true
   network_acls = {
     default_action = "Allow"
+    bypass         = "AzureServices"
   }
 
   role_assignments = {
@@ -195,6 +197,22 @@ module "testvm" {
       auto_upgrade_minor_version = true
       automatic_upgrade_enabled  = true
       settings                   = null
+    }
+    azure_disk_encryption = {
+      name                       = "${module.testvm.virtual_machine.name}-azure-disk-encryption"
+      publisher                  = "Microsoft.Azure.Security"
+      type                       = "AzureDiskEncryption"
+      type_handler_version       = "2.2"
+      auto_upgrade_minor_version = true
+      settings                   = <<SETTINGS
+          {
+              "EncryptionOperation": "EnableEncryption",
+              "KeyVaultURL": "${module.avm_res_keyvault_vault.resource.vault_uri}",
+              "KeyVaultResourceId": "${module.avm_res_keyvault_vault.resource.id}",						
+              "KeyEncryptionAlgorithm": "RSA-OAEP",
+              "VolumeType": "All"
+          }
+      SETTINGS
     }
   }
 

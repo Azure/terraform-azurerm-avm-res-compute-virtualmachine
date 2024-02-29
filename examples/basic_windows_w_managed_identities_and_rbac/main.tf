@@ -179,6 +179,8 @@ module "testvm" {
     scenario = "windows_w_rbac_and_managed_identity"
   }
 
+  winrm_listeners = [{ protocol = "Http" }]
+
   depends_on = [
     module.avm_res_keyvault_vault
   ]
