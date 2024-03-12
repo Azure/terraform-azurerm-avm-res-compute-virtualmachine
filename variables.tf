@@ -411,72 +411,69 @@ variable "extensions" {
   # tflint-ignore: terraform_sensitive_variable_no_default
   default     = {}
   description = <<EXTENSIONS
-    Argument to create any additional `azurerm_virtual_machine_extension` resource, the argument descriptions could be found at [the document](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension).
-    map(object({
-      name                           = (Required) - Set a custom name on this value if you want the guest configuration extension to have a custom name
-      publisher                      = (Required) - Configure the publisher for the extension to be deployed. The Publisher and Type of Virtual Machine Extensions can be found using the Azure CLI, via: az vm extension image list --location westus -o table
-      type                           = (Required) - Configure the type value for the extension to be deployed. 
-      type_handler_version           = (Required) - The type handler version for the extension. A common value is 1.0.
-      auto_upgrade_minor_version     = (Optional) - Set this to false to avoid automatic upgrades for minor versions on the extension.  Defaults to true
-      automatic_upgrade_enabled      = (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
-      failure_suppression_enabled    = (Optional) - Should failures from the extension be suppressed? Possible values are true or false. Defaults to false. Operational failures such as not connecting to the VM will not be suppressed regardless of the failure_suppression_enabled value.
-      settings                       = (Optional) - The settings passed to the extension, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
-      protected_settings             = (Optional) - The protected_settings passed to the extension, like settings, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the protected_settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
-      provision_after_extensions     = optional(list(string)) [
-        (Optional) - Specifies the collection of extension names after which this extension needs to be provisioned.
-      ]      
-      protected_settings_from_key_vault = optional(object({   #protected_settings_from_key_vault cannot be used with protected_settings
-        secret_url      = (Required) - The Secret URL of a Key Vault Certificate. This can be sourced from the `secret_id` field within the `azurerm_key_vault_certificate` Resource.
-        source_vault_id = (Required) - the Azure resource ID of the key vault holding the secret
-      }))
-      tags                           = (Optional) - A mapping of tags to assign to the extension resource.
-    }))
+This map of objects is used to create additional `azurerm_virtual_machine_extension` resources, the argument descriptions could be found at [the document](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension).
 
-    Example Inputs:
+- `<map key>` - Provide a custom key value to define each extension object
+  - `name` (Required) - Set a custom name on this value if you want the guest configuration extension to have a custom name
+  - `publisher` (Required) - Configure the publisher for the extension to be deployed. The Publisher and Type of Virtual Machine Extensions can be found using the Azure CLI, via: az vm extension image list --location westus -o table
+  - `type` (Required) - Configure the type value for the extension to be deployed. 
+  - `type_handler_version` (Required) - The type handler version for the extension. A common value is 1.0.
+  - `auto_upgrade_minor_version` (Optional) - Set this to false to avoid automatic upgrades for minor versions on the extension.  Defaults to true
+  - `automatic_upgrade_enabled` (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
+  - `failure_suppression_enabled` (Optional) - Should failures from the extension be suppressed? Possible values are true or false. Defaults to false. Operational failures such as not connecting to the VM will not be suppressed regardless of the failure_suppression_enabled value.
+  - `settings` (Optional) - The settings passed to the extension, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
+  - `protected_settings` (Optional) - The protected_settings passed to the extension, like settings, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the protected_settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
+  - `provision_after_extensions` (Optional) - list of strings that specifies the collection of extension names after which this extension needs to be provisioned.
+  - `protected_settings_from_key_vault` (Optional) object for protected settings.  Cannot be used with `protected_settings`
+    - `secret_url` (Required) - The Secret URL of a Key Vault Certificate. This can be sourced from the `secret_id` field within the `azurerm_key_vault_certificate` Resource.
+    - `source_vault_id` (Required) - the Azure resource ID of the key vault holding the secret
+  - `tags` (Optional) - A mapping of tags to assign to the extension resource.
 
-    ```terraform
-    #custom script extension example - linux
-    extensions = [
+Example Inputs:
+
+```hcl
+#custom script extension example - linux
+extensions = [
+  {
+    name = "CustomScriptExtension"
+    publisher = "Microsoft.Azure.Extensions"
+    type = "CustomScript"
+    type_handler_version = "2.0"
+    settings = <<SETTINGS
       {
-        name = "CustomScriptExtension"
-        publisher = "Microsoft.Azure.Extensions"
-        type = "CustomScript"
-        type_handler_version = "2.0"
-        settings = <<SETTINGS
-          {
-            "script": "<base 64 encoded script file>"
-          }
-        SETTINGS
+        "script": "<base 64 encoded script file>"
       }
-    ]
+    SETTINGS
+  }
+]
 
-    #custom script extension example - windows
-    extensions = [
+#custom script extension example - windows
+extensions = [
+  {
+    name = "CustomScriptExtension"
+    publisher = "Microsoft.Compute"
+    type = "CustomScriptExtension"
+    type_handler_version = "1.10"
+    settings = <<SETTINGS
       {
-        name = "CustomScriptExtension"
-        publisher = "Microsoft.Compute"
-        type = "CustomScriptExtension"
-        type_handler_version = "1.10"
-        settings = <<SETTINGS
-          {
-            "timestamp":123456789
-          }
-        SETTINGS
-        protected_settings = <<PROTECTED_SETTINGS
-          {
-            "commandToExecute": "myExecutionCommand",
-            "storageAccountName": "myStorageAccountName",
-            "storageAccountKey": "myStorageAccountKey",
-            "managedIdentity" : {},
-            "fileUris": [
-                "script location"
-            ]
-          }
-        PROTECTED_SETTINGS        
+        "timestamp":123456789
       }
-    ]
-    ```
-   EXTENSIONS
+    SETTINGS
+    protected_settings = <<PROTECTED_SETTINGS
+      {
+        "commandToExecute": "myExecutionCommand",
+        "storageAccountName": "myStorageAccountName",
+        "storageAccountKey": "myStorageAccountKey",
+        "managedIdentity" : {},
+        "fileUris": [
+            "script location"
+        ]
+      }
+    PROTECTED_SETTINGS        
+  }
+]
+```
+EXTENSIONS
   nullable    = false
   sensitive   = true # Because `protected_settings` is sensitive
 
@@ -503,23 +500,23 @@ variable "gallery_applications" {
   }))
   default     = []
   description = <<GALLERY_APPLICATIONS
-  list(object({
-    version_id             = "(Required) Specifies the Gallery Application Version resource ID."
-    configuration_blob_uri = "(Optional) Specifies the URI to an Azure Blob that will replace the default configuration for the package if provided."
-    order                  = "(Optional) Specifies the order in which the packages have to be installed. Possible values are between `0` and `2,147,483,647`."
-    tag                    = "(Optional) Specifies a passthrough value for more generic context. This field can be any valid `string` value."
-  }))
+list of gallery application objects with the following elements
 
-  Example Inputs:
+- `version_id` (Required) Specifies the Gallery Application Version resource ID.
+- `configuration_blob_uri` (Optional) Specifies the URI to an Azure Blob that will replace the default configuration for the package if provided.
+- `order` (Optional) Specifies the order in which the packages have to be installed. Possible values are between `0` and `2,147,483,647`.
+- `tag` (Optional) Specifies a passthrough value for more generic context. This field can be any valid `string` value.
 
-  ```terraform
-  gallery_applications = [
-    {
-      version_id = "/subscriptions/{subscriptionId}/resourceGroups/<resource group>/providers/Microsoft.Compute/galleries/{gallery name}/applications/{application name}/versions/{version}"
-      order      = 1
-  ]
-  ```
-  GALLERY_APPLICATIONS
+Example Inputs:
+
+```hcl
+gallery_applications = [
+  {
+    version_id = "/subscriptions/{subscriptionId}/resourceGroups/<resource group>/providers/Microsoft.Compute/galleries/{gallery name}/applications/{application name}/versions/{version}"
+    order      = 1
+]
+```
+GALLERY_APPLICATIONS
   nullable    = false
 }
 
@@ -554,16 +551,16 @@ variable "lock" {
   })
   default     = {}
   description = <<LOCK
-    "The lock level to apply to this virtual machine and all of it's child resources. The default value is none. Possible values are `None`, `CanNotDelete`, and `ReadOnly`. Set the lock value on child resource values explicitly to override any inherited locks." 
+"The lock level to apply to this virtual machine and all of it's child resources. The default value is none. Possible values are `None`, `CanNotDelete`, and `ReadOnly`. Set the lock value on child resource values explicitly to override any inherited locks." 
 
-    Example Inputs:
-    ```terraform
-    lock = {
-      name = "lock-{resourcename}" # optional
-      type = "CanNotDelete" 
-    }
-    ```
-    LOCK
+Example Inputs:
+```hcl
+lock = {
+  name = "lock-{resourcename}" # optional
+  type = "CanNotDelete" 
+}
+```
+LOCK
   nullable    = false
 
   validation {
@@ -579,30 +576,28 @@ variable "managed_identities" {
   })
   default     = {}
   description = <<IDENTITY
-  Sets the managed identity configuration for the virtual machine being deployed. Be aware that capabilities such as the Azure Monitor Agent and Role Assignments require that a managed identity has been configured.
-  object({
-    system_assigned = "(Optional) Specifies whether the System Assigned Managed Identity should be enabled.  Defaults to false. 
-   user_assigned_resource_ids    = "(Optional) Specifies a list of User Assigned Managed Identity IDs to be assigned to this Virtual Machine."
-  })
+An object that sets the managed identity configuration for the virtual machine being deployed. Be aware that capabilities such as the Azure Monitor Agent and Role Assignments require that a managed identity has been configured.
 
-  Example Inputs:
+- `system_assigned` (Optional) Specifies whether the System Assigned Managed Identity should be enabled.  Defaults to false. 
+- `user_assigned_resource_ids` (Optional) Specifies a list of User Assigned Managed Identity IDs to be assigned to this Virtual Machine."
 
-  ```terraform
-  #default system managed identity
-  managed_identities = {
-   system_assigned = true
-  }
-  #user assigned managed identity only
-  managed_identities           = {
-    user_assigned_resource_ids = ["<azure resource ID of a user assigned managed identity>"]
-  }
-  #user assigned and system assigned managed identities
-  managed_identities  = {
-    system_assigned            = true
-    user_assigned_resource_ids = ["<azure resource ID of a user assigned managed identity>"]
-  }
-  ```
-  IDENTITY
+Example Inputs:
+```hcl
+#default system managed identity
+managed_identities = {
+  system_assigned = true
+}
+#user assigned managed identity only
+managed_identities           = {
+  user_assigned_resource_ids = ["<azure resource ID of a user assigned managed identity>"]
+}
+#user assigned and system assigned managed identities
+managed_identities  = {
+  system_assigned            = true
+  user_assigned_resource_ids = ["<azure resource ID of a user assigned managed identity>"]
+}
+```
+IDENTITY
 }
 
 variable "max_bid_price" {
