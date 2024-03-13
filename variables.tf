@@ -777,41 +777,39 @@ variable "os_disk" {
     storage_account_type = "StandardSSD_LRS"
   }
   description = <<OS_DISK
-  Configuration values for the OS disk on the virtual machine
-    object({
-      caching                          = (Required) - The type of caching which should be used for the internal OS disk.  Possible values are `None`, `ReadOnly`, and `ReadWrite`.
-      storage_account_type             = (Required) - The Type of Storage Account which should back this the Internal OS Disk. Possible values are `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and `Premium_ZRS`. Changing this forces a new resource to be created
-      disk_encryption_set_id           = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. Conflicts with secure_vm_disk_encryption_set_id. The Disk Encryption Set must have the Reader Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault
-      disk_size_gb                     = (Optional) - The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from.
-      name                             = (Optional) - The name which should be used for the Internal OS Disk. Changing this forces a new resource to be created.
-      secure_vm_disk_encryption_set_id = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk when the Virtual Machine is a Confidential VM. Conflicts with disk_encryption_set_id. Changing this forces a new resource to be created.
-      security_encryption_type         = (Optional) - Encryption Type when the Virtual Machine is a Confidential VM. Possible values are `VMGuestStateOnly` and `DiskWithVMGuestState`. Changing this forces a new resource to be created. `vtpm_enabled` must be set to true when security_encryption_type is specified. encryption_at_host_enabled cannot be set to `true` when security_encryption_type is set to `DiskWithVMGuestState`
-      write_accelerator_enabled        = (Optional) - Should Write Accelerator be Enabled for this OS Disk? Defaults to `false`. This requires that the storage_account_type is set to `Premium_LRS` and that caching is set to `None`
-      diff_disk_settings = optional(object({
-        option    = (Required) - Specifies the Ephemeral Disk Settings for the OS Disk. At this time the only possible value is `Local`. Changing this forces a new resource to be created.
-        placement = (Optional) - Specifies where to store the Ephemeral Disk. Possible values are CacheDisk and ResourceDisk. Defaults to CacheDisk. Changing this forces a new resource to be created.
-      }), null)                  
-    })
-  
-  Example Inputs:
+Required configuration values for the OS disk on the virtual machine.
 
-  ```terraform
-  #basic example:
-  os_disk = {
-    caching              = "ReadWrite"
-    storage_account_type = "StandardSSD_LRS"
-  }
+  - `caching`                          = (Required) - The type of caching which should be used for the internal OS disk.  Possible values are `None`, `ReadOnly`, and `ReadWrite`.
+  - `storage_account_type`             = (Required) - The Type of Storage Account which should back this the Internal OS Disk. Possible values are `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and `Premium_ZRS`. Changing this forces a new resource to be created
+  - `disk_encryption_set_id`           = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. Conflicts with secure_vm_disk_encryption_set_id. The Disk Encryption Set must have the Reader Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault
+  - `disk_size_gb`                     = (Optional) - The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from.
+  - `name`                             = (Optional) - The name which should be used for the Internal OS Disk. Changing this forces a new resource to be created.
+  - `secure_vm_disk_encryption_set_id` = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk when the Virtual Machine is a Confidential VM. Conflicts with disk_encryption_set_id. Changing this forces a new resource to be created.
+  - `security_encryption_type`         = (Optional) - Encryption Type when the Virtual Machine is a Confidential VM. Possible values are `VMGuestStateOnly` and `DiskWithVMGuestState`. Changing this forces a new resource to be created. `vtpm_enabled` must be set to true when security_encryption_type is specified. encryption_at_host_enabled cannot be set to `true` when security_encryption_type is set to `DiskWithVMGuestState`
+  - `write_accelerator_enabled`        = (Optional) - Should Write Accelerator be Enabled for this OS Disk? Defaults to `false`. This requires that the storage_account_type is set to `Premium_LRS` and that caching is set to `None`
+  - `diff_disk_settings` - An optional object defining the diff disk settings
+    - `option`    = (Required) - Specifies the Ephemeral Disk Settings for the OS Disk. At this time the only possible value is `Local`. Changing this forces a new resource to be created.
+    - `placement` = (Optional) - Specifies where to store the Ephemeral Disk. Possible values are CacheDisk and ResourceDisk. Defaults to CacheDisk. Changing this forces a new resource to be created.              
 
-  #increased disk size and write acceleration example
-  {
-    name                      = "sample os disk"
-    caching                   = "None"
-    storage_account_type      = "Premium_LRS"
-    disk_size_gb              = 128
-    write_accelerator_enabled = true
-  }
-  ```
-  OS_DISK  
+Example Inputs:
+
+```hcl
+#basic example:
+os_disk = {
+  caching              = "ReadWrite"
+  storage_account_type = "StandardSSD_LRS"
+}
+
+#increased disk size and write acceleration example
+{
+  name                      = "sample os disk"
+  caching                   = "None"
+  storage_account_type      = "Premium_LRS"
+  disk_size_gb              = 128
+  write_accelerator_enabled = true
+}
+```
+OS_DISK  
   nullable    = false
 }
 
@@ -835,23 +833,23 @@ variable "plan" {
   })
   default     = null
   description = <<PLAN
-  Defines the Marketplace image this virtual machine should be creaed from. If you use the plan block with one of Microsoft's marketplace images (e.g. publisher = "MicrosoftWindowsServer"). This may prevent the purchase of the offer. An example Azure API error: The Offer: 'WindowsServer' cannot be purchased by subscription: '12345678-12234-5678-9012-123456789012' as it is not to be sold in market: 'US'. Please choose a subscription which is associated with a different market.
-  object({
-    name      = "(Required) Specifies the Name of the Marketplace Image this Virtual Machine should be created from. Changing this forces a new resource to be created."
-    product   = "(Required) Specifies the Product of the Marketplace Image this Virtual Machine should be created from. Changing this forces a new resource to be created."
-    publisher = "(Required) Specifies the Publisher of the Marketplace Image this Virtual Machine should be created from. Changing this forces a new resource to be created."
-  })
+An object variable that defines the Marketplace image this virtual machine should be created from. If you use the plan block with one of Microsoft's marketplace images (e.g. publisher = "MicrosoftWindowsServer"). This may prevent the purchase of the offer. An example Azure API error: The Offer: 'WindowsServer' cannot be purchased by subscription: '12345678-12234-5678-9012-123456789012' as it is not to be sold in market: 'US'. Please choose a subscription which is associated with a different market.
 
-  Example Input:
+  - `name`      = (Required) Specifies the Name of the Marketplace Image this Virtual Machine should be created from. Changing this forces a new resource to be created.
+  - `product`   = (Required) Specifies the Product of the Marketplace Image this Virtual Machine should be created from. Changing this forces a new resource to be created.
+  - `publisher` = (Required) Specifies the Publisher of the Marketplace Image this Virtual Machine should be created from. Changing this forces a new resource to be created.
 
-  ```terraform
-  plan = {
-    name      = "17_04_02-payg-essentials"
-    product   = "cisco-8000v"
-    publisher = "cisco"
-  }
-  ```
-  PLAN
+
+Example Input:
+
+```terraform
+plan = {
+  name      = "17_04_02-payg-essentials"
+  product   = "cisco-8000v"
+  publisher = "cisco"
+}
+```
+PLAN
 }
 
 variable "platform_fault_domain" {
