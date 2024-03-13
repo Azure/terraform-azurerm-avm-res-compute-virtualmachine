@@ -612,9 +612,12 @@ variable "network_interfaces" {
     name = string
     ip_configurations = map(object({
       name                                                        = string
+      app_gateway_backend_pool_resource_id                        = optional(string)
       create_public_ip_address                                    = optional(bool, false)
       gateway_load_balancer_frontend_ip_configuration_resource_id = optional(string)
       is_primary_ipconfiguration                                  = optional(bool, true)
+      load_balancer_backend_pool_resource_id                      = optional(string)
+      load_balancer_nat_rule_resource_id                          = optional(string)
       private_ip_address                                          = optional(string)
       private_ip_address_allocation                               = optional(string, "Dynamic")
       private_ip_address_version                                  = optional(string, "IPv4")
@@ -623,15 +626,8 @@ variable "network_interfaces" {
       public_ip_address_name                                      = optional(string)
       public_ip_address_resource_id                               = optional(string)
     }))
-    accelerated_networking_enabled = optional(bool, false)
-    dns_servers                    = optional(list(string))
-    inherit_tags                   = optional(bool, true)
-    internal_dns_name_label        = optional(string)
-    ip_forwarding_enabled          = optional(bool, false)
-    lock_level                     = optional(string)
-    lock_name                      = optional(string)
-    tags                           = optional(map(any))
-
+    accelerated_networking_enabled         = optional(bool, false)
+    application_security_group_resource_ids = optional(set(string), [])
     diagnostic_settings = optional(map(object({
       name                                     = optional(string, null)
       log_categories                           = optional(set(string), [])
@@ -644,7 +640,13 @@ variable "network_interfaces" {
       event_hub_name                           = optional(string, null)
       marketplace_partner_resource_id          = optional(string, null)
     })), {})
-
+    dns_servers                    = optional(list(string))
+    inherit_tags                   = optional(bool, true)
+    internal_dns_name_label        = optional(string)
+    ip_forwarding_enabled          = optional(bool, false)
+    lock_level                     = optional(string)
+    lock_name                      = optional(string)
+    network_security_group_resource_id = optional(string)    
     role_assignments = optional(map(object({
       principal_id                           = string
       role_definition_id_or_name             = string
@@ -655,6 +657,7 @@ variable "network_interfaces" {
       description                            = optional(string, null)
       skip_service_principal_aad_check       = optional(bool, false)
     })), {})
+    tags                           = optional(map(any))
   }))
   default = {
     ipconfig_1 = {
@@ -685,15 +688,19 @@ A map of objects representing each network virtual machine network interface
   - `ip_configurations` - A required map of objects defining each interfaces IP configurations
     - `<map key>' - Use a custom map key to define each ip configuration
       - `name`                                                        = (Required) - A name used for this IP Configuration.
-      - `private_ip_address_allocation`                               = (Required) - The allocation method used for the Private IP Address. Possible values are Dynamic and Static. Dynamic means "An IP is automatically assigned during creation of this Network Interface"; Static means "User supplied IP address will be used"
+      - `app_gateway_backend_pool_resource_id`                        = (Optional) - An application gateway backend pool Azure Resource ID can be entered to join this ip configuration to the backend pool of an Application Gateway.      
       - `create_public_ip_address`                                    = (Optional) - Select true here to have the module create the public IP address for this IP Configuration
       - `gateway_load_balancer_frontend_ip_configuration_resource_id` = (Optional) - The Frontend IP Configuration Azure Resource ID of a Gateway SKU Load Balancer.)
-      - `is_primary_ipconfiguration`                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified.  
-      - `private_ip_address`                                          = (Optional) - The Static IP Address which should be used. Configured when private_ip_address_allocation is set to Static 
+      - `is_primary_ipconfiguration`                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified. 
+      - `load_balancer_backend_pool_resource_id`                      = (Optional) - A Load Balancer backend pool Azure Resource ID can be entered to join this ip configuration to a load balancer backend pool.
+      - `load_balancer_nat_rule_resource_id`                          = (Optional) - A Load Balancer Nat Rule Azure Resource ID can be entered to associate this ip configuration to a load balancer NAT rule.
+      - `private_ip_address`                                          = (Optional) - The Static IP Address which should be used. Configured when private_ip_address_allocation is set to Static
+      - `private_ip_address_allocation`                               = (Optional) - The allocation method used for the Private IP Address. Possible values are Dynamic and Static. Dynamic means "An IP is automatically assigned during creation of this Network Interface" and is the default; Static means "User supplied IP address will be used" 
       - `private_ip_address_version`                                  = (Optional) - The IP Version to use. Possible values are IPv4 or IPv6. Defaults to IPv4.  
       - `private_ip_subnet_resource_id`                               = (Optional) - The Azure Resource ID of the Subnet where this Network Interface should be located in.
       - `public_ip_address_resource_id`                               = (Optional) - Reference to a Public IP Address resource ID to associate with this NIC  
   - `accelerated_networking_enabled` = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.  
+  - `application_security_group_resource_ids` - An set of Application Security Group (ASG) Azure Resource IDs can be entered to associate this Network Interface to one or more ASGs.
   - `diagnostic_settings` =  An optional map of objects defining the network interface resource diagnostic settings 
     - `<map key>' - Use a custom map key to define each diagnostic setting configuration
       - `name`                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
@@ -711,6 +718,7 @@ A map of objects representing each network virtual machine network interface
   - `ip_forwarding_enabled`          = (Optional) - Should IP Forwarding be enabled? Defaults to false
   - `lock_level`                     = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
   - `lock_name`                      = (Optional) - The name for the lock on this nic
+  - `network_security_group_resource_id` = (Optional) - A Network Security Group (NSG) Azure Resource ID can be entered to associate this Network Interface to the NSG.
   - `role_assignments` = An optional map of objects defining role assignments on the individual network configuration resource 
     - `<map key>' - Use a custom map key to define each role assignment configuration    
       - `assign_to_child_public_ip_addresses`        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.

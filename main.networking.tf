@@ -128,3 +128,41 @@ resource "azurerm_monitor_diagnostic_setting" "this_nic_diags" {
   }
 }
 
+#create the nic associations
+### NSG associations
+resource "azurerm_network_interface_security_group_association" "this" {
+  for_each =  { for key, values in var.network_interfaces : key => values if values.network_security_group_resource_id  != null }
+
+  network_interface_id      = azurerm_network_interface.virtualmachine_network_interfaces[each.key].id
+  network_security_group_id = each.value.network_security_group_resource_id
+}
+
+### ASG Associations - #Need to flatten this?
+
+
+### LB Pool Association
+resource "azurerm_network_interface_backend_address_pool_association" "this" {
+  for_each = { for key, values in local.nics_ip_configs : key => values if values.ipconfig.load_balancer_backend_pool_resource_id != null }
+
+  network_interface_id    = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  ip_configuration_name   = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].ip_configuration[each.value.ipconfig_key].name
+  backend_address_pool_id = each.value.ipconfig.load_balancer_backend_pool_resource_id
+}
+
+### App GW Assocation
+resource "azurerm_network_interface_application_gateway_backend_address_pool_association" "this" {
+  for_each = { for key, values in local.nics_ip_configs : key => values if values.ipconfig.app_gateway_backend_pool_resource_id != null }
+
+  network_interface_id    = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  ip_configuration_name   = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].ip_configuration[each.value.ipconfig_key].name
+  backend_address_pool_id = each.value.ipconfig.app_gateway_backend_pool_resource_id
+}
+
+### NAT Rule Assocation
+resource "azurerm_network_interface_nat_rule_association" "this" {
+  for_each = { for key, values in local.nics_ip_configs : key => values if values.ipconfig.load_balancer_nat_rule_resource_id != null }
+
+  network_interface_id    = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  ip_configuration_name   = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].ip_configuration[each.value.ipconfig_key].name
+  nat_rule_id             = each.value.ipconfig.load_balancer_nat_rule_resource_id
+}
