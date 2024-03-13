@@ -624,7 +624,7 @@ variable "network_interfaces" {
     }))
     accelerated_networking_enabled = optional(bool, false)
     dns_servers                    = optional(list(string))
-    inherit_tags                   = optional(bool, false)
+    inherit_tags                   = optional(bool, true)
     internal_dns_name_label        = optional(string)
     ip_forwarding_enabled          = optional(bool, false)
     lock_level                     = optional(string)
@@ -677,87 +677,83 @@ variable "network_interfaces" {
       tags                           = {}
   } }
   description = <<NETWORK_INTERFACES
-    map(object({
-    name = (Required) The name of the Network Interface. Changing this forces a new resource to be created.
-    ip_configurations = list(object({ 
-      name                                                        = (Required) - A name used for this IP Configuration.
-      private_ip_address                                          = (Optional) - The Static IP Address which should be used. Configured when private_ip_address_allocation is set to Static 
-      private_ip_address_version                                  = (Optional) - The IP Version to use. Possible values are IPv4 or IPv6. Defaults to IPv4.
-      private_ip_address_allocation                               = (Required) - The allocation method used for the Private IP Address. Possible values are Dynamic and Static. Dynamic means "An IP is automatically assigned during creation of this Network Interface"; Static means "User supplied IP address will be used"
-      private_ip_subnet_resource_id                               = (Optional) - The Azure Resource ID of the Subnet where this Network Interface should be located in.
-      public_ip_address_resource_id                               = (Optional) - Reference to a Public IP Address resource ID to associate with this NIC
-      is_primary_ipconfiguration                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified.
-      gateway_load_balancer_frontend_ip_configuration_resource_id = (Optional) - The Frontend IP Configuration Azure Resource ID of a Gateway SKU Load Balancer.)
-      create_public_ip_address                                    = (Optional) - Select true here to have the module create the public IP address for this IP Configuration
-    }))
-    dns_servers                    = (Optional) - A list of IP Addresses defining the DNS Servers which should be used for this Network Interface.
-    accelerated_networking_enabled = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.
-    ip_forwarding_enabled          = (Optional) - Should IP Forwarding be enabled? Defaults to false
-    internal_dns_name_label        = (Optional) - The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network.
-    tags                           = (Optional) - A mapping of tags to assign to the resource.
-    inherit_tags                   = (Optional) - Defaults to false.  Set this to false if only the tags defined on this resource should be applied. This is potential future functionality and is currently ignored.
-    lock_level                     = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-    lock_name                      = (Optional) - The name for the lock on this nic
+A map of objects representing each network virtual machine network interface
 
-    diagnostic_settings =  map(object({
-      name                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
-      log_categories_and_groups                = (Optional) - List of strings used to define log categories and groups. Currently not valid for the VM resource
-      metric_categories                        = (Optional) - List of strings used to define metric categories. Currently only AllMetrics is valid
-      log_analytics_destination_type           = (Optional) - Valid values are null, AzureDiagnostics, and Dedicated.  Defaults to null
-      workspace_resource_id                    = (Optional) - The Log Analytics Workspace Azure Resource ID when sending logs or metrics to a Log Analytics Workspace
-      storage_account_resource_id              = (Optional) - The Storage Account Azure Resource ID when sending logs or metrics to a Storage Account
-      event_hub_authorization_rule_resource_id = (Optional) - The Event Hub Namespace Authorization Rule Resource ID when sending logs or metrics to an Event Hub Namespace
-      event_hub_name                           = (Optional) - The Event Hub name when sending logs or metrics to an Event Hub
-      marketplace_partner_resource_id          = (Optional) - The marketplace partner solution Azure Resource ID when sending logs or metrics to a partner integration
-    }))
+- `name` = (Required) The name of the Network Interface. Changing this forces a new resource to be created.
+- `ip_configurations` - A required list of objects defining each interfaces IP configurations
+  - `name`                                                        = (Required) - A name used for this IP Configuration.
+  - `private_ip_address_allocation`                               = (Required) - The allocation method used for the Private IP Address. Possible values are Dynamic and Static. Dynamic means "An IP is automatically assigned during creation of this Network Interface"; Static means "User supplied IP address will be used"
+  - `create_public_ip_address`                                    = (Optional) - Select true here to have the module create the public IP address for this IP Configuration
+  - `gateway_load_balancer_frontend_ip_configuration_resource_id` = (Optional) - The Frontend IP Configuration Azure Resource ID of a Gateway SKU Load Balancer.)
+  - `is_primary_ipconfiguration`                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified.  
+  - `private_ip_address`                                          = (Optional) - The Static IP Address which should be used. Configured when private_ip_address_allocation is set to Static 
+  - `private_ip_address_version`                                  = (Optional) - The IP Version to use. Possible values are IPv4 or IPv6. Defaults to IPv4.  
+  - `private_ip_subnet_resource_id`                               = (Optional) - The Azure Resource ID of the Subnet where this Network Interface should be located in.
+  - `public_ip_address_resource_id`                               = (Optional) - Reference to a Public IP Address resource ID to associate with this NIC  
+- `accelerated_networking_enabled` = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.  
+- `diagnostic_settings` =  An optional map of objects defining the network interface resource diagnostic settings 
+  - `name`                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
+  - `event_hub_authorization_rule_resource_id` = (Optional) - The Event Hub Namespace Authorization Rule Resource ID when sending logs or metrics to an Event Hub Namespace
+  - `event_hub_name`                           = (Optional) - The Event Hub name when sending logs or metrics to an Event Hub  
+  - `log_analytics_destination_type`           = (Optional) - Valid values are null, AzureDiagnostics, and Dedicated.  Defaults to null
+  - `log_categories_and_groups`                = (Optional) - List of strings used to define log categories and groups. Currently not valid for the VM resource
+  - `marketplace_partner_resource_id`          = (Optional) - The marketplace partner solution Azure Resource ID when sending logs or metrics to a partner integration
+  - `metric_categories`                        = (Optional) - List of strings used to define metric categories. Currently only AllMetrics is valid
+  - `storage_account_resource_id`              = (Optional) - The Storage Account Azure Resource ID when sending logs or metrics to a Storage Account
+  - `workspace_resource_id`                    = (Optional) - The Log Analytics Workspace Azure Resource ID when sending logs or metrics to a Log Analytics Workspace
+- `dns_servers`                    = (Optional) - A list of IP Addresses defining the DNS Servers which should be used for this Network Interface.
+- `inherit_tags`                   = (Optional) - Defaults to true.  Set this to false if only the tags defined on this resource should be applied. This is potential future functionality and is currently ignored.
+- `internal_dns_name_label`        = (Optional) - The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network.
+- `ip_forwarding_enabled`          = (Optional) - Should IP Forwarding be enabled? Defaults to false
+- `lock_level`                     = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+- `lock_name`                      = (Optional) - The name for the lock on this nic
+- `role_assignments` = An optional list of objects defining role assignments on the individual network configuration resource       
+  - `assign_to_child_public_ip_addresses`        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.
+  - `condition`                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
+  - `condition_version`                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
+  - `delegated_managed_identity_resource_id`     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.
+  - `description`                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.  
+  - `principal_id`                               = (optional) - The ID of the Principal (User, Group or Service Principal) to assign the Role Definition to. Changing this forces a new resource to be created.
+  - `role_definition_id_or_name`                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name   
+  - `skip_service_principal_aad_check`           = (Optional) - If the principal_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal_id is a Service Principal identity. Defaults to true.
+- `tags`                           = (Optional) - A mapping of tags to assign to the resource.
 
-    role_assignments = list(object({      
-      principal_id                               = (optional) - The ID of the Principal (User, Group or Service Principal) to assign the Role Definition to. Changing this forces a new resource to be created.
-      role_definition_id_or_name                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name 
-      condition                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
-      condition_version                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
-      description                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.
-      skip_service_principal_aad_check           = (Optional) - If the principal_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal_id is a Service Principal identity. Defaults to true.
-      delegated_managed_identity_resource_id     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.
-      assign_to_child_public_ip_addresses        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.
-    }))
+Example Inputs:
 
-  }))
+```hcl
+#Simple private IP single NIC with IPV4 private address
+network_interfaces = [
+  {
+    name = "testnic1"
+    ip_configurations = [
+      {
+        name                          = "testnic1-ipconfig"
+        private_ip_subnet_resource_id = data.azurerm_subnet.vmsubnet1.id
+        create_public_ip_address      = false
+      }
+    ]
+  }
+]
 
-  Example Inputs:
-
-  ```terraform
-  #Simple private IP single NIC with IPV4 private address
-    network_interfaces = [{
-      name = "testnic1"
-      ip_configurations = [
-        {
-          name                          = "testnic1-ipconfig"
-          private_ip_subnet_resource_id = data.azurerm_subnet.vmsubnet1.id
-          create_public_ip_address      = false
-        }
-      ]
-    }
-  ]
-
-  #Simple NIC with private and public IP address 
-  network_interfaces = [{
-      name = "testnic1"
-      ip_configurations = [
-        {
-          name                          = "testnic1-ipconfig"
-          private_ip_subnet_resource_id = data.azurerm_subnet.vmsubnet1.id
-          create_public_ip_address      = false
-        },
-        {
-          name                          = "testnic1-ipconfig2-public"
-          create_public_ip_address      = true
-        }
-      ]
-    }
-  ]
-  ```
-  NETWORK_INTERFACES
+#Simple NIC with private and public IP address 
+network_interfaces = [
+  {
+    name = "testnic1"
+    ip_configurations = [
+      {
+        name                          = "testnic1-ipconfig"
+        private_ip_subnet_resource_id = data.azurerm_subnet.vmsubnet1.id
+        create_public_ip_address      = false
+      },
+      {
+        name                          = "testnic1-ipconfig2-public"
+        create_public_ip_address      = true
+      }
+    ]
+  }
+]
+```
+NETWORK_INTERFACES
   nullable    = false
 }
 
