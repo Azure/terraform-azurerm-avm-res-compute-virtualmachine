@@ -612,12 +612,18 @@ variable "network_interfaces" {
     name = string
     ip_configurations = map(object({
       name                                                        = string
-      app_gateway_backend_pool_resource_id                        = optional(string)
+      app_gateway_backend_pools                                   = optional(map(object({
+        app_gateway_backend_pool_resource_id                      = string
+      })), {})
       create_public_ip_address                                    = optional(bool, false)
       gateway_load_balancer_frontend_ip_configuration_resource_id = optional(string)
       is_primary_ipconfiguration                                  = optional(bool, true)
-      load_balancer_backend_pool_resource_id                      = optional(string)
-      load_balancer_nat_rule_resource_id                          = optional(string)
+      load_balancer_backend_pools                                 = optional(map(object({
+        load_balancer_backend_pool_resource_id                    = string
+      })), {})   
+      load_balancer_nat_rules                                     = optional(map(object({
+        load_balancer_nat_rule_resource_id                        = string
+      })), {})
       private_ip_address                                          = optional(string)
       private_ip_address_allocation                               = optional(string, "Dynamic")
       private_ip_address_version                                  = optional(string, "IPv4")
@@ -627,7 +633,9 @@ variable "network_interfaces" {
       public_ip_address_resource_id                               = optional(string)
     }))
     accelerated_networking_enabled         = optional(bool, false)
-    application_security_group_resource_ids = optional(set(string), [])
+    application_security_groups =  optional(map(object({
+      application_security_group_resource_id = string
+    })), {})   
     diagnostic_settings = optional(map(object({
       name                                     = optional(string, null)
       log_categories                           = optional(set(string), [])
@@ -646,7 +654,9 @@ variable "network_interfaces" {
     ip_forwarding_enabled          = optional(bool, false)
     lock_level                     = optional(string)
     lock_name                      = optional(string)
-    network_security_group_resource_id = optional(string)    
+    network_security_groups = optional(map(object({
+      network_security_group_resource_id = string
+    })), {})    
     role_assignments = optional(map(object({
       principal_id                           = string
       role_definition_id_or_name             = string
@@ -688,20 +698,28 @@ A map of objects representing each network virtual machine network interface
   - `ip_configurations` - A required map of objects defining each interfaces IP configurations
     - `<map key>' - Use a custom map key to define each ip configuration
       - `name`                                                        = (Required) - A name used for this IP Configuration.
-      - `app_gateway_backend_pool_resource_id`                        = (Optional) - An application gateway backend pool Azure Resource ID can be entered to join this ip configuration to the backend pool of an Application Gateway.      
+      - `app_gateway_backend_pools`                                   = (Optional) - A map defining app gateway backend pool(s) this IP configuration should be associated to.
+        - `<map key>' - Use a custom map key to define each app gateway backend pool association.  This is done to handle issues with certain details not being known until after apply.
+          - `app_gateway_backend_pool_resource_id`                    = (Required) - An application gateway backend pool Azure Resource ID can be entered to join this ip configuration to the backend pool of an Application Gateway.      
       - `create_public_ip_address`                                    = (Optional) - Select true here to have the module create the public IP address for this IP Configuration
       - `gateway_load_balancer_frontend_ip_configuration_resource_id` = (Optional) - The Frontend IP Configuration Azure Resource ID of a Gateway SKU Load Balancer.)
       - `is_primary_ipconfiguration`                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified. 
-      - `load_balancer_backend_pool_resource_id`                      = (Optional) - A Load Balancer backend pool Azure Resource ID can be entered to join this ip configuration to a load balancer backend pool.
-      - `load_balancer_nat_rule_resource_id`                          = (Optional) - A Load Balancer Nat Rule Azure Resource ID can be entered to associate this ip configuration to a load balancer NAT rule.
+      - `load_balancer_backend_pools`                                 = (Optional) - A map defining load balancer backend pool(s) this IP configuration should be associated to.
+        - `<map key>' - Use a custom map key to define each load balancer backend pool association.  This is done to handle issues with certain details not being known until after apply.
+          - `load_balancer_backend_pool_resource_id`                  = (Required) - A Load Balancer backend pool Azure Resource ID can be entered to join this ip configuration to a load balancer backend pool.
+      - `load_balancer_nat_rules`                                     = (Optional) - A map defining load balancer NAT rule(s) that this IP Configuration should be associated to.
+        - `<map key>' - Use a custom map key to define each load balancer NAT Rule association.  This is done to handle issues with certain details not being known until after apply.  
+          - `load_balancer_nat_rule_resource_id`                        = (Optional) - A Load Balancer Nat Rule Azure Resource ID can be entered to associate this ip configuration to a load balancer NAT rule.
       - `private_ip_address`                                          = (Optional) - The Static IP Address which should be used. Configured when private_ip_address_allocation is set to Static
       - `private_ip_address_allocation`                               = (Optional) - The allocation method used for the Private IP Address. Possible values are Dynamic and Static. Dynamic means "An IP is automatically assigned during creation of this Network Interface" and is the default; Static means "User supplied IP address will be used" 
       - `private_ip_address_version`                                  = (Optional) - The IP Version to use. Possible values are IPv4 or IPv6. Defaults to IPv4.  
       - `private_ip_subnet_resource_id`                               = (Optional) - The Azure Resource ID of the Subnet where this Network Interface should be located in.
       - `public_ip_address_resource_id`                               = (Optional) - Reference to a Public IP Address resource ID to associate with this NIC  
-  - `accelerated_networking_enabled` = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.  
-  - `application_security_group_resource_ids` - An set of Application Security Group (ASG) Azure Resource IDs can be entered to associate this Network Interface to one or more ASGs.
-  - `diagnostic_settings` =  An optional map of objects defining the network interface resource diagnostic settings 
+  - `accelerated_networking_enabled`                                  = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.  
+  - `application_security_groups`                                     = (Optional) - A map defining the Application Security Group(s) that this network interface should be a part of.
+    - `<map key>' - Use a custom map key to define each Application Security Group association.  This is done to handle issues with certain details not being known until after apply.   
+      - `application_security_group_resource_ids`                     = (Required) - The Application Security Group (ASG) Azure Resource ID for this Network Interface to be associated to.
+  - `diagnostic_settings`                                             = (Optional) - A map of objects defining the network interface resource diagnostic settings 
     - `<map key>' - Use a custom map key to define each diagnostic setting configuration
       - `name`                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
       - `event_hub_authorization_rule_resource_id` = (Optional) - The Event Hub Namespace Authorization Rule Resource ID when sending logs or metrics to an Event Hub Namespace
@@ -712,13 +730,15 @@ A map of objects representing each network virtual machine network interface
       - `metric_categories`                        = (Optional) - List of strings used to define metric categories. Currently only AllMetrics is valid
       - `storage_account_resource_id`              = (Optional) - The Storage Account Azure Resource ID when sending logs or metrics to a Storage Account
       - `workspace_resource_id`                    = (Optional) - The Log Analytics Workspace Azure Resource ID when sending logs or metrics to a Log Analytics Workspace
-  - `dns_servers`                    = (Optional) - A list of IP Addresses defining the DNS Servers which should be used for this Network Interface.
-  - `inherit_tags`                   = (Optional) - Defaults to true.  Set this to false if only the tags defined on this resource should be applied. This is potential future functionality and is currently ignored.
-  - `internal_dns_name_label`        = (Optional) - The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network.
-  - `ip_forwarding_enabled`          = (Optional) - Should IP Forwarding be enabled? Defaults to false
-  - `lock_level`                     = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-  - `lock_name`                      = (Optional) - The name for the lock on this nic
-  - `network_security_group_resource_id` = (Optional) - A Network Security Group (NSG) Azure Resource ID can be entered to associate this Network Interface to the NSG.
+  - `dns_servers`                                                     = (Optional) - A list of IP Addresses defining the DNS Servers which should be used for this Network Interface.
+  - `inherit_tags`                                                    = (Optional) - Defaults to true.  Set this to false if only the tags defined on this resource should be applied. This is potential future functionality and is currently ignored.
+  - `internal_dns_name_label`                                         = (Optional) - The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network.
+  - `ip_forwarding_enabled`                                           = (Optional) - Should IP Forwarding be enabled? Defaults to false
+  - `lock_level`                                                      = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+  - `lock_name`                                                       = (Optional) - The name for the lock on this nic
+  - `network_security_groups`                                         = (Optional) - A map describing Network Security Group(s) that this Network Interface should be associated to.
+    - `<map key>' - Use a custom map key to define each network security group association.  This is done to handle issues with certain details not being known until after apply.
+      - `network_security_group_resource_id` = (Optional) - The Network Security Group (NSG) Azure Resource ID used to associate this Network Interface to the NSG.
   - `role_assignments` = An optional map of objects defining role assignments on the individual network configuration resource 
     - `<map key>' - Use a custom map key to define each role assignment configuration    
       - `assign_to_child_public_ip_addresses`        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.

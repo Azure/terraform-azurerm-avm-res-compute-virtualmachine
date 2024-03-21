@@ -62,3 +62,8 @@ output "virtual_machine_azurerm" {
     VIRTUAL_MACHINE_AZURERM
   value       = (lower(var.virtualmachine_os_type) == "windows") ? local.windows_virtual_machine_output_map : local.linux_virtual_machine_output_map
 }
+
+
+output "testlocal" {
+  value = local.nics_ip_configs_lb_pools
+}
