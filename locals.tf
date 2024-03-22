@@ -40,7 +40,7 @@ locals {
   location = coalesce(var.location, data.azurerm_resource_group.virtualmachine_deployment.location)
   #set the type value for the managed identity that is used by azurerm
   managed_identity_type = var.managed_identities.system_assigned ? ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "SystemAssigned, UserAssigned" : "SystemAssigned") : ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "UserAssigned" : null)
-  
+
   #flatten the diag settings for the nics
   nics_diag_settings = { for ds in flatten([
     for nk, nv in var.network_interfaces : [
@@ -75,22 +75,22 @@ locals {
   ]) : "${ra.nic_key}-${ra.ra_key}" => ra }
 
   #flatten the NSG's for the nics
-    nics_nsgs = { for nsg in flatten([
+  nics_nsgs = { for nsg in flatten([
     for nk, nv in var.network_interfaces : [
       for nsk, nsv in nv.network_security_groups : {
-        nic_key         = nk
-        nsg_key         = nsk
+        nic_key                 = nk
+        nsg_key                 = nsk
         network_security_groups = nsv
       }
     ]
   ]) : "${nsg.nic_key}-${nsg.nsg_key}" => nsg }
 
   #flatten the ASG's for the nics
-    nics_asgs = { for asg in flatten([
+  nics_asgs = { for asg in flatten([
     for nk, nv in var.network_interfaces : [
       for ask, asv in nv.application_security_groups : {
-        nic_key         = nk
-        asg_key         = ask
+        nic_key                     = nk
+        asg_key                     = ask
         application_security_groups = asv
       }
     ]
@@ -99,7 +99,7 @@ locals {
   #flatten the ip_configs for the nics and load-balancer pools
   nics_ip_configs_lb_pools = { for lb_pool in flatten([
     for nk, nv in var.network_interfaces : [
-      for ipck, ipcv in nv.ip_configurations : [ 
+      for ipck, ipcv in nv.ip_configurations : [
         for lbk, lbv in ipcv.load_balancer_backend_pools : {
           nic_key       = nk
           ipconfig_key  = ipck
@@ -114,7 +114,7 @@ locals {
   #flatten the ip_configs for the nics and load-balancer nat rules
   nics_ip_configs_lb_nat_rules = { for lb_nat_rule in flatten([
     for nk, nv in var.network_interfaces : [
-      for ipck, ipcv in nv.ip_configurations : [ 
+      for ipck, ipcv in nv.ip_configurations : [
         for lbk, lbv in ipcv.load_balancer_nat_rules : {
           nic_key       = nk
           ipconfig_key  = ipck
@@ -129,7 +129,7 @@ locals {
   #flatten the ip_configs for the nics and app gateway pools
   nics_ip_configs_app_gw_pools = { for ag_pool in flatten([
     for nk, nv in var.network_interfaces : [
-      for ipck, ipcv in nv.ip_configurations : [ 
+      for ipck, ipcv in nv.ip_configurations : [
         for agk, agv in ipcv.app_gateway_backend_pools : {
           nic_key       = nk
           ipconfig_key  = ipck

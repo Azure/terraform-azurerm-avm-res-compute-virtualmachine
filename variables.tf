@@ -22,6 +22,11 @@ variable "virtualmachine_sku_size" {
   nullable    = false
 }
 
+variable "zone" {
+  type        = string
+  description = "The Availability Zone which the Virtual Machine should be allocated in, only one zone would be accepted. If set then this module won't create `azurerm_availability_set` resource. Changing this forces a new resource to be created. This has been moved to a required value to comply with WAF guidance to intentionally select zones for resources as part of resource architectures. If deploying to a region without zones, set this value to null."
+}
+
 ########## optional variables
 variable "additional_unattend_contents" {
   type = list(object({
@@ -611,31 +616,31 @@ variable "network_interfaces" {
   type = map(object({
     name = string
     ip_configurations = map(object({
-      name                                                        = string
-      app_gateway_backend_pools                                   = optional(map(object({
-        app_gateway_backend_pool_resource_id                      = string
+      name = string
+      app_gateway_backend_pools = optional(map(object({
+        app_gateway_backend_pool_resource_id = string
       })), {})
       create_public_ip_address                                    = optional(bool, false)
       gateway_load_balancer_frontend_ip_configuration_resource_id = optional(string)
       is_primary_ipconfiguration                                  = optional(bool, true)
-      load_balancer_backend_pools                                 = optional(map(object({
-        load_balancer_backend_pool_resource_id                    = string
-      })), {})   
-      load_balancer_nat_rules                                     = optional(map(object({
-        load_balancer_nat_rule_resource_id                        = string
+      load_balancer_backend_pools = optional(map(object({
+        load_balancer_backend_pool_resource_id = string
       })), {})
-      private_ip_address                                          = optional(string)
-      private_ip_address_allocation                               = optional(string, "Dynamic")
-      private_ip_address_version                                  = optional(string, "IPv4")
-      private_ip_subnet_resource_id                               = optional(string)
-      public_ip_address_lock_name                                 = optional(string)
-      public_ip_address_name                                      = optional(string)
-      public_ip_address_resource_id                               = optional(string)
+      load_balancer_nat_rules = optional(map(object({
+        load_balancer_nat_rule_resource_id = string
+      })), {})
+      private_ip_address            = optional(string)
+      private_ip_address_allocation = optional(string, "Dynamic")
+      private_ip_address_version    = optional(string, "IPv4")
+      private_ip_subnet_resource_id = optional(string)
+      public_ip_address_lock_name   = optional(string)
+      public_ip_address_name        = optional(string)
+      public_ip_address_resource_id = optional(string)
     }))
-    accelerated_networking_enabled         = optional(bool, false)
-    application_security_groups =  optional(map(object({
+    accelerated_networking_enabled = optional(bool, false)
+    application_security_groups = optional(map(object({
       application_security_group_resource_id = string
-    })), {})   
+    })), {})
     diagnostic_settings = optional(map(object({
       name                                     = optional(string, null)
       log_categories                           = optional(set(string), [])
@@ -648,15 +653,15 @@ variable "network_interfaces" {
       event_hub_name                           = optional(string, null)
       marketplace_partner_resource_id          = optional(string, null)
     })), {})
-    dns_servers                    = optional(list(string))
-    inherit_tags                   = optional(bool, true)
-    internal_dns_name_label        = optional(string)
-    ip_forwarding_enabled          = optional(bool, false)
-    lock_level                     = optional(string)
-    lock_name                      = optional(string)
+    dns_servers             = optional(list(string))
+    inherit_tags            = optional(bool, true)
+    internal_dns_name_label = optional(string)
+    ip_forwarding_enabled   = optional(bool, false)
+    lock_level              = optional(string)
+    lock_name               = optional(string)
     network_security_groups = optional(map(object({
       network_security_group_resource_id = string
-    })), {})    
+    })), {})
     role_assignments = optional(map(object({
       principal_id                           = string
       role_definition_id_or_name             = string
@@ -667,7 +672,7 @@ variable "network_interfaces" {
       description                            = optional(string, null)
       skip_service_principal_aad_check       = optional(bool, false)
     })), {})
-    tags                           = optional(map(any))
+    tags = optional(map(any))
   }))
   default = {
     ipconfig_1 = {
@@ -1259,8 +1264,4 @@ WINRM_LISTENERS
   nullable    = false
 }
 
-variable "zone" {
-  type        = string
-  default     = null
-  description = "(Optional) The Availability Zone which the Virtual Machine should be allocated in, only one zone would be accepted. If set then this module won't create `azurerm_availability_set` resource. Changing this forces a new resource to be created."
-}
+

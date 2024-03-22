@@ -97,14 +97,14 @@ resource "azurerm_bastion_host" "bastion" {
 */
 
 module "loadbalancer" {
-  source = "Azure/avm-res-network-loadbalancer/azurerm"
+  source  = "Azure/avm-res-network-loadbalancer/azurerm"
   version = "0.1.6"
 
   enable_telemetry = var.enable_telemetry
 
   name                = module.naming.lb.name_unique
   location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name  
+  resource_group_name = azurerm_resource_group.this_rg.name
 
   # Virtual Network and Subnet for Internal LoadBalancer
   # frontend_vnet_resource_id   = azurerm_virtual_network.example.id
@@ -120,7 +120,7 @@ module "loadbalancer" {
   # Backend Address Pool
   backend_address_pools = {
     pool1 = {
-      name = "testBackendPool"      
+      name = "testBackendPool"
     }
   }
 
@@ -128,20 +128,20 @@ module "loadbalancer" {
     lb_nat_rule_1 = {
       name                           = "rdp_nat_rule_1"
       frontend_ip_configuration_name = "testFrontend"
-      protocol = "Tcp"
-      frontend_port = 30001
-      backend_port = 3389
+      protocol                       = "Tcp"
+      frontend_port                  = 30001
+      backend_port                   = 3389
     }
   }
 }
 
 data "azurerm_lb_backend_address_pool" "testlbpool" {
-  name = "testBackendPool"
+  name            = "testBackendPool"
   loadbalancer_id = module.loadbalancer.azurerm_lb.id
 }
 
 resource "azurerm_lb_nat_rule" "test" {
-  resource_group_name            = azurerm_resource_group.this_rg.name 
+  resource_group_name            = azurerm_resource_group.this_rg.name
   loadbalancer_id                = module.loadbalancer.azurerm_lb.id
   name                           = "RDPAccess"
   protocol                       = "Tcp"
@@ -183,10 +183,10 @@ resource "azurerm_application_gateway" "network" {
   }
 
   frontend_ip_configuration {
-    name                 = local.frontend_ip_configuration_name
-    subnet_id            = azurerm_subnet.this_subnet_2.id
+    name                          = local.frontend_ip_configuration_name
+    subnet_id                     = azurerm_subnet.this_subnet_2.id
     private_ip_address_allocation = "Static"
-    private_ip_address = "10.0.3.100"
+    private_ip_address            = "10.0.3.100"
   }
 
   backend_address_pool {
@@ -257,26 +257,26 @@ module "testnsg" {
   resource_group_name = azurerm_resource_group.this_rg.name
   name                = module.naming.network_security_group.name_unique
   location            = azurerm_resource_group.this_rg.location
-  nsgrules            = { #allow all just to show the association.
-    "rule01": {
-      "nsg_rule_access": "Allow",
-      "nsg_rule_destination_address_prefix": "*",
-      "nsg_rule_destination_port_range": "*",
-      "nsg_rule_direction": "Inbound",
-      "nsg_rule_priority": 100,
-      "nsg_rule_protocol": "Tcp",
-      "nsg_rule_source_address_prefix": "*",
-      "nsg_rule_source_port_range": "*"
+  nsgrules = { #allow all just to show the association.
+    "rule01" : {
+      "nsg_rule_access" : "Allow",
+      "nsg_rule_destination_address_prefix" : "*",
+      "nsg_rule_destination_port_range" : "*",
+      "nsg_rule_direction" : "Inbound",
+      "nsg_rule_priority" : 100,
+      "nsg_rule_protocol" : "Tcp",
+      "nsg_rule_source_address_prefix" : "*",
+      "nsg_rule_source_port_range" : "*"
     },
-    "rule02": {
-      "nsg_rule_access": "Allow",
-      "nsg_rule_destination_address_prefix": "*",
-      "nsg_rule_destination_port_range": "*",
-      "nsg_rule_direction": "Outbound",
-      "nsg_rule_priority": 200,
-      "nsg_rule_protocol": "Tcp",
-      "nsg_rule_source_address_prefix": "*",
-      "nsg_rule_source_port_range": "*"
+    "rule02" : {
+      "nsg_rule_access" : "Allow",
+      "nsg_rule_destination_address_prefix" : "*",
+      "nsg_rule_destination_port_range" : "*",
+      "nsg_rule_direction" : "Outbound",
+      "nsg_rule_priority" : 200,
+      "nsg_rule_protocol" : "Tcp",
+      "nsg_rule_source_address_prefix" : "*",
+      "nsg_rule_source_port_range" : "*"
     }
   }
 }
@@ -304,8 +304,8 @@ module "testvm" {
 
 
   os_disk = {
-    caching                = "ReadWrite"
-    storage_account_type   = "StandardSSD_LRS"
+    caching              = "ReadWrite"
+    storage_account_type = "StandardSSD_LRS"
   }
 
   source_image_reference = {
@@ -332,19 +332,19 @@ module "testvm" {
         ip_configuration_1 = {
           app_gateway_backend_pools = {
             app_gw_pool_1 = {
-              app_gateway_backend_pool_resource_id = [ for value in azurerm_application_gateway.network.backend_address_pool : value.id if value.name == local.backend_address_pool_name ][0]
+              app_gateway_backend_pool_resource_id = [for value in azurerm_application_gateway.network.backend_address_pool : value.id if value.name == local.backend_address_pool_name][0]
             }
-          }          
+          }
           load_balancer_backend_pools = {
             lb_pool_1 = {
-              load_balancer_backend_pool_resource_id = data.azurerm_lb_backend_address_pool.testlbpool.id 
-            }            
-          }  
+              load_balancer_backend_pool_resource_id = data.azurerm_lb_backend_address_pool.testlbpool.id
+            }
+          }
           load_balancer_nat_rules = {
             lb_nat_rule_1 = {
               load_balancer_nat_rule_resource_id = azurerm_lb_nat_rule.test.id
-            }            
-          }         
+            }
+          }
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
           private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
         }

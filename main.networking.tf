@@ -131,7 +131,7 @@ resource "azurerm_monitor_diagnostic_setting" "this_nic_diags" {
 #create the nic associations
 ### NSG associations
 resource "azurerm_network_interface_security_group_association" "this" {
-  for_each =  local.nics_nsgs
+  for_each = local.nics_nsgs
 
   network_interface_id      = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
   network_security_group_id = each.value.network_security_groups.network_security_group_resource_id
@@ -141,7 +141,7 @@ resource "azurerm_network_interface_security_group_association" "this" {
 resource "azurerm_network_interface_application_security_group_association" "this" {
   for_each = local.nics_asgs
 
-  network_interface_id      = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  network_interface_id          = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
   application_security_group_id = each.value.application_security_groups.application_security_group_resource_id
 }
 
@@ -168,7 +168,7 @@ resource "azurerm_network_interface_application_gateway_backend_address_pool_ass
 resource "azurerm_network_interface_nat_rule_association" "this" {
   for_each = local.nics_ip_configs_lb_nat_rules
 
-  network_interface_id    = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
-  ip_configuration_name   = each.value.ipconfig_name
-  nat_rule_id             = each.value.lb_nat_rules.load_balancer_nat_rule_resource_id
+  network_interface_id  = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  ip_configuration_name = each.value.ipconfig_name
+  nat_rule_id           = each.value.lb_nat_rules.load_balancer_nat_rule_resource_id
 }
