@@ -1483,10 +1483,6 @@ Description: The Azure resource id for the deployed virtual machine
 
 Description: The principal id of the system managed identity assigned to the virtual machine
 
-### <a name="output_testlocal"></a> [testlocal](#output\_testlocal)
-
-Description: n/a
-
 ### <a name="output_virtual_machine"></a> [virtual\_machine](#output\_virtual\_machine)
 
 Description: The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values
