@@ -54,8 +54,8 @@ resource "azurerm_linux_virtual_machine" "this" {
       for_each = var.os_disk.diff_disk_settings == null ? [] : ["diff_disk_settings"]
 
       content {
-        option    = var.diff_disk_settings.option
-        placement = var.diff_disk_settings.placement
+        option    = var.os_disk.diff_disk_settings.option
+        placement = var.os_disk.diff_disk_settings.placement
       }
     }
   }

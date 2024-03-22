@@ -10,7 +10,7 @@ module "regions" {
 
 locals {
   tags = {
-    scenario = "windows_w_encryption_at_host"
+    scenario = "windows_w_load_balancing"
   }
   test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
 }
@@ -341,7 +341,7 @@ module "testvm" {
             }            
           }  
           load_balancer_nat_rules = {
-            lb_pool_1 = {
+            lb_nat_rule_1 = {
               load_balancer_nat_rule_resource_id = azurerm_lb_nat_rule.test.id
             }            
           }         
