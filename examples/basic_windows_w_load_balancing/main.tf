@@ -143,7 +143,6 @@ locals {
   http_setting_name              = "${azurerm_virtual_network.this_vnet.name}-be-htst"
   listener_name                  = "${azurerm_virtual_network.this_vnet.name}-httplstn"
   request_routing_rule_name      = "${azurerm_virtual_network.this_vnet.name}-rqrt"
-  redirect_configuration_name    = "${azurerm_virtual_network.this_vnet.name}-rdrcfg"
 }
 
 resource "azurerm_application_gateway" "network" {
