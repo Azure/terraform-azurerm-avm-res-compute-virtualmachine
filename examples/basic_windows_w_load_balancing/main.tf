@@ -98,7 +98,7 @@ resource "azurerm_bastion_host" "bastion" {
 
 module "loadbalancer" {
   source  = "Azure/avm-res-network-loadbalancer/azurerm"
-  version = "0.1.6"
+  version = "0.1.7"
 
   enable_telemetry = var.enable_telemetry
 
@@ -119,7 +119,7 @@ module "loadbalancer" {
 
   # Backend Address Pool
   backend_address_pools = {
-    pool1 = {
+    pool_1 = {
       name = "testBackendPool"
     }
   }
@@ -133,21 +133,6 @@ module "loadbalancer" {
       backend_port                   = 3389
     }
   }
-}
-
-data "azurerm_lb_backend_address_pool" "testlbpool" {
-  name            = "testBackendPool"
-  loadbalancer_id = module.loadbalancer.azurerm_lb.id
-}
-
-resource "azurerm_lb_nat_rule" "test" {
-  resource_group_name            = azurerm_resource_group.this_rg.name
-  loadbalancer_id                = module.loadbalancer.azurerm_lb.id
-  name                           = "RDPAccess"
-  protocol                       = "Tcp"
-  frontend_port                  = 30000
-  backend_port                   = 3389
-  frontend_ip_configuration_name = "testFrontend"
 }
 
 # copied over from the AzureRM example - simplifies naming for the appgw resources
@@ -337,12 +322,12 @@ module "testvm" {
           }
           load_balancer_backend_pools = {
             lb_pool_1 = {
-              load_balancer_backend_pool_resource_id = data.azurerm_lb_backend_address_pool.testlbpool.id
+              load_balancer_backend_pool_resource_id = module.loadbalancer.azurerm_lb_backend_address_pool["pool_1"].id
             }
           }
           load_balancer_nat_rules = {
             lb_nat_rule_1 = {
-              load_balancer_nat_rule_resource_id = azurerm_lb_nat_rule.test.id
+              load_balancer_nat_rule_resource_id = module.loadbalancer.azurerm_lb_nat_rule["rdp_nat_rule_1"].id
             }
           }
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
