@@ -172,7 +172,7 @@ resource "azurerm_key_vault_secret" "admin_ssh_key" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.8.0"
+  #version = "0.9.0"
 
   admin_username                     = "azureuser"
   admin_password                     = "Don'tPutSecretsInPlainText1!"
