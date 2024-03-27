@@ -1,12 +1,12 @@
 locals {
   admin_password_linux = (lower(var.virtualmachine_os_type) == "linux") ? (
-    var.disable_password_authentication == false ? (                                                                                                                          #if os is linux and password authentication is enabled
-      var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : coalesce(var.admin_password, data.azurerm_key_vault_secret.admin_password[0].value) #use generated password, password variable, or vault reference (in order)
+    var.disable_password_authentication == false ? (                                                                                                                                     #if os is linux and password authentication is enabled
+      var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : coalesce(var.admin_password, try(data.azurerm_key_vault_secret.admin_password[0].value, null)) #use generated password, password variable, or vault reference (in order)
     ) : null
   ) : null
   #set the admin password to either a generated value or the entered value
   admin_password_windows = (lower(var.virtualmachine_os_type) == "windows") ? (
-    var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : coalesce(var.admin_password, data.azurerm_key_vault_secret.admin_password[0].value) #use generated password, password variable, or vault reference (in order)
+    var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : coalesce(var.admin_password, try(data.azurerm_key_vault_secret.admin_password[0].value, null)) #use generated password, password variable, or vault reference (in order)
   ) : null
   #format the admin ssh key so it can be concat'ed to the other keys.
   admin_ssh_key = (((var.generate_admin_password_or_ssh_key == true) && (lower(var.virtualmachine_os_type) == "linux")) ?
