@@ -1263,5 +1263,3 @@ winrm_listeners = [
 WINRM_LISTENERS
   nullable    = false
 }
-
-
