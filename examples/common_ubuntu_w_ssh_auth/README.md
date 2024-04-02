@@ -185,6 +185,7 @@ resource "azurerm_key_vault_secret" "admin_ssh_key" {
   key_vault_id = module.avm_res_keyvault_vault.resource.id
   name         = "azureuser-ssh-private-key"
   value        = tls_private_key.this.private_key_pem
+
   depends_on = [
     module.avm_res_keyvault_vault
   ]
