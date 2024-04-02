@@ -148,12 +148,18 @@ resource "azurerm_windows_virtual_machine" "this" {
     }
   }
   dynamic "winrm_listener" {
-    for_each = { for listener in var.winrm_listeners : sha256(jsonencode(listener)) => listener }
+    for_each = var.winrm_listeners
 
     content {
       protocol        = winrm_listener.value.protocol
       certificate_url = winrm_listener.value.certificate_url
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      winrm_listener # Once the certificate got rotated, it will triger a destroy/recreate of the VM.
+    ]
   }
 }
 
