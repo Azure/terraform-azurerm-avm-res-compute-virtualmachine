@@ -254,6 +254,7 @@ module "testvm" {
   admin_username                         = local.admin_username
   enable_telemetry                       = var.enable_telemetry
   generate_admin_password_or_ssh_key     = true
+  location                               = azurerm_resource_group.this_rg.location
   name                                   = module.naming.virtual_machine.name_unique
   resource_group_name                    = azurerm_resource_group.this_rg.name
   virtualmachine_os_type                 = local.virtualmachine_os_type
