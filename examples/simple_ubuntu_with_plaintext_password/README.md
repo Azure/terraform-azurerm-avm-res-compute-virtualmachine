@@ -201,6 +201,7 @@ module "testvm" {
   enable_telemetry                   = var.enable_telemetry
   encryption_at_host_enabled         = true
   generate_admin_password_or_ssh_key = false
+  location                           = azurerm_resource_group.this_rg.location
   name                               = module.naming.virtual_machine.name_unique
   resource_group_name                = azurerm_resource_group.this_rg.name
   virtualmachine_os_type             = "Linux"

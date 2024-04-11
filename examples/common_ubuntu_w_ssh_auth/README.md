@@ -213,6 +213,7 @@ module "testvm" {
   enable_telemetry                   = var.enable_telemetry
   encryption_at_host_enabled         = true
   generate_admin_password_or_ssh_key = false
+  location                           = azurerm_resource_group.this_rg.location
   name                               = module.naming.virtual_machine.name_unique
   resource_group_name                = azurerm_resource_group.this_rg.name
   virtualmachine_os_type             = "Linux"
@@ -244,11 +245,24 @@ module "testvm" {
 
   network_interfaces = {
     network_interface_1 = {
-      name = module.naming.network_interface.name_unique
+      name                           = "${module.naming.network_interface.name_unique}-1"
+      accelerated_networking_enabled = true
+      ip_forwarding_enabled          = true
       ip_configurations = {
         ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          name                          = "${module.naming.network_interface.name_unique}-nic1-ipconfig1"
           private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
+        }
+      }
+    }
+    network_interface_2 = {
+      name                           = "${module.naming.network_interface.name_unique}-2"
+      accelerated_networking_enabled = true
+      ip_forwarding_enabled          = true
+      ip_configurations = {
+        ip_configuration_avs_facing = {
+          name                          = "${module.naming.network_interface.name_unique}-nic2-ipconfig1"
+          private_ip_subnet_resource_id = azurerm_subnet.this_subnet_2.id
         }
       }
     }

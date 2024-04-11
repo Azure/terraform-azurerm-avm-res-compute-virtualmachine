@@ -32,6 +32,7 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
+- [azurerm_dev_test_global_vm_shutdown_schedule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule) (resource)
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_linux_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine) (resource)
@@ -63,12 +64,17 @@ The following resources are used by this module:
 - [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
 - [tls_private_key.this](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) (resource)
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/key_vault_secret) (data source)
-- [azurerm_resource_group.virtualmachine_deployment](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/resource_group) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
 
 The following input variables are required:
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The Azure region where this and supporting resources should be deployed.
+
+Type: `string`
 
 ### <a name="input_name"></a> [name](#input\_name)
 
@@ -649,14 +655,6 @@ Default: `false`
 ### <a name="input_license_type"></a> [license\_type](#input\_license\_type)
 
 Description: (Optional) For Linux virtual machine specifies the BYOL Type for this Virtual Machine, possible values are `RHEL_BYOS` and `SLES_BYOS`. For Windows virtual machine specifies the type of on-premise license (also known as [Azure Hybrid Use Benefit](https://docs.microsoft.com/windows-server/get-started/azure-hybrid-benefit)) which should be used for this Virtual Machine, possible values are `None`, `Windows_Client` and `Windows_Server`.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_location"></a> [location](#input\_location)
-
-Description: The Azure region where this and supporting resources should be deployed.  Defaults to the Resource Groups location if undefined.
 
 Type: `string`
 
@@ -1261,6 +1259,55 @@ Description: (Optional) Specifies whether secure boot should be enabled on the v
 Type: `bool`
 
 Default: `null`
+
+### <a name="input_shutdown_schedules"></a> [shutdown\_schedules](#input\_shutdown\_schedules)
+
+Description: This map of objects describes an auto-shutdown schedule for the virtual machine.  The default is to not have a shutdown schedule.
+- `<map key>` - Use a custom map key for the shutdown schedule definition
+  - `daily_recurrence_time` = (Required) The time each day when the schedule takes effect. Must match the format HHmm where HH is 00-23 and mm is 00-59 (e.g. 0930, 2300, etc.)
+  - `enabled` = (Required) Designates whether the shutdown schedule is enabled.  Defaults to true when a schedule is configured.
+  - `notification_settings` = (Required) The notification setting object for this schedule.
+    - `enabled` = (Required) Whether to enable pre-shutdown notifications.  Possible values are true or false.
+    - `email` = (Optional) = Email address or multiple email addresses separated by a semi-colon where the notification emails will be sent.
+    - `time_in_minutes` = (Optional) TIme in minutes between 15 and 120 before a shutdown event at which a notification will be sent.  Defaults to "30".
+    - `webhook_url` = (Optional) The webhook URL to which notifications will be sent.
+  - `timezone` = (Required) - (Required) The time zone ID (e.g. Pacific Standard time).
+
+Example Input:
+```hcl
+  shutdown_schedules = {
+    test_schedule = {
+      daily_recurrence_time = "1700"
+      enabled               = true
+      timezone              = "Pacific Standard Time"
+      notification_settings = {
+        enabled         = true
+        email           = "example@example.com;example2@example.com"
+        time_in_minutes = "15"
+        webhook_url     = "https://example-webhook-url.example.com"
+      }
+    }
+  }
+
+```
+
+Type:
+
+```hcl
+map(object({
+    daily_recurrence_time = string
+    notification_settings = optional(object({
+      enabled         = optional(bool, false)
+      email           = optional(string, null)
+      time_in_minutes = optional(string, "30")
+      webhook_url     = optional(string, null)
+    }), { enabled = false })
+    timezone = string
+    enabled  = optional(bool, true)
+  }))
+```
+
+Default: `{}`
 
 ### <a name="input_source_image_reference"></a> [source\_image\_reference](#input\_source\_image\_reference)
 

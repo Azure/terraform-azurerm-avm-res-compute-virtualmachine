@@ -1096,6 +1096,51 @@ variable "secure_boot_enabled" {
   description = "(Optional) Specifies whether secure boot should be enabled on the virtual machine. Changing this forces a new resource to be created."
 }
 
+variable "shutdown_schedules" {
+  type = map(object({
+    daily_recurrence_time = string
+    notification_settings = optional(object({
+      enabled         = optional(bool, false)
+      email           = optional(string, null)
+      time_in_minutes = optional(string, "30")
+      webhook_url     = optional(string, null)
+    }), { enabled = false })
+    timezone = string
+    enabled  = optional(bool, true)
+  }))
+  default     = {}
+  description = <<SHUTDOWN_SCHEDULES
+This map of objects describes an auto-shutdown schedule for the virtual machine.  The default is to not have a shutdown schedule.
+- `<map key>` - Use a custom map key for the shutdown schedule definition
+  - `daily_recurrence_time` = (Required) The time each day when the schedule takes effect. Must match the format HHmm where HH is 00-23 and mm is 00-59 (e.g. 0930, 2300, etc.)
+  - `enabled` = (Required) Designates whether the shutdown schedule is enabled.  Defaults to true when a schedule is configured.
+  - `notification_settings` = (Required) The notification setting object for this schedule.
+    - `enabled` = (Required) Whether to enable pre-shutdown notifications.  Possible values are true or false.
+    - `email` = (Optional) = Email address or multiple email addresses separated by a semi-colon where the notification emails will be sent.
+    - `time_in_minutes` = (Optional) TIme in minutes between 15 and 120 before a shutdown event at which a notification will be sent.  Defaults to "30".
+    - `webhook_url` = (Optional) The webhook URL to which notifications will be sent.
+  - `timezone` = (Required) - (Required) The time zone ID (e.g. Pacific Standard time).
+
+Example Input:
+```hcl
+  shutdown_schedules = {
+    test_schedule = {
+      daily_recurrence_time = "1700"
+      enabled               = true
+      timezone              = "Pacific Standard Time"
+      notification_settings = {
+        enabled         = true
+        email           = "example@example.com;example2@example.com"
+        time_in_minutes = "15"
+        webhook_url     = "https://example-webhook-url.example.com"
+      }
+    }
+  }
+
+```
+SHUTDOWN_SCHEDULES
+}
+
 variable "source_image_reference" {
   type = object({
     publisher = string

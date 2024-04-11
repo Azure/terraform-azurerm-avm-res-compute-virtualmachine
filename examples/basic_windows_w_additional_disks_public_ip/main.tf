@@ -160,6 +160,14 @@ module "testvm" {
     }
   }
 
+  shutdown_schedules = {
+    test_schedule = {
+      daily_recurrence_time = "1700"
+      enabled               = true
+      timezone              = "Pacific Standard Time"
+    }
+  }
+
   tags = {
     scenario = "windows_w_data_disk_and_public_ip"
   }

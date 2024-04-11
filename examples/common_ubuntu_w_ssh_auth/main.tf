@@ -223,7 +223,7 @@ module "testvm" {
 
   network_interfaces = {
     network_interface_1 = {
-      name = "${module.naming.network_interface.name_unique}-1"
+      name                           = "${module.naming.network_interface.name_unique}-1"
       accelerated_networking_enabled = true
       ip_forwarding_enabled          = true
       ip_configurations = {

@@ -36,7 +36,6 @@ locals {
     public_ip_addresses  = azurerm_linux_virtual_machine.this[0].public_ip_addresses
     virtual_machine_id   = azurerm_linux_virtual_machine.this[0].virtual_machine_id
   } : null
-
   #set the type value for the managed identity that is used by azurerm
   managed_identity_type = var.managed_identities.system_assigned ? ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "SystemAssigned, UserAssigned" : "SystemAssigned") : ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "UserAssigned" : null)
   #flatten the ASG's for the nics
