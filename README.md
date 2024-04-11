@@ -1271,7 +1271,8 @@ Description: This map of objects describes an auto-shutdown schedule for the vir
     - `email` = (Optional) = Email address or multiple email addresses separated by a semi-colon where the notification emails will be sent.
     - `time_in_minutes` = (Optional) TIme in minutes between 15 and 120 before a shutdown event at which a notification will be sent.  Defaults to "30".
     - `webhook_url` = (Optional) The webhook URL to which notifications will be sent.
-  - `timezone` = (Required) - (Required) The time zone ID (e.g. Pacific Standard time).
+  - `tags` = (Optional) - Tags to apply to the shutdown schedules resource.
+  - `timezone` = (Required) - The time zone ID (e.g. Pacific Standard time).
 
 Example Input:
 ```hcl
