@@ -234,7 +234,6 @@ module "testnsg" {
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
   name                = module.naming.network_security_group.name_unique
-  location            = azurerm_resource_group.this_rg.location
   nsgrules = { #allow all just to show the association.
     "rule01" : {
       "nsg_rule_access" : "Allow",
