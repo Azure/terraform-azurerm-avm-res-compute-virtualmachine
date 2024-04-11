@@ -245,7 +245,7 @@ variable "data_disk_managed_disks" {
   description = <<DATA_DISK_MANAGED_DISKS
 This variable is a map of objects used to define one or more data disks for creation and attachment to the virtual machine. 
 
-- `<map key>' - Use a custom map key to define each data disk
+- `<map key>` - Use a custom map key to define each data disk
   - `caching` (Required) - Specifies the caching requirements for this Data Disk. Possible values include None, ReadOnly and ReadWrite
   - `lun` (Required) - The Logical Unit Number of the Data Disk, which needs to be unique within the Virtual Machine. Changing this forces a new resource to be created.
   - `name` (Required) - Specifies the name of the Managed Disk. Changing this forces a new resource to be created.
@@ -338,7 +338,7 @@ variable "diagnostic_settings" {
   description = <<DIAGNOSTIC_SETTINGS
 This map object is used to define the diagnostic settings on the virtual machine.  This functionality does not implement the diagnostic settings extension, but instead can be used to configure sending the vm metrics to one of the standard targets.
 
-- <map_key> - unique key to define the map element
+- `<map_key>` - unique key to define the map element
   - `name`                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
   - `log_categories_and_groups`                = (Optional) - List of strings used to define log categories and groups. Currently not valid for the VM resource
   - `metric_categories`                        = (Optional) - List of strings used to define metric categories. Currently only AllMetrics is valid
@@ -697,22 +697,22 @@ variable "network_interfaces" {
   description = <<NETWORK_INTERFACES
 A map of objects representing each network virtual machine network interface
 
-- `<map key>' - Use a custom map key to define each network interface
+- `<map key>` - Use a custom map key to define each network interface
   - `name` = (Required) The name of the Network Interface. Changing this forces a new resource to be created.
   - `ip_configurations` - A required map of objects defining each interfaces IP configurations
-    - `<map key>' - Use a custom map key to define each ip configuration
+    - `<map key>` - Use a custom map key to define each ip configuration
       - `name`                                                        = (Required) - A name used for this IP Configuration.
       - `app_gateway_backend_pools`                                   = (Optional) - A map defining app gateway backend pool(s) this IP configuration should be associated to.
-        - `<map key>' - Use a custom map key to define each app gateway backend pool association.  This is done to handle issues with certain details not being known until after apply.
+        - `<map key>` - Use a custom map key to define each app gateway backend pool association.  This is done to handle issues with certain details not being known until after apply.
           - `app_gateway_backend_pool_resource_id`                    = (Required) - An application gateway backend pool Azure Resource ID can be entered to join this ip configuration to the backend pool of an Application Gateway.      
       - `create_public_ip_address`                                    = (Optional) - Select true here to have the module create the public IP address for this IP Configuration
       - `gateway_load_balancer_frontend_ip_configuration_resource_id` = (Optional) - The Frontend IP Configuration Azure Resource ID of a Gateway SKU Load Balancer.)
       - `is_primary_ipconfiguration`                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified. 
       - `load_balancer_backend_pools`                                 = (Optional) - A map defining load balancer backend pool(s) this IP configuration should be associated to.
-        - `<map key>' - Use a custom map key to define each load balancer backend pool association.  This is done to handle issues with certain details not being known until after apply.
+        - `<map key>` - Use a custom map key to define each load balancer backend pool association.  This is done to handle issues with certain details not being known until after apply.
           - `load_balancer_backend_pool_resource_id`                  = (Required) - A Load Balancer backend pool Azure Resource ID can be entered to join this ip configuration to a load balancer backend pool.
       - `load_balancer_nat_rules`                                     = (Optional) - A map defining load balancer NAT rule(s) that this IP Configuration should be associated to.
-        - `<map key>' - Use a custom map key to define each load balancer NAT Rule association.  This is done to handle issues with certain details not being known until after apply.  
+        - `<map key>` - Use a custom map key to define each load balancer NAT Rule association.  This is done to handle issues with certain details not being known until after apply.  
           - `load_balancer_nat_rule_resource_id`                        = (Optional) - A Load Balancer Nat Rule Azure Resource ID can be entered to associate this ip configuration to a load balancer NAT rule.
       - `private_ip_address`                                          = (Optional) - The Static IP Address which should be used. Configured when private_ip_address_allocation is set to Static
       - `private_ip_address_allocation`                               = (Optional) - The allocation method used for the Private IP Address. Possible values are Dynamic and Static. Dynamic means "An IP is automatically assigned during creation of this Network Interface" and is the default; Static means "User supplied IP address will be used" 
@@ -721,10 +721,10 @@ A map of objects representing each network virtual machine network interface
       - `public_ip_address_resource_id`                               = (Optional) - Reference to a Public IP Address resource ID to associate with this NIC  
   - `accelerated_networking_enabled`                                  = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.  
   - `application_security_groups`                                     = (Optional) - A map defining the Application Security Group(s) that this network interface should be a part of.
-    - `<map key>' - Use a custom map key to define each Application Security Group association.  This is done to handle issues with certain details not being known until after apply.   
+    - `<map key>` - Use a custom map key to define each Application Security Group association.  This is done to handle issues with certain details not being known until after apply.   
       - `application_security_group_resource_ids`                     = (Required) - The Application Security Group (ASG) Azure Resource ID for this Network Interface to be associated to.
   - `diagnostic_settings`                                             = (Optional) - A map of objects defining the network interface resource diagnostic settings 
-    - `<map key>' - Use a custom map key to define each diagnostic setting configuration
+    - `<map key>` - Use a custom map key to define each diagnostic setting configuration
       - `name`                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
       - `event_hub_authorization_rule_resource_id` = (Optional) - The Event Hub Namespace Authorization Rule Resource ID when sending logs or metrics to an Event Hub Namespace
       - `event_hub_name`                           = (Optional) - The Event Hub name when sending logs or metrics to an Event Hub  
@@ -741,10 +741,10 @@ A map of objects representing each network virtual machine network interface
   - `lock_level`                                                      = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
   - `lock_name`                                                       = (Optional) - The name for the lock on this nic
   - `network_security_groups`                                         = (Optional) - A map describing Network Security Group(s) that this Network Interface should be associated to.
-    - `<map key>' - Use a custom map key to define each network security group association.  This is done to handle issues with certain details not being known until after apply.
+    - `<map key>` - Use a custom map key to define each network security group association.  This is done to handle issues with certain details not being known until after apply.
       - `network_security_group_resource_id` = (Optional) - The Network Security Group (NSG) Azure Resource ID used to associate this Network Interface to the NSG.
   - `role_assignments` = An optional map of objects defining role assignments on the individual network configuration resource 
-    - `<map key>' - Use a custom map key to define each role assignment configuration    
+    - `<map key>` - Use a custom map key to define each role assignment configuration    
       - `assign_to_child_public_ip_addresses`        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.
       - `condition`                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
       - `condition_version`                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
@@ -985,7 +985,7 @@ variable "role_assignments" {
   description = <<VIRTUAL_MACHINE_ROLE_ASSIGNMENTS
 A map of role definitions and scopes to be assigned as part of this resources implementation.  Two forms are supported. Assignments against this virtual machine resource scope and assignments to external resource scopes using the system managed identity.
 
-- `<map key>' - Use a custom map key to define each role assignment configuration for this virtual machine
+- `<map key>` - Use a custom map key to define each role assignment configuration for this virtual machine
   - `principal_id`                               = (optional) - The ID of the Principal (User, Group or Service Principal) to assign the Role Definition to. Changing this forces a new resource to be created.
   - `role_definition_id_or_name`                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name 
   - `condition`                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
@@ -1027,7 +1027,7 @@ variable "role_assignments_system_managed_identity" {
   description = <<SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS
 A map of role definitions and scopes to be assigned as part of this resources implementation.  Two forms are supported. Assignments against this virtual machine resource scope and assignments to external resource scopes using the system managed identity.
 
-- `<map key>' - Use a custom map key to define each role assignment configuration assigned to the system managed identity of this virtual machine
+- `<map key>` - Use a custom map key to define each role assignment configuration assigned to the system managed identity of this virtual machine
   - `scope_resource_id`                          = (optional) - The scope at which the System Managed Identity Role Assignment applies to, such as /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333, /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup, or /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup/providers/Microsoft.Compute/virtualMachines/myVM, or /providers/Microsoft.Management/managementGroups/myMG. Changing this forces a new resource to be created.
   - `principal_id`                               = (optional) - The ID of the Principal (User, Group or Service Principal) to assign the Role Definition to. Changing this forces a new resource to be created.
   - `role_definition_id_or_name`                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name 
