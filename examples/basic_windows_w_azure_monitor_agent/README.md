@@ -159,7 +159,7 @@ resource "azurerm_log_analytics_workspace" "this_workspace" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.10.0"
+  #version = "0.11.0"
 
   enable_telemetry                       = var.enable_telemetry
   location                               = azurerm_resource_group.this_rg.location
