@@ -1107,6 +1107,7 @@ variable "shutdown_schedules" {
     }), { enabled = false })
     timezone = string
     enabled  = optional(bool, true)
+    tags     = optional(map(any))
   }))
   default     = {}
   description = <<SHUTDOWN_SCHEDULES

@@ -1304,6 +1304,7 @@ map(object({
     }), { enabled = false })
     timezone = string
     enabled  = optional(bool, true)
+    tags     = optional(map(any))
   }))
 ```
 
