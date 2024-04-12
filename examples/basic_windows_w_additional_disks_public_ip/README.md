@@ -137,7 +137,7 @@ module "avm_res_keyvault_vault" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.10.0"
+  #version = "0.11.0"
 
   enable_telemetry                       = var.enable_telemetry
   location                               = azurerm_resource_group.this_rg.location
@@ -176,6 +176,14 @@ module "testvm" {
       lun                  = 0
       caching              = "ReadWrite"
       disk_size_gb         = 32
+    }
+  }
+
+  shutdown_schedules = {
+    test_schedule = {
+      daily_recurrence_time = "1700"
+      enabled               = true
+      timezone              = "Pacific Standard Time"
     }
   }
 

@@ -3,9 +3,9 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
   for_each = { for key, values in local.nics_ip_configs : key => values if values.ipconfig.create_public_ip_address == true }
 
   allocation_method       = var.public_ip_configuration_details.allocation_method
-  location                = local.location
+  location                = var.location
   name                    = each.value.ipconfig.public_ip_address_name
-  resource_group_name     = data.azurerm_resource_group.virtualmachine_deployment.name
+  resource_group_name     = var.resource_group_name
   ddos_protection_mode    = var.public_ip_configuration_details.ddos_protection_mode
   ddos_protection_plan_id = var.public_ip_configuration_details.ddos_protection_plan_id
   domain_name_label       = var.public_ip_configuration_details.domain_name_label
@@ -23,9 +23,9 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
 resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
   for_each = var.network_interfaces
 
-  location                      = local.location
+  location                      = var.location
   name                          = each.value.name
-  resource_group_name           = data.azurerm_resource_group.virtualmachine_deployment.name
+  resource_group_name           = var.resource_group_name
   dns_servers                   = each.value.dns_servers
   edge_zone                     = var.edge_zone #each.value.edge_zone
   enable_accelerated_networking = each.value.accelerated_networking_enabled

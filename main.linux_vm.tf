@@ -3,10 +3,10 @@ resource "azurerm_linux_virtual_machine" "this" {
 
   #required properties
   admin_username        = var.admin_username
-  location              = local.location
+  location              = var.location
   name                  = var.name
   network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
-  resource_group_name   = data.azurerm_resource_group.virtualmachine_deployment.name
+  resource_group_name   = var.resource_group_name
   size                  = var.virtualmachine_sku_size
   #optional properties
   admin_password                                         = (var.disable_password_authentication ? null : local.admin_password_linux)

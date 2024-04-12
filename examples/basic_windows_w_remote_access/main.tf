@@ -180,12 +180,19 @@ module "avm_res_keyvault_vault" {
   tags = local.tags
 }
 
+resource "random_string" "public_ip_fqdn" {
+  length  = 8
+  lower   = true
+  special = false
+  upper   = false
+}
+
 resource "azurerm_public_ip" "this" {
   allocation_method       = "Static"
   location                = azurerm_resource_group.this_rg.location
   name                    = module.naming.public_ip.name_unique
   resource_group_name     = azurerm_resource_group.this_rg.name
-  domain_name_label       = "avmdemowinrm"
+  domain_name_label       = random_string.public_ip_fqdn.result
   idle_timeout_in_minutes = 30
   ip_version              = "IPv4"
   sku                     = "Standard"
@@ -248,12 +255,13 @@ resource "azurerm_key_vault_certificate" "self_signed_winrm" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.10.0"
+  #version = "0.11.0"
 
   admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
   admin_username                         = local.admin_username
   enable_telemetry                       = var.enable_telemetry
   generate_admin_password_or_ssh_key     = true
+  location                               = azurerm_resource_group.this_rg.location
   name                                   = module.naming.virtual_machine.name_unique
   resource_group_name                    = azurerm_resource_group.this_rg.name
   virtualmachine_os_type                 = local.virtualmachine_os_type

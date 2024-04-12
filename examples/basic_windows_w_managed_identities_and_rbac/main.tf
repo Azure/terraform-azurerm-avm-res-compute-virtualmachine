@@ -125,9 +125,10 @@ module "avm_res_keyvault_vault" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.10.0"
+  #version = "0.11.0"
 
   enable_telemetry                       = var.enable_telemetry
+  location                               = azurerm_resource_group.this_rg.location
   resource_group_name                    = azurerm_resource_group.this_rg.name
   virtualmachine_os_type                 = "Windows"
   name                                   = module.naming.virtual_machine.name_unique

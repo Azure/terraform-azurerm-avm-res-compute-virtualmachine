@@ -1,12 +1,12 @@
 locals {
   admin_password_linux = (lower(var.virtualmachine_os_type) == "linux") ? (
-    var.disable_password_authentication == false ? (                                                                                                                                     #if os is linux and password authentication is enabled
-      var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : coalesce(var.admin_password, try(data.azurerm_key_vault_secret.admin_password[0].value, null)) #use generated password, password variable, or vault reference (in order)
+    var.disable_password_authentication == false ? (                                                         #if os is linux and password authentication is enabled
+      var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : var.admin_password #use generated password, password variable
     ) : null
   ) : null
   #set the admin password to either a generated value or the entered value
   admin_password_windows = (lower(var.virtualmachine_os_type) == "windows") ? (
-    var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : coalesce(var.admin_password, try(data.azurerm_key_vault_secret.admin_password[0].value, null)) #use generated password, password variable, or vault reference (in order)
+    var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : var.admin_password #use generated password, password variable
   ) : null
   #format the admin ssh key so it can be concat'ed to the other keys.
   admin_ssh_key = (((var.generate_admin_password_or_ssh_key == true) && (lower(var.virtualmachine_os_type) == "linux")) ?
@@ -36,8 +36,6 @@ locals {
     public_ip_addresses  = azurerm_linux_virtual_machine.this[0].public_ip_addresses
     virtual_machine_id   = azurerm_linux_virtual_machine.this[0].virtual_machine_id
   } : null
-  #set the resource deployment location. Default to the resource group location
-  location = coalesce(var.location, data.azurerm_resource_group.virtualmachine_deployment.location)
   #set the type value for the managed identity that is used by azurerm
   managed_identity_type = var.managed_identities.system_assigned ? ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "SystemAssigned, UserAssigned" : "SystemAssigned") : ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "UserAssigned" : null)
   #flatten the ASG's for the nics

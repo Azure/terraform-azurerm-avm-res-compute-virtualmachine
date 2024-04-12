@@ -231,9 +231,9 @@ module "testnsg" {
   version = "0.1.1"
 
   enable_telemetry    = var.enable_telemetry
+  location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
   name                = module.naming.network_security_group.name_unique
-  location            = azurerm_resource_group.this_rg.location
   nsgrules = { #allow all just to show the association.
     "rule01" : {
       "nsg_rule_access" : "Allow",
@@ -268,9 +268,10 @@ resource "azurerm_application_security_group" "test_asg" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.10.0"
+  #version = "0.11.0"
 
   enable_telemetry                       = var.enable_telemetry
+  location                               = azurerm_resource_group.this_rg.location
   resource_group_name                    = azurerm_resource_group.this_rg.name
   virtualmachine_os_type                 = "Windows"
   name                                   = module.naming.virtual_machine.name_unique
