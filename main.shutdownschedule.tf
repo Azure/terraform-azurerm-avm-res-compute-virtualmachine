@@ -6,6 +6,7 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "this" {
   timezone              = each.value.timezone
   virtual_machine_id    = local.virtualmachine_resource_id
   enabled               = each.value.enabled
+  tags                  = each.value.tags
 
   notification_settings {
     enabled         = each.value.notification_settings.enabled
