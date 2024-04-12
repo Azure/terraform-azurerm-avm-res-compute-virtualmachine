@@ -38,14 +38,6 @@ resource "azurerm_key_vault_secret" "admin_password" {
   tags         = var.tags
 }
 
-#if the password isn't being generated or input directly then get it from the key vault
-data "azurerm_key_vault_secret" "admin_password" {
-  count = var.generate_admin_password_or_ssh_key == false && var.admin_password == null && var.disable_password_authentication == false ? 1 : 0
-
-  key_vault_id = var.admin_credential_key_vault_resource_id
-  name         = var.admin_password_key_vault_secret_name
-}
-
 ####Admin SSH key generation related resources
 #create an ssh key for the admin user in linux
 resource "tls_private_key" "this" {

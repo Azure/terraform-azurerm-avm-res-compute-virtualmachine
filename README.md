@@ -63,7 +63,6 @@ The following resources are used by this module:
 - [random_id.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
 - [tls_private_key.this](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) (resource)
-- [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/key_vault_secret) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -151,7 +150,7 @@ Default: `null`
 
 ### <a name="input_admin_password"></a> [admin\_password](#input\_admin\_password)
 
-Description: Password to use for the default admin account created for the virtual machine
+Description: Password to use for the default admin account created for the virtual machine. Passing this as a key vault secret value is recommended.
 
 Type: `string`
 
@@ -159,7 +158,7 @@ Default: `null`
 
 ### <a name="input_admin_password_key_vault_secret_name"></a> [admin\_password\_key\_vault\_secret\_name](#input\_admin\_password\_key\_vault\_secret\_name)
 
-Description: The name of the key vault secret which should be used for the admin password
+Description: The name of the key vault secret which should be used for the auto-generated admin password. This is only used to store auto-generated passwords. Use the `admin_password` variable and a key vault secret value reference if storing the password value in an external key vault secret.
 
 Type: `string`
 

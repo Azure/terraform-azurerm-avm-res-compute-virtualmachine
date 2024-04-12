@@ -98,6 +98,16 @@ resource "azurerm_user_assigned_identity" "example_identity" {
   tags                = local.tags
 }
 
+resource "random_password" "admin_password" {
+  length           = 22
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
+  min_upper        = 2
+  override_special = "!#$%&()*+,-./:;<=>?@[]^_{|}~"
+  special          = true
+}
+
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
   version                     = ">= 0.5.0"
@@ -136,39 +146,16 @@ module "avm_res_keyvault_vault" {
 
   tags = local.tags
 
-  keys = {
-    des_key = {
-      name     = "des-disk-key"
-      key_type = "RSA"
-      key_size = 2048
-
-      key_opts = [
-        "decrypt",
-        "encrypt",
-        "sign",
-        "unwrapKey",
-        "verify",
-        "wrapKey",
-      ]
+  secrets = {
+    admin_password = {
+      name = "admin-password"
     }
   }
+
+  secrets_value = {
+    admin_password = random_password.admin_password.result
+  }
 }
-
-resource "tls_private_key" "this" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
-resource "azurerm_key_vault_secret" "admin_ssh_key" {
-  key_vault_id = module.avm_res_keyvault_vault.resource.id
-  name         = "azureuser-ssh-private-key"
-  value        = tls_private_key.this.private_key_pem
-
-  depends_on = [
-    module.avm_res_keyvault_vault
-  ]
-}
-
 
 module "testvm" {
   source = "../../"
@@ -176,7 +163,7 @@ module "testvm" {
   #version = "0.11.0"
 
   admin_username                     = "azureuser"
-  admin_password                     = "Don'tPutSecretsInPlainText1!"
+  admin_password                     = module.avm_res_keyvault_vault.resource_secrets["admin_password"].value
   disable_password_authentication    = false
   enable_telemetry                   = var.enable_telemetry
   encryption_at_host_enabled         = true

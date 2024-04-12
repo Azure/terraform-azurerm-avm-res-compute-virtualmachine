@@ -180,12 +180,19 @@ module "avm_res_keyvault_vault" {
   tags = local.tags
 }
 
+resource "random_string" "public_ip_fqdn" {
+  length  = 8
+  lower   = true
+  special = false
+  upper   = false
+}
+
 resource "azurerm_public_ip" "this" {
   allocation_method       = "Static"
   location                = azurerm_resource_group.this_rg.location
   name                    = module.naming.public_ip.name_unique
   resource_group_name     = azurerm_resource_group.this_rg.name
-  domain_name_label       = "avmdemowinrm"
+  domain_name_label       = random_string.public_ip_fqdn.result
   idle_timeout_in_minutes = 30
   ip_version              = "IPv4"
   sku                     = "Standard"

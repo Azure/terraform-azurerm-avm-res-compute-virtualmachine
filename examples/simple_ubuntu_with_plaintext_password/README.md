@@ -118,6 +118,16 @@ resource "azurerm_user_assigned_identity" "example_identity" {
   tags                = local.tags
 }
 
+resource "random_password" "admin_password" {
+  length           = 22
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
+  min_upper        = 2
+  override_special = "!#$%&()*+,-./:;<=>?@[]^_{|}~"
+  special          = true
+}
+
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
   version                     = ">= 0.5.0"
@@ -156,39 +166,16 @@ module "avm_res_keyvault_vault" {
 
   tags = local.tags
 
-  keys = {
-    des_key = {
-      name     = "des-disk-key"
-      key_type = "RSA"
-      key_size = 2048
-
-      key_opts = [
-        "decrypt",
-        "encrypt",
-        "sign",
-        "unwrapKey",
-        "verify",
-        "wrapKey",
-      ]
+  secrets = {
+    admin_password = {
+      name = "admin-password"
     }
   }
+
+  secrets_value = {
+    admin_password = random_password.admin_password.result
+  }
 }
-
-resource "tls_private_key" "this" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
-resource "azurerm_key_vault_secret" "admin_ssh_key" {
-  key_vault_id = module.avm_res_keyvault_vault.resource.id
-  name         = "azureuser-ssh-private-key"
-  value        = tls_private_key.this.private_key_pem
-
-  depends_on = [
-    module.avm_res_keyvault_vault
-  ]
-}
-
 
 module "testvm" {
   source = "../../"
@@ -196,7 +183,7 @@ module "testvm" {
   #version = "0.11.0"
 
   admin_username                     = "azureuser"
-  admin_password                     = "Don'tPutSecretsInPlainText1!"
+  admin_password                     = module.avm_res_keyvault_vault.resource_secrets["admin_password"].value
   disable_password_authentication    = false
   enable_telemetry                   = var.enable_telemetry
   encryption_at_host_enabled         = true
@@ -261,13 +248,10 @@ The following providers are used by this module:
 
 - <a name="provider_random"></a> [random](#provider\_random) (~> 3.6)
 
-- <a name="provider_tls"></a> [tls](#provider\_tls) (~> 4.0)
-
 ## Resources
 
 The following resources are used by this module:
 
-- [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.this_subnet_1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.this_subnet_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
@@ -275,7 +259,7 @@ The following resources are used by this module:
 - [azurerm_virtual_network.this_vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
-- [tls_private_key.this](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) (resource)
+- [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->

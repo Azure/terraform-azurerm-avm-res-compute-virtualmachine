@@ -204,12 +204,19 @@ module "avm_res_keyvault_vault" {
   tags = local.tags
 }
 
+resource "random_string" "public_ip_fqdn" {
+  length  = 8
+  lower   = true
+  special = false
+  upper   = false
+}
+
 resource "azurerm_public_ip" "this" {
   allocation_method       = "Static"
   location                = azurerm_resource_group.this_rg.location
   name                    = module.naming.public_ip.name_unique
   resource_group_name     = azurerm_resource_group.this_rg.name
-  domain_name_label       = "avmdemowinrm"
+  domain_name_label       = random_string.public_ip_fqdn.result
   idle_timeout_in_minutes = 30
   ip_version              = "IPv4"
   sku                     = "Standard"
@@ -511,6 +518,7 @@ The following resources are used by this module:
 - [azurerm_virtual_network.this_vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
+- [random_string.public_ip_fqdn](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
 - [terraform_data.enable_certificate_rotation_on_winrms_listener](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) (resource)
 - [terraform_data.test_connection_ssh](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)

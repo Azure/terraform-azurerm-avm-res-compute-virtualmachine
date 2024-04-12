@@ -74,14 +74,14 @@ variable "admin_generated_ssh_key_vault_secret_name" {
 variable "admin_password" {
   type        = string
   default     = null
-  description = "Password to use for the default admin account created for the virtual machine"
+  description = "Password to use for the default admin account created for the virtual machine. Passing this as a key vault secret value is recommended."
   sensitive   = true
 }
 
 variable "admin_password_key_vault_secret_name" {
   type        = string
   default     = null
-  description = "The name of the key vault secret which should be used for the admin password"
+  description = "The name of the key vault secret which should be used for the auto-generated admin password. This is only used to store auto-generated passwords. Use the `admin_password` variable and a key vault secret value reference if storing the password value in an external key vault secret."
 }
 
 variable "admin_ssh_keys" {
