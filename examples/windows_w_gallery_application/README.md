@@ -14,10 +14,7 @@ It includes the following resources in addition to the VM resource:
     - A vnet with three subnets
     - A keyvault for storing the login secrets and disk encryption key
     - An optional subnet, public ip, and bastion which can be enabled by uncommenting the bastion resources when running the example.
-    - An internal load-balancer with NAT rules for demonstrating load-balancer associations
-    - An NSG for demonstrating NSG associations
-    - An ASG for demonstrating ASG associations
-    - An internal Application Gateway for demonstrating Application Gateway Backend Pool associations.
+    - A simple gallery application that installs visual studio code to demonstrate and test gallery application functionality.
 
 ```hcl
 module "naming" {
@@ -32,7 +29,7 @@ module "regions" {
 
 locals {
   tags = {
-    scenario = "windows_w_load_balancing"
+    scenario = "windows_w_gallery_application"
   }
   test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
 }
@@ -88,135 +85,35 @@ resource "azurerm_subnet" "this_subnet_2" {
   virtual_network_name = azurerm_virtual_network.this_vnet.name
 }
 
-/*
+
 # Uncomment this section if you would like to include a bastion resource with this example.
 resource "azurerm_subnet" "bastion_subnet" {
+  address_prefixes     = ["10.0.4.0/24"]
   name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
-  address_prefixes     = ["10.0.3.0/24"]
 }
 
 resource "azurerm_public_ip" "bastionpip" {
-  name                = module.naming.public_ip.name_unique
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
   allocation_method   = "Static"
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.public_ip.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
 }
 
 resource "azurerm_bastion_host" "bastion" {
-  name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.bastion_host.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
 
   ip_configuration {
     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
-    subnet_id            = azurerm_subnet.bastion_subnet.id
     public_ip_address_id = azurerm_public_ip.bastionpip.id
-  }
-}
-*/
-
-module "loadbalancer" {
-  source  = "Azure/avm-res-network-loadbalancer/azurerm"
-  version = "0.1.7"
-
-  enable_telemetry = var.enable_telemetry
-
-  name                = module.naming.lb.name_unique
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-
-  # Virtual Network and Subnet for Internal LoadBalancer
-  # frontend_vnet_resource_id   = azurerm_virtual_network.example.id
-  frontend_subnet_resource_id = azurerm_subnet.this_subnet_lb.id
-
-  # Frontend IP Configuration
-  frontend_ip_configurations = {
-    frontend_configuration_1 = {
-      name = "testFrontend"
-    }
-  }
-
-  # Backend Address Pool
-  backend_address_pools = {
-    pool_1 = {
-      name = "testBackendPool"
-    }
-  }
-
-  lb_nat_rules = {
-    lb_nat_rule_1 = {
-      name                           = "rdp_nat_rule_1"
-      frontend_ip_configuration_name = "testFrontend"
-      protocol                       = "Tcp"
-      frontend_port                  = 30001
-      backend_port                   = 3389
-    }
+    subnet_id            = azurerm_subnet.bastion_subnet.id
   }
 }
 
-# copied over from the AzureRM example - simplifies naming for the appgw resources
-locals {
-  backend_address_pool_name      = "${azurerm_virtual_network.this_vnet.name}-beap"
-  frontend_ip_configuration_name = "${azurerm_virtual_network.this_vnet.name}-feip"
-  frontend_port_name             = "${azurerm_virtual_network.this_vnet.name}-feport"
-  http_setting_name              = "${azurerm_virtual_network.this_vnet.name}-be-htst"
-  listener_name                  = "${azurerm_virtual_network.this_vnet.name}-httplstn"
-  request_routing_rule_name      = "${azurerm_virtual_network.this_vnet.name}-rqrt"
-}
-
-resource "azurerm_application_gateway" "network" {
-  location            = azurerm_resource_group.this_rg.location
-  name                = "example-appgateway"
-  resource_group_name = azurerm_resource_group.this_rg.name
-
-  backend_address_pool {
-    name = local.backend_address_pool_name
-  }
-  backend_http_settings {
-    cookie_based_affinity = "Disabled"
-    name                  = local.http_setting_name
-    port                  = 80
-    protocol              = "Http"
-    path                  = "/path1/"
-    request_timeout       = 60
-  }
-  frontend_ip_configuration {
-    name                          = local.frontend_ip_configuration_name
-    private_ip_address            = "10.0.3.100"
-    private_ip_address_allocation = "Static"
-    subnet_id                     = azurerm_subnet.this_subnet_2.id
-  }
-  frontend_port {
-    name = local.frontend_port_name
-    port = 80
-  }
-  gateway_ip_configuration {
-    name      = "my-gateway-ip-configuration"
-    subnet_id = azurerm_subnet.this_subnet_2.id
-  }
-  http_listener {
-    frontend_ip_configuration_name = local.frontend_ip_configuration_name
-    frontend_port_name             = local.frontend_port_name
-    name                           = local.listener_name
-    protocol                       = "Http"
-  }
-  request_routing_rule {
-    http_listener_name         = local.listener_name
-    name                       = local.request_routing_rule_name
-    rule_type                  = "Basic"
-    backend_address_pool_name  = local.backend_address_pool_name
-    backend_http_settings_name = local.http_setting_name
-    priority                   = 9
-  }
-  sku {
-    name     = "Standard_v2"
-    tier     = "Standard_v2"
-    capacity = 2
-  }
-}
 
 data "azurerm_client_config" "current" {}
 
@@ -245,47 +142,65 @@ module "avm_res_keyvault_vault" {
   }
 
   tags = local.tags
-
 }
 
-module "testnsg" {
-  source  = "Azure/avm-res-network-networksecuritygroup/azurerm"
-  version = "0.1.1"
+resource "azurerm_storage_account" "app_account" {
+  account_replication_type = "LRS"
+  account_tier             = "Standard"
+  location                 = azurerm_resource_group.this_rg.location
+  name                     = module.naming.storage_account.name_unique
+  resource_group_name      = azurerm_resource_group.this_rg.name
+}
 
-  enable_telemetry    = var.enable_telemetry
+resource "azurerm_storage_container" "app_container" {
+  name                  = module.naming.storage_container.name_unique
+  storage_account_name  = azurerm_storage_account.app_account.name
+  container_access_type = "blob"
+}
+
+resource "azurerm_storage_blob" "app" {
+  name                   = "install-script.ps1"
+  storage_account_name   = azurerm_storage_account.app_account.name
+  storage_container_name = azurerm_storage_container.app_container.name
+  type                   = "Block"
+  source                 = "${path.module}/install-vscode.ps1"
+}
+
+#blob content = file
+
+
+resource "azurerm_shared_image_gallery" "app_gallery" {
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.shared_image_gallery.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
-  name                = module.naming.network_security_group.name_unique
-  nsgrules = { #allow all just to show the association.
-    "rule01" : {
-      "nsg_rule_access" : "Allow",
-      "nsg_rule_destination_address_prefix" : "*",
-      "nsg_rule_destination_port_range" : "*",
-      "nsg_rule_direction" : "Inbound",
-      "nsg_rule_priority" : 100,
-      "nsg_rule_protocol" : "Tcp",
-      "nsg_rule_source_address_prefix" : "*",
-      "nsg_rule_source_port_range" : "*"
-    },
-    "rule02" : {
-      "nsg_rule_access" : "Allow",
-      "nsg_rule_destination_address_prefix" : "*",
-      "nsg_rule_destination_port_range" : "*",
-      "nsg_rule_direction" : "Outbound",
-      "nsg_rule_priority" : 200,
-      "nsg_rule_protocol" : "Tcp",
-      "nsg_rule_source_address_prefix" : "*",
-      "nsg_rule_source_port_range" : "*"
-    }
+  tags                = local.tags
+}
+
+resource "azurerm_gallery_application" "app_gallery_sample" {
+  gallery_id        = azurerm_shared_image_gallery.app_gallery.id
+  location          = azurerm_resource_group.this_rg.location
+  name              = "VSCode"
+  supported_os_type = "Windows"
+}
+
+resource "azurerm_gallery_application_version" "test_app_version" {
+  gallery_application_id = azurerm_gallery_application.app_gallery_sample.id
+  location               = azurerm_gallery_application.app_gallery_sample.location
+  name                   = "0.1.0"
+  package_file           = "install-script.ps1"
+
+  manage_action {
+    install = "powershell.exe -command ./install-script.ps1"
+    remove  = "powershell.exe -command ./install-script.ps1 -mode uninstall"
+  }
+  source {
+    media_link = azurerm_storage_blob.app.id
+  }
+  target_region {
+    name                   = azurerm_gallery_application.app_gallery_sample.location
+    regional_replica_count = 1
   }
 }
-
-resource "azurerm_application_security_group" "test_asg" {
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.application_security_group.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-}
-
 
 module "testvm" {
   source = "../../"
@@ -318,33 +233,8 @@ module "testvm" {
   network_interfaces = {
     network_interface_1 = {
       name = module.naming.network_interface.name_unique
-      application_security_groups = {
-        asg_1 = {
-          application_security_group_resource_id = azurerm_application_security_group.test_asg.id
-        }
-      }
-      network_security_groups = {
-        nsg_1 = {
-          network_security_group_resource_id = module.testnsg.nsg_resource.id
-        }
-      }
       ip_configurations = {
         ip_configuration_1 = {
-          app_gateway_backend_pools = {
-            app_gw_pool_1 = {
-              app_gateway_backend_pool_resource_id = [for value in azurerm_application_gateway.network.backend_address_pool : value.id if value.name == local.backend_address_pool_name][0]
-            }
-          }
-          load_balancer_backend_pools = {
-            lb_pool_1 = {
-              load_balancer_backend_pool_resource_id = module.loadbalancer.azurerm_lb_backend_address_pool["pool_1"].id
-            }
-          }
-          load_balancer_nat_rules = {
-            lb_nat_rule_1 = {
-              load_balancer_nat_rule_resource_id = module.loadbalancer.azurerm_lb_nat_rule["rdp_nat_rule_1"].id
-            }
-          }
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
           private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
         }
@@ -352,9 +242,16 @@ module "testvm" {
     }
   }
 
+  gallery_applications = {
+    vscode = {
+      version_id = azurerm_gallery_application_version.test_app_version.id
+      order      = 1
+    }
+  }
+
   tags = local.tags
 
-  depends_on = [module.avm_res_keyvault_vault, module.testnsg, module.loadbalancer]
+  depends_on = [module.avm_res_keyvault_vault]
 
 }
 ```
@@ -382,9 +279,16 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
-- [azurerm_application_gateway.network](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_gateway) (resource)
-- [azurerm_application_security_group.test_asg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_security_group) (resource)
+- [azurerm_bastion_host.bastion](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/bastion_host) (resource)
+- [azurerm_gallery_application.app_gallery_sample](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/gallery_application) (resource)
+- [azurerm_gallery_application_version.test_app_version](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/gallery_application_version) (resource)
+- [azurerm_public_ip.bastionpip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_shared_image_gallery.app_gallery](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/shared_image_gallery) (resource)
+- [azurerm_storage_account.app_account](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
+- [azurerm_storage_blob.app](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_blob) (resource)
+- [azurerm_storage_container.app_container](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_container) (resource)
+- [azurerm_subnet.bastion_subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.this_subnet_1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.this_subnet_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.this_subnet_lb](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
@@ -432,12 +336,6 @@ Source: ../../modules/sku_selector
 
 Version:
 
-### <a name="module_loadbalancer"></a> [loadbalancer](#module\_loadbalancer)
-
-Source: Azure/avm-res-network-loadbalancer/azurerm
-
-Version: 0.1.7
-
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
 Source: Azure/naming/azurerm
@@ -449,12 +347,6 @@ Version: >= 0.3.0
 Source: Azure/regions/azurerm
 
 Version: >= 0.4.0
-
-### <a name="module_testnsg"></a> [testnsg](#module\_testnsg)
-
-Source: Azure/avm-res-network-networksecuritygroup/azurerm
-
-Version: 0.1.1
 
 ### <a name="module_testvm"></a> [testvm](#module\_testvm)
 

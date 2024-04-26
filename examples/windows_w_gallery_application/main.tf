@@ -69,29 +69,29 @@ resource "azurerm_subnet" "this_subnet_2" {
 
 # Uncomment this section if you would like to include a bastion resource with this example.
 resource "azurerm_subnet" "bastion_subnet" {
+  address_prefixes     = ["10.0.4.0/24"]
   name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
-  address_prefixes     = ["10.0.4.0/24"]
 }
 
 resource "azurerm_public_ip" "bastionpip" {
-  name                = module.naming.public_ip.name_unique
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
   allocation_method   = "Static"
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.public_ip.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
 }
 
 resource "azurerm_bastion_host" "bastion" {
-  name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.bastion_host.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
 
   ip_configuration {
     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
-    subnet_id            = azurerm_subnet.bastion_subnet.id
     public_ip_address_id = azurerm_public_ip.bastionpip.id
+    subnet_id            = azurerm_subnet.bastion_subnet.id
   }
 }
 
@@ -126,11 +126,11 @@ module "avm_res_keyvault_vault" {
 }
 
 resource "azurerm_storage_account" "app_account" {
+  account_replication_type = "LRS"
+  account_tier             = "Standard"
+  location                 = azurerm_resource_group.this_rg.location
   name                     = module.naming.storage_account.name_unique
   resource_group_name      = azurerm_resource_group.this_rg.name
-  location                 = azurerm_resource_group.this_rg.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
 }
 
 resource "azurerm_storage_container" "app_container" {
@@ -151,38 +151,34 @@ resource "azurerm_storage_blob" "app" {
 
 
 resource "azurerm_shared_image_gallery" "app_gallery" {
+  location            = azurerm_resource_group.this_rg.location
   name                = module.naming.shared_image_gallery.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
-  location            = azurerm_resource_group.this_rg.location
-
-  tags = local.tags
+  tags                = local.tags
 }
 
 resource "azurerm_gallery_application" "app_gallery_sample" {
-  name              = "VSCode"
   gallery_id        = azurerm_shared_image_gallery.app_gallery.id
   location          = azurerm_resource_group.this_rg.location
+  name              = "VSCode"
   supported_os_type = "Windows"
 }
 
 resource "azurerm_gallery_application_version" "test_app_version" {
-  name = "0.1.0"
   gallery_application_id = azurerm_gallery_application.app_gallery_sample.id
-  location = azurerm_gallery_application.app_gallery_sample.location
-  package_file = "install-script.ps1"
+  location               = azurerm_gallery_application.app_gallery_sample.location
+  name                   = "0.1.0"
+  package_file           = "install-script.ps1"
 
   manage_action {
     install = "powershell.exe -command ./install-script.ps1"
-    remove = "powershell.exe -command ./install-script.ps1 -mode uninstall"
+    remove  = "powershell.exe -command ./install-script.ps1 -mode uninstall"
   }
-
   source {
     media_link = azurerm_storage_blob.app.id
   }
-
-
   target_region {
-    name = azurerm_gallery_application.app_gallery_sample.location
+    name                   = azurerm_gallery_application.app_gallery_sample.location
     regional_replica_count = 1
   }
 }
@@ -228,11 +224,11 @@ module "testvm" {
   }
 
   gallery_applications = {
-  vscode = {
-    version_id = azurerm_gallery_application_version.test_app_version.id
-    order      = 1
+    vscode = {
+      version_id = azurerm_gallery_application_version.test_app_version.id
+      order      = 1
+    }
   }
-}
 
   tags = local.tags
 

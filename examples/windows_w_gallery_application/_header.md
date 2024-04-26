@@ -13,7 +13,5 @@ It includes the following resources in addition to the VM resource:
     - A vnet with three subnets 
     - A keyvault for storing the login secrets and disk encryption key
     - An optional subnet, public ip, and bastion which can be enabled by uncommenting the bastion resources when running the example.
-    - An internal load-balancer with NAT rules for demonstrating load-balancer associations
-    - An NSG for demonstrating NSG associations
-    - An ASG for demonstrating ASG associations
-    - An internal Application Gateway for demonstrating Application Gateway Backend Pool associations. 
+    - A simple gallery application that installs visual studio code to demonstrate and test gallery application functionality.
+

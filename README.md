@@ -606,26 +606,27 @@ Default: `"PT1H30M"`
 ### <a name="input_gallery_applications"></a> [gallery\_applications](#input\_gallery\_applications)
 
 Description: A list of gallery application objects with the following elements
-
-- `version_id` (Required) Specifies the Gallery Application Version resource ID.
-- `configuration_blob_uri` (Optional) Specifies the URI to an Azure Blob that will replace the default configuration for the package if provided.
-- `order` (Optional) Specifies the order in which the packages have to be installed. Possible values are between `0` and `2,147,483,647`.
-- `tag` (Optional) Specifies a passthrough value for more generic context. This field can be any valid `string` value.
+- `<map key>` - Used to designate a unique instance for a gallery application.
+  - `version_id` (Required) Specifies the Gallery Application Version resource ID.
+  - `configuration_blob_uri` (Optional) Specifies the URI to an Azure Blob that will replace the default configuration for the package if provided.
+  - `order` (Optional) Specifies the order in which the packages have to be installed. Possible values are between `0` and `2,147,483,647`.
+  - `tag` (Optional) Specifies a passthrough value for more generic context. This field can be any valid `string` value.
 
 Example Inputs:
 
 ```hcl
-gallery_applications = [
-  {
+gallery_applications = {
+  application_1 = {
     version_id = "/subscriptions/{subscriptionId}/resourceGroups/<resource group>/providers/Microsoft.Compute/galleries/{gallery name}/applications/{application name}/versions/{version}"
     order      = 1
-]
+  }
+}
 ```
 
 Type:
 
 ```hcl
-list(object({
+map(object({
     version_id             = string
     configuration_blob_uri = optional(string)
     order                  = optional(number, 0)
@@ -633,7 +634,7 @@ list(object({
   }))
 ```
 
-Default: `[]`
+Default: `{}`
 
 ### <a name="input_generate_admin_password_or_ssh_key"></a> [generate\_admin\_password\_or\_ssh\_key](#input\_generate\_admin\_password\_or\_ssh\_key)
 
