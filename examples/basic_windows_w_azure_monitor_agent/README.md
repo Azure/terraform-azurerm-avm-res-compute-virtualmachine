@@ -33,7 +33,7 @@ locals {
   tags = {
     scenario = "windows_w_azure_monitor_agent"
   }
-  test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
+  test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
 }
 
 module "get_valid_sku_for_deployment_region" {

@@ -34,7 +34,7 @@ locals {
   tags = {
     scenario = "windows_w_load_balancing"
   }
-  test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
+  test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
 }
 
 resource "random_integer" "region_index" {

@@ -16,7 +16,7 @@ locals {
   tags = {
     scenario = "basic_windows_w_winrms"
   }
-  test_regions           = ["centralus", "eastasia", "westus2", "eastus2", "japaneast"]
+  test_regions           = ["centralus", "eastasia", "eastus2", "westus3"]
   virtualmachine_os_type = "Windows"
   winrms_port            = 15986
 }

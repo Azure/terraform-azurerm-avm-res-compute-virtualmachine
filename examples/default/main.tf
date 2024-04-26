@@ -12,7 +12,7 @@ locals {
   tags = {
     scenario = "Ubuntu_w_ssh"
   }
-  test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
+  test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
 }
 
 resource "random_integer" "region_index" {
