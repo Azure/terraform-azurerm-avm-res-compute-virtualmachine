@@ -291,7 +291,7 @@ Description: This variable is a map of objects used to define one or more data d
   - `hyper_v_generation` (Optional) - The HyperV Generation of the Disk when the source of an Import or Copy operation targets a source that contains an operating system. Possible values are V1 and V2. For ImportSecure it must be set to V2. Changing this forces a new resource to be created.
   - `image_reference_resource_id` (Optional) - ID of an existing platform/marketplace disk image to copy when create\_option is FromImage. This field cannot be specified if gallery\_image\_reference\_resource\_id is specified. Changing this forces a new resource to be created.
   - `inherit_tags` (Optional) - Defaults to true.  Set this to false if only the tags defined on this resource should be applied.
-  - `lock_level` (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+  - `lock_level` (Optional) - Set this value to override the resource level lock value.  Possible values are `CanNotDelete`, and `ReadOnly`.
   - `lock_name` (Optional) - The name for the lock on this disk
   - `logical_sector_size` (Optional) - Logical Sector Size. Possible values are: 512 and 4096. Defaults to 4096. Changing this forces a new resource to be created. Setting logical sector size is supported only with UltraSSD\_LRS disks and PremiumV2\_LRS disks.
   - `max_shares` (Optional) - The maximum number of VMs that can attach to the disk at the same time. Value greater than one indicates a disk that can be mounted on multiple VMs at the same time. Premium SSD maxShares limit: P15 and P20 disks: 2. P30,P40,P50 disks: 5. P60,P70,P80 disks: 10. For ultra disks the max\_shares minimum value is 1 and the maximum is 5.
@@ -364,8 +364,8 @@ map(object({
     hyper_v_generation                        = optional(string)
     image_reference_resource_id               = optional(string)
     inherit_tags                              = optional(bool, true)
-    lock_level                                = optional(string)
-    lock_name                                 = optional(string)
+    lock_level                                = optional(string, null)
+    lock_name                                 = optional(string, null)
     logical_sector_size                       = optional(number, null)
     max_shares                                = optional(number)
     network_access_policy                     = optional(string)
@@ -1118,7 +1118,7 @@ object({
     idle_timeout_in_minutes = optional(number, 30)
     inherit_tags            = optional(bool, false)
     ip_version              = optional(string, "IPv4")
-    lock_level              = optional(string)
+    lock_level              = optional(string, null)
     sku                     = optional(string, "Standard")
     sku_tier                = optional(string, "Regional")
     tags                    = optional(map(string), null)

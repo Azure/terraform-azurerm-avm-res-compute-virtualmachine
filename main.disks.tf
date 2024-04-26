@@ -82,9 +82,9 @@ moved {
 }
 #configure resource locks on each Data Disk if the lock values are set. Set explicit dependencies on the attachments and vm's to ensure provisioning is complete prior to setting resource locks
 resource "azurerm_management_lock" "this_disk" {
-  for_each = { for disk, diskvalues in var.data_disk_managed_disks : disk => diskvalues if coalesce(diskvalues.lock_level, var.lock.kind) != "None" }
+  for_each = { for disk, diskvalues in var.data_disk_managed_disks : disk => diskvalues if diskvalues.lock_level != null }
 
-  lock_level = coalesce(each.value.lock_level, var.lock.kind)
+  lock_level = each.value.lock_level
   name       = coalesce(each.value.lock_name, "${each.key}-lock")
   scope      = azurerm_managed_disk.this[each.key].id
 

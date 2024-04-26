@@ -165,7 +165,7 @@ resource "azurerm_windows_virtual_machine" "this" {
 }
 
 resource "azurerm_management_lock" "this_windows_virtualmachine" {
-  count = var.lock.kind != "None" && (lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
+  count = (var.lock != null) && (lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
 
   lock_level = var.lock.kind
   name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
