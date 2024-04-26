@@ -1156,7 +1156,7 @@ Description: A map of role definitions and scopes to be assigned as part of this
   - `condition`                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
   - `condition_version`                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
   - `description`                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.
-  - `skip_service_principal_aad_check`           = (Optional) - If the principal\_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal\_id is a Service Principal identity. Defaults to true.
+  - `skip_service_principal_aad_check`           = (Optional) - If the principal\_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal\_id is a Service Principal identity. Defaults to false.
   - `delegated_managed_identity_resource_id`     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.  
   - `principal_type`                             = (Optional) - The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
 
@@ -1185,7 +1185,7 @@ map(object({
     delegated_managed_identity_resource_id = optional(string, null)
     description                            = optional(string, null)
     principal_type                         = optional(string, null)
-    skip_service_principal_aad_check       = optional(bool, true)
+    skip_service_principal_aad_check       = optional(bool, false)
 
     }
   ))
@@ -1203,7 +1203,7 @@ Description: A map of role definitions and scopes to be assigned as part of this
   - `condition`                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
   - `condition_version`                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
   - `description`                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.
-  - `skip_service_principal_aad_check`           = (Optional) - If the principal\_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal\_id is a Service Principal identity. Defaults to true.
+  - `skip_service_principal_aad_check`           = (Optional) - If the principal\_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal\_id is a Service Principal identity. Defaults to false.
   - `delegated_managed_identity_resource_id`     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.
   - `principal_type`                             = (Optional) - The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.  
 Example Inputs:
@@ -1229,7 +1229,7 @@ map(object({
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     description                            = optional(string, null)
-    skip_service_principal_aad_check       = optional(bool, true)
+    skip_service_principal_aad_check       = optional(bool, false)
     delegated_managed_identity_resource_id = optional(string, null)
     principal_type                         = optional(string, null)
     }
