@@ -18,6 +18,7 @@ resource "azurerm_windows_virtual_machine" "this" {
   custom_data                                            = var.custom_data
   dedicated_host_group_id                                = var.dedicated_host_group_resource_id
   dedicated_host_id                                      = var.dedicated_host_resource_id
+  disk_controller_type                                   = var.disk_controller_type
   edge_zone                                              = var.edge_zone
   enable_automatic_updates                               = var.enable_automatic_updates
   encryption_at_host_enabled                             = var.encryption_at_host_enabled
@@ -167,8 +168,9 @@ resource "azurerm_management_lock" "this_windows_virtualmachine" {
   count = var.lock.kind != "None" && (lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
 
   lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.name}")
+  name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
   scope      = azurerm_windows_virtual_machine.this[0].id
+  notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
 
   depends_on = [
     azurerm_managed_disk.this,

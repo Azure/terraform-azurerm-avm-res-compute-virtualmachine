@@ -19,6 +19,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   dedicated_host_group_id                                = var.dedicated_host_group_resource_id
   dedicated_host_id                                      = var.dedicated_host_resource_id
   disable_password_authentication                        = var.disable_password_authentication
+  disk_controller_type                                   = var.disk_controller_type
   edge_zone                                              = var.edge_zone
   encryption_at_host_enabled                             = var.encryption_at_host_enabled
   eviction_policy                                        = var.eviction_policy
@@ -154,8 +155,9 @@ resource "azurerm_management_lock" "this_linux_virtualmachine" {
   count = var.lock.kind != "None" && !(lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
 
   lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.name}")
+  name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
   scope      = azurerm_linux_virtual_machine.this[0].id
+  notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
 
   depends_on = [
     azurerm_managed_disk.this,
