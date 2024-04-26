@@ -503,29 +503,30 @@ variable "extensions_time_budget" {
 }
 
 variable "gallery_applications" {
-  type = list(object({
+  type = map(object({
     version_id             = string
     configuration_blob_uri = optional(string)
     order                  = optional(number, 0)
     tag                    = optional(string)
   }))
-  default     = []
+  default     = {}
   description = <<GALLERY_APPLICATIONS
 A list of gallery application objects with the following elements
-
-- `version_id` (Required) Specifies the Gallery Application Version resource ID.
-- `configuration_blob_uri` (Optional) Specifies the URI to an Azure Blob that will replace the default configuration for the package if provided.
-- `order` (Optional) Specifies the order in which the packages have to be installed. Possible values are between `0` and `2,147,483,647`.
-- `tag` (Optional) Specifies a passthrough value for more generic context. This field can be any valid `string` value.
+- `<map key>` - Used to designate a unique instance for a gallery application.
+  - `version_id` (Required) Specifies the Gallery Application Version resource ID.
+  - `configuration_blob_uri` (Optional) Specifies the URI to an Azure Blob that will replace the default configuration for the package if provided.
+  - `order` (Optional) Specifies the order in which the packages have to be installed. Possible values are between `0` and `2,147,483,647`.
+  - `tag` (Optional) Specifies a passthrough value for more generic context. This field can be any valid `string` value.
 
 Example Inputs:
 
 ```hcl
-gallery_applications = [
-  {
+gallery_applications = {
+  application_1 = {
     version_id = "/subscriptions/{subscriptionId}/resourceGroups/<resource group>/providers/Microsoft.Compute/galleries/{gallery name}/applications/{application name}/versions/{version}"
     order      = 1
-]
+  }
+}
 ```
 GALLERY_APPLICATIONS
   nullable    = false

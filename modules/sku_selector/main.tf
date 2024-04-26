@@ -3,7 +3,7 @@ terraform {
   required_providers {
     azapi = {
       source  = "Azure/azapi"
-      version = "~> 1.12"
+      version = "~> 1.13"
     }
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -22,7 +22,7 @@ data "azurerm_subscription" "current" {
 
 #get the full sku list (azapi doesn't currently have a good way to filter the api call)
 data "azapi_resource_list" "example" {
-  type                   = "Microsoft.Compute/skus@2021-07-01"
+  type                   = "Microsoft.Compute/skus?$filter=location%20eq%20%27${var.deployment_region}%27@2021-07-01"
   parent_id              = data.azurerm_subscription.current.id
   response_export_values = ["*"]
 }
@@ -30,9 +30,8 @@ data "azapi_resource_list" "example" {
 locals {
   #filter the location output for the current region, virtual machine resources, and filter out entries that don't include the capabilities list
   location_valid_vms = [
-    for location in jsondecode(data.azapi_resource_list.example.output).value : location
-    if contains(location.locations, var.deployment_region) && #if the sku location field matches the selected location
-    length(location.restrictions) < 1 &&                      #and there are no restrictions on deploying the sku (i.e. allowed for deployment)
+    for location in data.azapi_resource_list.example.output.value : location
+    if length(location.restrictions) < 1 &&                   #there are no restrictions on deploying the sku (i.e. allowed for deployment)
     location.resourceType == "virtualMachines" &&             #and the sku is a virtual machine
     !strcontains(location.name, "C") &&                       #no confidential vm skus
     !strcontains(location.name, "B") &&                       #no B skus

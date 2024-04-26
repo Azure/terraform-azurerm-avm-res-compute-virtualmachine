@@ -82,7 +82,7 @@ resource "azurerm_linux_virtual_machine" "this" {
     }
   }
   dynamic "gallery_application" {
-    for_each = { for app in var.gallery_applications : app.version_id => app }
+    for_each = { for app, app_details in var.gallery_applications : app => app_details }
 
     content {
       version_id             = gallery_application.value.version_id
