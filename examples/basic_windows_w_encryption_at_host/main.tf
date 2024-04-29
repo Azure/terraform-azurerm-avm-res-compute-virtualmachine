@@ -115,14 +115,17 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
     deployment_user_keys = { #give the deployment user access to keys
       role_definition_id_or_name = "Key Vault Crypto Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
     user_managed_identity_keys = { #give the user assigned managed identity for the disk encryption set access to keys
       role_definition_id_or_name = "Key Vault Crypto Officer"
       principal_id               = azurerm_user_assigned_identity.test.principal_id
+      principal_type             = "ServicePrincipal"
     }
   }
 

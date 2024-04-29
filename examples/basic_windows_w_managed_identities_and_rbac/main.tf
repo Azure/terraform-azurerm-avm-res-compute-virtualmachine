@@ -165,6 +165,7 @@ module "testvm" {
       scope_resource_id          = module.avm_res_keyvault_vault.resource.id
       role_definition_id_or_name = "Key Vault Secrets Officer"
       description                = "Assign the Key Vault Secrets Officer role to the virtual machine's system managed identity"
+      principal_type             = "ServicePrincipal"
     }
   }
 
@@ -173,6 +174,7 @@ module "testvm" {
       principal_id               = data.azurerm_client_config.current.client_id
       role_definition_id_or_name = "Virtual Machine Contributor"
       description                = "Assign the Virtual Machine Contributor role to the deployment user on this virtual machine resource scope."
+      principal_type             = "ServicePrincipal"
     }
   }
 

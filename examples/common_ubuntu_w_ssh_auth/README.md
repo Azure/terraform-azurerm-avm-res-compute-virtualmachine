@@ -137,14 +137,17 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
     deployment_user_keys = { #give the deployment user access to keys
       role_definition_id_or_name = "Key Vault Crypto Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
     user_managed_identity_keys = { #give the user assigned managed identity for the disk encryption set access to keys
       role_definition_id_or_name = "Key Vault Crypto Officer"
       principal_id               = azurerm_user_assigned_identity.example_identity.principal_id
+      principal_type             = "ServicePrincipal"
     }
   }
 
@@ -256,9 +259,8 @@ module "testvm" {
       }
     }
     network_interface_2 = {
-      name                           = "${module.naming.network_interface.name_unique}-2"
-      accelerated_networking_enabled = true
-      ip_forwarding_enabled          = true
+      name                  = "${module.naming.network_interface.name_unique}-2"
+      ip_forwarding_enabled = true
       ip_configurations = {
         ip_configuration_avs_facing = {
           name                          = "${module.naming.network_interface.name_unique}-nic2-ipconfig1"
@@ -279,6 +281,7 @@ module "testvm" {
       scope_resource_id          = module.avm_res_keyvault_vault.resource.id
       role_definition_id_or_name = "Key Vault Secrets Officer"
       description                = "Assign the Key Vault Secrets Officer role to the virtual machine's system managed identity"
+      principal_type             = "ServicePrincipal"
     }
   }
 
@@ -287,6 +290,7 @@ module "testvm" {
       principal_id               = data.azurerm_client_config.current.client_id
       role_definition_id_or_name = "Virtual Machine Contributor"
       description                = "Assign the Virtual Machine Contributor role to the deployment user on this virtual machine resource scope."
+      principal_type             = "ServicePrincipal"
     }
   }
 

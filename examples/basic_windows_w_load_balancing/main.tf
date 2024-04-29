@@ -137,12 +137,21 @@ module "loadbalancer" {
 
 # copied over from the AzureRM example - simplifies naming for the appgw resources
 locals {
+  app_gw_public_ip_name          = "${azurerm_virtual_network.this_vnet.name}-pip"
   backend_address_pool_name      = "${azurerm_virtual_network.this_vnet.name}-beap"
   frontend_ip_configuration_name = "${azurerm_virtual_network.this_vnet.name}-feip"
   frontend_port_name             = "${azurerm_virtual_network.this_vnet.name}-feport"
   http_setting_name              = "${azurerm_virtual_network.this_vnet.name}-be-htst"
   listener_name                  = "${azurerm_virtual_network.this_vnet.name}-httplstn"
   request_routing_rule_name      = "${azurerm_virtual_network.this_vnet.name}-rqrt"
+}
+
+resource "azurerm_public_ip" "app_gw_pip" {
+  allocation_method   = "Static"
+  location            = azurerm_resource_group.this_rg.location
+  name                = local.app_gw_public_ip_name
+  resource_group_name = azurerm_resource_group.this_rg.name
+  sku                 = "Standard"
 }
 
 resource "azurerm_application_gateway" "network" {
@@ -162,10 +171,8 @@ resource "azurerm_application_gateway" "network" {
     request_timeout       = 60
   }
   frontend_ip_configuration {
-    name                          = local.frontend_ip_configuration_name
-    private_ip_address            = "10.0.3.100"
-    private_ip_address_allocation = "Static"
-    subnet_id                     = azurerm_subnet.this_subnet_2.id
+    name                 = local.frontend_ip_configuration_name
+    public_ip_address_id = azurerm_public_ip.app_gw_pip.id
   }
   frontend_port {
     name = local.frontend_port_name
@@ -215,6 +222,7 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
   }
 
@@ -332,6 +340,6 @@ module "testvm" {
 
   tags = local.tags
 
-  depends_on = [module.avm_res_keyvault_vault, module.testnsg, module.loadbalancer]
+  depends_on = [module.avm_res_keyvault_vault, module.testnsg, module.loadbalancer, azurerm_application_security_group.test_asg, azurerm_application_gateway.network] #setting explicit dependencies to enforce destroy ordering
 
 }

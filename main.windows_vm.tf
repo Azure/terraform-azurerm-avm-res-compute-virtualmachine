@@ -157,6 +157,14 @@ resource "azurerm_windows_virtual_machine" "this" {
     }
   }
 
+  depends_on = [ #set explicit depends on for each association to address delete order issues.
+    azurerm_network_interface_security_group_association.this,
+    azurerm_network_interface_application_security_group_association.this,
+    azurerm_network_interface_backend_address_pool_association.this,
+    azurerm_network_interface_application_gateway_backend_address_pool_association.this,
+    azurerm_network_interface_nat_rule_association.this
+  ]
+
   lifecycle {
     ignore_changes = [
       winrm_listener # Once the certificate got rotated, it will triger a destroy/recreate of the VM.

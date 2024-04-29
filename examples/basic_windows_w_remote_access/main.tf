@@ -156,20 +156,24 @@ module "avm_res_keyvault_vault" {
       # give the deployment user access to certificates
       role_definition_id_or_name = "Key Vault Certificates Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
 
     user_managed_identity_certificates = {
       role_definition_id_or_name = "Key Vault Certificate User"
       principal_id               = azurerm_user_assigned_identity.this.principal_id
+      principal_type             = "ServicePrincipal"
     }
 
     user_managed_identity_secrets = {
       role_definition_id_or_name = "Key Vault Secrets User"
       principal_id               = azurerm_user_assigned_identity.this.principal_id
+      principal_type             = "ServicePrincipal"
     }
   }
 

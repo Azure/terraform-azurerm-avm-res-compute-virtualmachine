@@ -105,6 +105,7 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
   }
 
