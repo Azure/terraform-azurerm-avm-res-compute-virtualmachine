@@ -16,7 +16,7 @@ locals {
   tags = {
     scenario = "basic_windows_w_winrms"
   }
-  test_regions           = ["centralus", "eastasia", "westus2", "eastus2", "japaneast"]
+  test_regions           = ["centralus", "eastasia", "eastus2", "westus3"]
   virtualmachine_os_type = "Windows"
   winrms_port            = 15986
 }
@@ -156,20 +156,24 @@ module "avm_res_keyvault_vault" {
       # give the deployment user access to certificates
       role_definition_id_or_name = "Key Vault Certificates Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
 
     user_managed_identity_certificates = {
       role_definition_id_or_name = "Key Vault Certificate User"
       principal_id               = azurerm_user_assigned_identity.this.principal_id
+      principal_type             = "ServicePrincipal"
     }
 
     user_managed_identity_secrets = {
       role_definition_id_or_name = "Key Vault Secrets User"
       principal_id               = azurerm_user_assigned_identity.this.principal_id
+      principal_type             = "ServicePrincipal"
     }
   }
 
@@ -255,7 +259,7 @@ resource "azurerm_key_vault_certificate" "self_signed_winrm" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.11.0"
+  #version = "0.12.0"
 
   admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
   admin_username                         = local.admin_username

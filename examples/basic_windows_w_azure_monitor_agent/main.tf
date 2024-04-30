@@ -12,7 +12,7 @@ locals {
   tags = {
     scenario = "windows_w_azure_monitor_agent"
   }
-  test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
+  test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
 }
 
 module "get_valid_sku_for_deployment_region" {
@@ -116,6 +116,7 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Administrator"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
   }
 
@@ -138,7 +139,7 @@ resource "azurerm_log_analytics_workspace" "this_workspace" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.11.0"
+  #version = "0.12.0"
 
   enable_telemetry                       = var.enable_telemetry
   location                               = azurerm_resource_group.this_rg.location

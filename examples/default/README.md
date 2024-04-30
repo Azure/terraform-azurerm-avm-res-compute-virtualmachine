@@ -30,7 +30,7 @@ locals {
   tags = {
     scenario = "Ubuntu_w_ssh"
   }
-  test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
+  test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
 }
 
 resource "random_integer" "region_index" {
@@ -137,7 +137,7 @@ module "avm_res_keyvault_vault" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.11.0"
+  #version = "0.12.0"
 
   enable_telemetry                       = var.enable_telemetry
   location                               = azurerm_resource_group.this_rg.location

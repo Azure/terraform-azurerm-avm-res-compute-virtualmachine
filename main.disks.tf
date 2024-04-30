@@ -82,9 +82,9 @@ moved {
 }
 #configure resource locks on each Data Disk if the lock values are set. Set explicit dependencies on the attachments and vm's to ensure provisioning is complete prior to setting resource locks
 resource "azurerm_management_lock" "this_disk" {
-  for_each = { for disk, diskvalues in var.data_disk_managed_disks : disk => diskvalues if coalesce(diskvalues.lock_level, var.lock.kind) != "None" }
+  for_each = { for disk, diskvalues in var.data_disk_managed_disks : disk => diskvalues if diskvalues.lock_level != null }
 
-  lock_level = coalesce(each.value.lock_level, var.lock.kind)
+  lock_level = each.value.lock_level
   name       = coalesce(each.value.lock_name, "${each.key}-lock")
   scope      = azurerm_managed_disk.this[each.key].id
 
@@ -105,6 +105,7 @@ resource "azurerm_role_assignment" "disks" {
   condition                              = each.value.role_assignment.condition
   condition_version                      = each.value.role_assignment.condition_version
   delegated_managed_identity_resource_id = each.value.role_assignment.delegated_managed_identity_resource_id
+  principal_type                         = each.value.role_assignment.principal_type
   role_definition_id                     = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? each.value.role_assignment.role_definition_id_or_name : null
   role_definition_name                   = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? null : each.value.role_assignment.role_definition_id_or_name
   skip_service_principal_aad_check       = each.value.role_assignment.skip_service_principal_aad_check

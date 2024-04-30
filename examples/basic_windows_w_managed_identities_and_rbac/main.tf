@@ -12,7 +12,7 @@ locals {
   tags = {
     scenario = "windows_w_rbac_and_managed_identity"
   }
-  test_regions = ["centralus", "eastasia", "westus2", "eastus2", "westeurope", "japaneast"]
+  test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
 }
 
 resource "random_integer" "region_index" {
@@ -125,7 +125,7 @@ module "avm_res_keyvault_vault" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.11.0"
+  #version = "0.12.0"
 
   enable_telemetry                       = var.enable_telemetry
   location                               = azurerm_resource_group.this_rg.location
@@ -165,6 +165,7 @@ module "testvm" {
       scope_resource_id          = module.avm_res_keyvault_vault.resource.id
       role_definition_id_or_name = "Key Vault Secrets Officer"
       description                = "Assign the Key Vault Secrets Officer role to the virtual machine's system managed identity"
+      principal_type             = "ServicePrincipal"
     }
   }
 
@@ -173,6 +174,7 @@ module "testvm" {
       principal_id               = data.azurerm_client_config.current.client_id
       role_definition_id_or_name = "Virtual Machine Contributor"
       description                = "Assign the Virtual Machine Contributor role to the deployment user on this virtual machine resource scope."
+      principal_type             = "ServicePrincipal"
     }
   }
 

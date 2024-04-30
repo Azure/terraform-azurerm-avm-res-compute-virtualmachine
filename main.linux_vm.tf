@@ -19,6 +19,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   dedicated_host_group_id                                = var.dedicated_host_group_resource_id
   dedicated_host_id                                      = var.dedicated_host_resource_id
   disable_password_authentication                        = var.disable_password_authentication
+  disk_controller_type                                   = var.disk_controller_type
   edge_zone                                              = var.edge_zone
   encryption_at_host_enabled                             = var.encryption_at_host_enabled
   eviction_policy                                        = var.eviction_policy
@@ -82,7 +83,7 @@ resource "azurerm_linux_virtual_machine" "this" {
     }
   }
   dynamic "gallery_application" {
-    for_each = { for app in var.gallery_applications : app.version_id => app }
+    for_each = { for app, app_details in var.gallery_applications : app => app_details }
 
     content {
       version_id             = gallery_application.value.version_id
@@ -142,6 +143,14 @@ resource "azurerm_linux_virtual_machine" "this" {
       timeout = var.termination_notification.timeout
     }
   }
+
+  depends_on = [ #set explicit depends on for each association to address delete order issues.
+    azurerm_network_interface_security_group_association.this,
+    azurerm_network_interface_application_security_group_association.this,
+    azurerm_network_interface_backend_address_pool_association.this,
+    azurerm_network_interface_application_gateway_backend_address_pool_association.this,
+    azurerm_network_interface_nat_rule_association.this
+  ]
 }
 
 moved {
@@ -151,11 +160,12 @@ moved {
 
 #set explicit dependencies on all the child resources to ensure that they have finished update and modification prior to locking the vm
 resource "azurerm_management_lock" "this_linux_virtualmachine" {
-  count = var.lock.kind != "None" && !(lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
+  count = (var.lock != null) && !(lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
 
   lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.name}")
+  name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
   scope      = azurerm_linux_virtual_machine.this[0].id
+  notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
 
   depends_on = [
     azurerm_managed_disk.this,

@@ -10,7 +10,7 @@ module "regions" {
 
 locals {
   tags = {
-    scenario = "windows_w_encryption_at_host"
+    scenario = "windows_w_gallery_application"
   }
   test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
 }
@@ -52,51 +52,51 @@ resource "azurerm_subnet" "this_subnet_1" {
   virtual_network_name = azurerm_virtual_network.this_vnet.name
 }
 
-resource "azurerm_subnet" "this_subnet_2" {
+resource "azurerm_subnet" "this_subnet_lb" {
   address_prefixes     = ["10.0.2.0/24"]
+  name                 = "${module.naming.subnet.name_unique}-lb"
+  resource_group_name  = azurerm_resource_group.this_rg.name
+  virtual_network_name = azurerm_virtual_network.this_vnet.name
+}
+
+resource "azurerm_subnet" "this_subnet_2" {
+  address_prefixes     = ["10.0.3.0/24"]
   name                 = "${module.naming.subnet.name_unique}-2"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
 }
 
-/*
+
 # Uncomment this section if you would like to include a bastion resource with this example.
 resource "azurerm_subnet" "bastion_subnet" {
+  address_prefixes     = ["10.0.4.0/24"]
   name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
-  address_prefixes     = ["10.0.3.0/24"]
 }
 
 resource "azurerm_public_ip" "bastionpip" {
-  name                = module.naming.public_ip.name_unique
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
   allocation_method   = "Static"
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.public_ip.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
 }
 
 resource "azurerm_bastion_host" "bastion" {
-  name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.bastion_host.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
 
   ip_configuration {
     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
-    subnet_id            = azurerm_subnet.bastion_subnet.id
     public_ip_address_id = azurerm_public_ip.bastionpip.id
+    subnet_id            = azurerm_subnet.bastion_subnet.id
   }
 }
-*/
+
 
 data "azurerm_client_config" "current" {}
-
-resource "azurerm_user_assigned_identity" "test" {
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  tags                = local.tags
-}
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
@@ -115,22 +115,7 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
-      principal_type             = "ServicePrincipal"
     }
-    deployment_user_keys = { #give the deployment user access to keys
-      role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = data.azurerm_client_config.current.object_id
-      principal_type             = "ServicePrincipal"
-    }
-    user_managed_identity_keys = { #give the user assigned managed identity for the disk encryption set access to keys
-      role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = azurerm_user_assigned_identity.test.principal_id
-      principal_type             = "ServicePrincipal"
-    }
-  }
-
-  wait_for_rbac_before_key_operations = {
-    create = "60s"
   }
 
   wait_for_rbac_before_secret_operations = {
@@ -138,35 +123,63 @@ module "avm_res_keyvault_vault" {
   }
 
   tags = local.tags
-
-  keys = {
-    des_key = {
-      name     = "des-disk-key"
-      key_type = "RSA"
-      key_size = 2048
-
-      key_opts = [
-        "decrypt",
-        "encrypt",
-        "sign",
-        "unwrapKey",
-        "verify",
-        "wrapKey",
-      ]
-    }
-  }
 }
 
-resource "azurerm_disk_encryption_set" "this" {
-  key_vault_key_id    = module.avm_res_keyvault_vault.resource_keys.des_key.id
+resource "azurerm_storage_account" "app_account" {
+  account_replication_type = "LRS"
+  account_tier             = "Standard"
+  location                 = azurerm_resource_group.this_rg.location
+  name                     = module.naming.storage_account.name_unique
+  resource_group_name      = azurerm_resource_group.this_rg.name
+}
+
+resource "azurerm_storage_container" "app_container" {
+  name                  = module.naming.storage_container.name_unique
+  storage_account_name  = azurerm_storage_account.app_account.name
+  container_access_type = "blob"
+}
+
+resource "azurerm_storage_blob" "app" {
+  name                   = "install-script.ps1"
+  storage_account_name   = azurerm_storage_account.app_account.name
+  storage_container_name = azurerm_storage_container.app_container.name
+  type                   = "Block"
+  source                 = "${path.module}/install-vscode.ps1"
+}
+
+#blob content = file
+
+
+resource "azurerm_shared_image_gallery" "app_gallery" {
   location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.disk_encryption_set.name_unique
+  name                = module.naming.shared_image_gallery.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
   tags                = local.tags
+}
 
-  identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.test.id]
+resource "azurerm_gallery_application" "app_gallery_sample" {
+  gallery_id        = azurerm_shared_image_gallery.app_gallery.id
+  location          = azurerm_resource_group.this_rg.location
+  name              = "VSCode"
+  supported_os_type = "Windows"
+}
+
+resource "azurerm_gallery_application_version" "test_app_version" {
+  gallery_application_id = azurerm_gallery_application.app_gallery_sample.id
+  location               = azurerm_gallery_application.app_gallery_sample.location
+  name                   = "0.1.0"
+  package_file           = "install-script.ps1"
+
+  manage_action {
+    install = "powershell.exe -command ./install-script.ps1"
+    remove  = "powershell.exe -command ./install-script.ps1 -mode uninstall"
+  }
+  source {
+    media_link = azurerm_storage_blob.app.id
+  }
+  target_region {
+    name                   = azurerm_gallery_application.app_gallery_sample.location
+    regional_replica_count = 1
   }
 }
 
@@ -187,9 +200,8 @@ module "testvm" {
 
 
   os_disk = {
-    caching                = "ReadWrite"
-    storage_account_type   = "StandardSSD_LRS"
-    disk_encryption_set_id = azurerm_disk_encryption_set.this.id
+    caching              = "ReadWrite"
+    storage_account_type = "StandardSSD_LRS"
   }
 
   source_image_reference = {
@@ -211,20 +223,14 @@ module "testvm" {
     }
   }
 
-  data_disk_managed_disks = {
-    disk1 = {
-      name                   = "${module.naming.managed_disk.name_unique}-lun0"
-      storage_account_type   = "StandardSSD_LRS"
-      lun                    = 0
-      caching                = "ReadWrite"
-      disk_size_gb           = 32
-      disk_encryption_set_id = azurerm_disk_encryption_set.this.id
+  gallery_applications = {
+    vscode = {
+      version_id = azurerm_gallery_application_version.test_app_version.id
+      order      = 1
     }
   }
 
-  tags = {
-    scenario = "windows_w_encryption_at_host"
-  }
+  tags = local.tags
 
   depends_on = [module.avm_res_keyvault_vault]
 
