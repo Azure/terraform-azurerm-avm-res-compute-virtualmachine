@@ -220,6 +220,14 @@ module "testvm" {
           private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
         }
       }
+      role_assignments = {
+        role_assignment_1 = {
+          principal_id               = data.azurerm_client_config.current.client_id
+          role_definition_id_or_name = "Contributor"
+          description                = "Assign the Contributor role to the deployment user on this network interface resource scope."
+          principal_type             = "ServicePrincipal"
+        }
+      }
     }
   }
 

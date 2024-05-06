@@ -797,6 +797,7 @@ Description: A map of objects representing each network virtual machine network 
   - `network_security_groups`                                         = (Optional) - A map describing Network Security Group(s) that this Network Interface should be associated to.
     - `<map key>` - Use a custom map key to define each network security group association.  This is done to handle issues with certain details not being known until after apply.
       - `network_security_group_resource_id` = (Optional) - The Network Security Group (NSG) Azure Resource ID used to associate this Network Interface to the NSG.
+  - `resource_group_name` (Optional) - Specify a resource group name if the network interface should be created in a separate resource group from the virtual machine
   - `role_assignments` = An optional map of objects defining role assignments on the individual network configuration resource
     - `<map key>` - Use a custom map key to define each role assignment configuration  
       - `assign_to_child_public_ip_addresses`        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.
@@ -894,6 +895,7 @@ map(object({
     network_security_groups = optional(map(object({
       network_security_group_resource_id = string
     })), {})
+    resource_group_name = optional(string)
     role_assignments = optional(map(object({
       principal_id                           = string
       role_definition_id_or_name             = string

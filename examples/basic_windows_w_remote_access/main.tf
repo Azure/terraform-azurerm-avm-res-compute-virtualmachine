@@ -187,6 +187,7 @@ module "avm_res_keyvault_vault" {
 resource "random_string" "public_ip_fqdn" {
   length  = 8
   lower   = true
+  numeric = false
   special = false
   upper   = false
 }

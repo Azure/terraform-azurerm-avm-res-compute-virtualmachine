@@ -59,6 +59,12 @@ resource "azurerm_resource_group" "this_rg" {
   tags     = local.tags
 }
 
+resource "azurerm_resource_group" "this_rg_secondary" {
+  location = local.test_regions[random_integer.region_index.result]
+  name     = "${module.naming.resource_group.name_unique}-alt"
+  tags     = local.tags
+}
+
 resource "azurerm_virtual_network" "this_vnet" {
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this_rg.location
@@ -238,6 +244,15 @@ module "testvm" {
       caching                = "ReadWrite"
       disk_size_gb           = 32
       disk_encryption_set_id = azurerm_disk_encryption_set.this.id
+      resource_group_name    = azurerm_resource_group.this_rg_secondary.name
+      role_assignments = {
+        role_assignment_2 = {
+          principal_id               = data.azurerm_client_config.current.client_id
+          role_definition_id_or_name = "Contributor"
+          description                = "Assign the Contributor role to the deployment user on this managed disk resource scope."
+          principal_type             = "ServicePrincipal"
+        }
+      }
     }
   }
 
@@ -257,6 +272,7 @@ module "testvm" {
           private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
         }
       }
+      resource_group_name = azurerm_resource_group.this_rg_secondary.name
     }
     network_interface_2 = {
       name                  = "${module.naming.network_interface.name_unique}-2"
@@ -339,6 +355,7 @@ The following resources are used by this module:
 - [azurerm_disk_encryption_set.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/disk_encryption_set) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_resource_group.this_rg_secondary](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.this_subnet_1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.this_subnet_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_user_assigned_identity.example_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
