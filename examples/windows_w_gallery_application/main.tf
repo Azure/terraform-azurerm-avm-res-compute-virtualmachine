@@ -291,9 +291,11 @@ module "testvm" {
   }
 
   azure_backup_configurations = {
-    resource_group_name       = azurerm_recovery_services_vault.test_vault.resource_group_name
-    recovery_vault_name       = azurerm_recovery_services_vault.test_vault.name
-    backup_policy_resource_id = azurerm_backup_policy_vm.test_policy.id
+    backup_config = {
+      resource_group_name       = azurerm_recovery_services_vault.test_vault.resource_group_name
+      recovery_vault_name       = azurerm_recovery_services_vault.test_vault.name
+      backup_policy_resource_id = azurerm_backup_policy_vm.test_policy.id
+    }
   }
 
   maintenance_configuration_resource_ids = {

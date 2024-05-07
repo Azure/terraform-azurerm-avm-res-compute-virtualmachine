@@ -227,35 +227,38 @@ Default: `null`
 
 Description: This object describes the backup configuration to use for this VM instance. Provide the backup details for configuring the backup. It defaults to null.
 
-- `resource_group_name` - (Optional) - The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
-- `recovery_vault_name` - (Required) - The name of the recovery services vault where the backup will be stored.
-- `backup_policy_resource_id`    - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
-- `exclude_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection.
-- `include_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection.
-- `protection_state`    - (Optional) - Specifies the protection state of the backup. Possible values are `Invalid`, `Protected`, `ProtectionStopped`, `ProtectionError`, and `ProtectionPaused`.
+- `<map_key>` - An arbitrary map key to avoid terraform issues with know before apply challenges
+  - `resource_group_name` - (Optional) - The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
+  - `recovery_vault_name` - (Required) - The name of the recovery services vault where the backup will be stored.
+  - `backup_policy_resource_id`    - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
+  - `exclude_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection.
+  - `include_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection.
+  - `protection_state`    - (Optional) - Specifies the protection state of the backup. Possible values are `Invalid`, `Protected`, `ProtectionStopped`, `ProtectionError`, and `ProtectionPaused`.
 
 Example Input:  
 azure\_backup\_configurations = {  
-  resource\_group\_name = azurerm\_recovery\_services\_vault.test\_vault.resource\_group\_name  
-  recovery\_vault\_name = azurerm\_recovery\_services\_vault.test\_vault.name  
-  backup\_policy\_resource\_id    = azurerm\_backup\_policy\_vm.test\_policy.id  
-  exclude\_disk\_luns   = [1]
+  arbitrary\_key = {  
+    resource\_group\_name = azurerm\_recovery\_services\_vault.test\_vault.resource\_group\_name  
+    recovery\_vault\_name = azurerm\_recovery\_services\_vault.test\_vault.name  
+    backup\_policy\_resource\_id    = azurerm\_backup\_policy\_vm.test\_policy.id  
+    exclude\_disk\_luns   = [1]
+  }
 }
 
 Type:
 
 ```hcl
-object({
+map(object({
     resource_group_name       = optional(string, null)
     recovery_vault_name       = string
     backup_policy_resource_id = optional(string, null)
     exclude_disk_luns         = optional(list(number), null)
     include_disk_luns         = optional(list(number), null)
     protection_state          = optional(string, null)
-  })
+  }))
 ```
 
-Default: `null`
+Default: `{}`
 
 ### <a name="input_boot_diagnostics"></a> [boot\_diagnostics](#input\_boot\_diagnostics)
 

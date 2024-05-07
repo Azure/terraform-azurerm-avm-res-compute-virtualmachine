@@ -142,31 +142,34 @@ variable "availability_set_resource_id" {
 }
 
 variable "azure_backup_configurations" {
-  type = object({
+  type = map(object({
     resource_group_name       = optional(string, null)
     recovery_vault_name       = string
     backup_policy_resource_id = optional(string, null)
     exclude_disk_luns         = optional(list(number), null)
     include_disk_luns         = optional(list(number), null)
     protection_state          = optional(string, null)
-  })
-  default     = null
+  }))
+  default     = {}
   description = <<DESCRIPTION
 This object describes the backup configuration to use for this VM instance. Provide the backup details for configuring the backup. It defaults to null.
 
-- `resource_group_name` - (Optional) - The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
-- `recovery_vault_name` - (Required) - The name of the recovery services vault where the backup will be stored.
-- `backup_policy_resource_id`    - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
-- `exclude_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection.
-- `include_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection.
-- `protection_state`    - (Optional) - Specifies the protection state of the backup. Possible values are `Invalid`, `Protected`, `ProtectionStopped`, `ProtectionError`, and `ProtectionPaused`.
+- `<map_key>` - An arbitrary map key to avoid terraform issues with know before apply challenges
+  - `resource_group_name` - (Optional) - The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
+  - `recovery_vault_name` - (Required) - The name of the recovery services vault where the backup will be stored.
+  - `backup_policy_resource_id`    - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
+  - `exclude_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection.
+  - `include_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection.
+  - `protection_state`    - (Optional) - Specifies the protection state of the backup. Possible values are `Invalid`, `Protected`, `ProtectionStopped`, `ProtectionError`, and `ProtectionPaused`.
 
 Example Input:
 azure_backup_configurations = {
-  resource_group_name = azurerm_recovery_services_vault.test_vault.resource_group_name
-  recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
-  backup_policy_resource_id    = azurerm_backup_policy_vm.test_policy.id
-  exclude_disk_luns   = [1]
+  arbitrary_key = {
+    resource_group_name = azurerm_recovery_services_vault.test_vault.resource_group_name
+    recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
+    backup_policy_resource_id    = azurerm_backup_policy_vm.test_policy.id
+    exclude_disk_luns   = [1]
+  }
 }
 DESCRIPTION
 }
