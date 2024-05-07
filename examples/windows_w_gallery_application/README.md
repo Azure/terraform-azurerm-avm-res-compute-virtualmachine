@@ -259,7 +259,7 @@ resource "azurerm_maintenance_configuration" "test_maintenance_config" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.12.0"
+  #version = "0.13.0"
 
   enable_telemetry                                       = var.enable_telemetry
   location                                               = azurerm_resource_group.this_rg.location
