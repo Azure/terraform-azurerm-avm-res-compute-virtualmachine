@@ -183,6 +183,28 @@ resource "azurerm_gallery_application_version" "test_app_version" {
   }
 }
 
+resource "azurerm_recovery_services_vault" "test_vault" {
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.recovery_services_vault.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  sku                 = "Standard"
+  soft_delete_enabled = false
+}
+
+resource "azurerm_backup_policy_vm" "test_policy" {
+  name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
+  recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
+  resource_group_name = azurerm_resource_group.this_rg.name
+
+  backup {
+    frequency = "Daily"
+    time      = "23:00"
+  }
+  retention_daily {
+    count = 10
+  }
+}
+
 resource "azurerm_maintenance_configuration" "test_maintenance_config" {
   location                 = azurerm_resource_group.this_rg.location
   name                     = "${module.naming.virtual_machine.name_unique}-test-maint-config"
@@ -202,6 +224,10 @@ resource "azurerm_maintenance_configuration" "test_maintenance_config" {
     time_zone       = "Pacific Standard Time"
     duration        = "04:00"
     recur_every     = "Month Second Friday"
+  }
+
+  lifecycle {
+    ignore_changes = [window[0].start_date_time]
   }
 }
 
@@ -262,6 +288,12 @@ module "testvm" {
       version_id = azurerm_gallery_application_version.test_app_version.id
       order      = 1
     }
+  }
+
+  azure_backup_configurations = {
+    resource_group_name       = azurerm_recovery_services_vault.test_vault.resource_group_name
+    recovery_vault_name       = azurerm_recovery_services_vault.test_vault.name
+    backup_policy_resource_id = azurerm_backup_policy_vm.test_policy.id
   }
 
   maintenance_configuration_resource_ids = {
