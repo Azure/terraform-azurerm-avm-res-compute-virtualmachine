@@ -183,20 +183,46 @@ resource "azurerm_gallery_application_version" "test_app_version" {
   }
 }
 
+resource "azurerm_maintenance_configuration" "test_maintenance_config" {
+  location                 = azurerm_resource_group.this_rg.location
+  name                     = "${module.naming.virtual_machine.name_unique}-test-maint-config"
+  resource_group_name      = azurerm_resource_group.this_rg.name
+  scope                    = "InGuestPatch"
+  in_guest_user_patch_mode = "User"
+
+  install_patches {
+    reboot = "Always"
+
+    windows {
+      classifications_to_include = ["Critical", "Security", "UpdateRollup"]
+    }
+  }
+  window {
+    start_date_time = formatdate("YYYY-MM-DD hh:mm", timeadd(timestamp(), "30m"))
+    time_zone       = "Pacific Standard Time"
+    duration        = "04:00"
+    recur_every     = "Month Second Friday"
+  }
+}
+
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.12.0"
 
-  enable_telemetry                       = var.enable_telemetry
-  location                               = azurerm_resource_group.this_rg.location
-  resource_group_name                    = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type                 = "Windows"
-  name                                   = module.naming.virtual_machine.name_unique
-  admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
-  virtualmachine_sku_size                = module.get_valid_sku_for_deployment_region.sku
-  encryption_at_host_enabled             = true
-  zone                                   = random_integer.zone_index.result
+  enable_telemetry                                       = var.enable_telemetry
+  location                                               = azurerm_resource_group.this_rg.location
+  resource_group_name                                    = azurerm_resource_group.this_rg.name
+  virtualmachine_os_type                                 = "Windows"
+  name                                                   = module.naming.virtual_machine.name_unique
+  admin_credential_key_vault_resource_id                 = module.avm_res_keyvault_vault.resource.id
+  virtualmachine_sku_size                                = module.get_valid_sku_for_deployment_region.sku
+  encryption_at_host_enabled                             = true
+  zone                                                   = random_integer.zone_index.result
+  patch_assessment_mode                                  = "AutomaticByPlatform"
+  patch_mode                                             = "AutomaticByPlatform"
+  bypass_platform_safety_checks_on_user_schedule_enabled = true
+
 
 
   os_disk = {
@@ -236,6 +262,10 @@ module "testvm" {
       version_id = azurerm_gallery_application_version.test_app_version.id
       order      = 1
     }
+  }
+
+  maintenance_configuration_resource_ids = {
+    config_1 = azurerm_maintenance_configuration.test_maintenance_config.id
   }
 
   tags = local.tags

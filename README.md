@@ -36,6 +36,7 @@ The following resources are used by this module:
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_linux_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine) (resource)
+- [azurerm_maintenance_assignment_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/maintenance_assignment_virtual_machine) (resource)
 - [azurerm_managed_disk.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/managed_disk) (resource)
 - [azurerm_management_lock.this_disk](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_management_lock.this_linux_virtualmachine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
@@ -703,6 +704,21 @@ object({
 ```
 
 Default: `null`
+
+### <a name="input_maintenance_configuration_resource_ids"></a> [maintenance\_configuration\_resource\_ids](#input\_maintenance\_configuration\_resource\_ids)
+
+Description: A map of maintenance configuration Id(s) to apply to this virtual machine. Using a map to avoid any issues with known before apply. The key value is arbitrary as it is only used as the index for terraform.
+
+Example Input:
+```hcl
+{
+  config_1 = "<maintenance configuration Azure resource id>"
+}
+```
+
+Type: `map(string)`
+
+Default: `{}`
 
 ### <a name="input_managed_identities"></a> [managed\_identities](#input\_managed\_identities)
 

@@ -592,6 +592,21 @@ LOCK
   }
 }
 
+variable "maintenance_configuration_resource_ids" {
+  type        = map(string)
+  default     = {}
+  description = <<DESCRIPTION
+A map of maintenance configuration Id(s) to apply to this virtual machine. Using a map to avoid any issues with known before apply. The key value is arbitrary as it is only used as the index for terraform.
+
+Example Input:
+```hcl
+{
+  config_1 = "<maintenance configuration Azure resource id>"
+}
+```
+DESCRIPTION
+}
+
 variable "managed_identities" {
   type = object({
     system_assigned            = optional(bool, false)
