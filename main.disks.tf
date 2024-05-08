@@ -106,7 +106,7 @@ resource "azurerm_role_assignment" "disks" {
   condition_version                      = each.value.role_assignment.condition_version
   delegated_managed_identity_resource_id = each.value.role_assignment.delegated_managed_identity_resource_id
   principal_type                         = each.value.role_assignment.principal_type
-  role_definition_id                     = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? each.value.role_assignment.role_definition_id_or_name : null
-  role_definition_name                   = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? null : each.value.role_assignment.role_definition_id_or_name
+  role_definition_id                     = (length(split("/", each.value.role_assignment.role_definition_id_or_name))) > 3 ? each.value.role_assignment.role_definition_id_or_name : null
+  role_definition_name                   = (length(split("/", each.value.role_assignment.role_definition_id_or_name))) > 3 ? null : each.value.role_assignment.role_definition_id_or_name
   skip_service_principal_aad_check       = each.value.role_assignment.skip_service_principal_aad_check
 }

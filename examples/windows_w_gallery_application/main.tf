@@ -183,20 +183,72 @@ resource "azurerm_gallery_application_version" "test_app_version" {
   }
 }
 
+resource "azurerm_recovery_services_vault" "test_vault" {
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.recovery_services_vault.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  sku                 = "Standard"
+  soft_delete_enabled = false
+}
+
+resource "azurerm_backup_policy_vm" "test_policy" {
+  name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
+  recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
+  resource_group_name = azurerm_resource_group.this_rg.name
+
+  backup {
+    frequency = "Daily"
+    time      = "23:00"
+  }
+  retention_daily {
+    count = 10
+  }
+}
+
+resource "azurerm_maintenance_configuration" "test_maintenance_config" {
+  location                 = azurerm_resource_group.this_rg.location
+  name                     = "${module.naming.virtual_machine.name_unique}-test-maint-config"
+  resource_group_name      = azurerm_resource_group.this_rg.name
+  scope                    = "InGuestPatch"
+  in_guest_user_patch_mode = "User"
+
+  install_patches {
+    reboot = "Always"
+
+    windows {
+      classifications_to_include = ["Critical", "Security", "UpdateRollup"]
+    }
+  }
+  window {
+    start_date_time = formatdate("YYYY-MM-DD hh:mm", timeadd(timestamp(), "30m"))
+    time_zone       = "Pacific Standard Time"
+    duration        = "04:00"
+    recur_every     = "Month Second Friday"
+  }
+
+  lifecycle {
+    ignore_changes = [window[0].start_date_time]
+  }
+}
+
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.12.0"
+  #version = "0.13.0"
 
-  enable_telemetry                       = var.enable_telemetry
-  location                               = azurerm_resource_group.this_rg.location
-  resource_group_name                    = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type                 = "Windows"
-  name                                   = module.naming.virtual_machine.name_unique
-  admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
-  virtualmachine_sku_size                = module.get_valid_sku_for_deployment_region.sku
-  encryption_at_host_enabled             = true
-  zone                                   = random_integer.zone_index.result
+  enable_telemetry                                       = var.enable_telemetry
+  location                                               = azurerm_resource_group.this_rg.location
+  resource_group_name                                    = azurerm_resource_group.this_rg.name
+  virtualmachine_os_type                                 = "Windows"
+  name                                                   = module.naming.virtual_machine.name_unique
+  admin_credential_key_vault_resource_id                 = module.avm_res_keyvault_vault.resource.id
+  virtualmachine_sku_size                                = module.get_valid_sku_for_deployment_region.sku
+  encryption_at_host_enabled                             = true
+  zone                                                   = random_integer.zone_index.result
+  patch_assessment_mode                                  = "AutomaticByPlatform"
+  patch_mode                                             = "AutomaticByPlatform"
+  bypass_platform_safety_checks_on_user_schedule_enabled = true
+
 
 
   os_disk = {
@@ -220,6 +272,14 @@ module "testvm" {
           private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
         }
       }
+      role_assignments = {
+        role_assignment_1 = {
+          principal_id               = data.azurerm_client_config.current.client_id
+          role_definition_id_or_name = "Contributor"
+          description                = "Assign the Contributor role to the deployment user on this network interface resource scope."
+          principal_type             = "ServicePrincipal"
+        }
+      }
     }
   }
 
@@ -228,6 +288,18 @@ module "testvm" {
       version_id = azurerm_gallery_application_version.test_app_version.id
       order      = 1
     }
+  }
+
+  azure_backup_configurations = {
+    backup_config = {
+      resource_group_name       = azurerm_recovery_services_vault.test_vault.resource_group_name
+      recovery_vault_name       = azurerm_recovery_services_vault.test_vault.name
+      backup_policy_resource_id = azurerm_backup_policy_vm.test_policy.id
+    }
+  }
+
+  maintenance_configuration_resource_ids = {
+    config_1 = azurerm_maintenance_configuration.test_maintenance_config.id
   }
 
   tags = local.tags

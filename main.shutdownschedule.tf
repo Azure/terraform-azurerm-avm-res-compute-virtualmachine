@@ -14,4 +14,9 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "this" {
     time_in_minutes = each.value.notification_settings.time_in_minutes
     webhook_url     = each.value.notification_settings.webhook_url
   }
+
+  depends_on = [
+    azurerm_virtual_machine_data_disk_attachment.this_linux,
+    azurerm_virtual_machine_data_disk_attachment.this_windows
+  ]
 }

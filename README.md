@@ -32,10 +32,12 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
+- [azurerm_backup_protected_vm.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_protected_vm) (resource)
 - [azurerm_dev_test_global_vm_shutdown_schedule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule) (resource)
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_linux_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine) (resource)
+- [azurerm_maintenance_assignment_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/maintenance_assignment_virtual_machine) (resource)
 - [azurerm_managed_disk.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/managed_disk) (resource)
 - [azurerm_management_lock.this_disk](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_management_lock.this_linux_virtualmachine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
@@ -220,6 +222,43 @@ Description: (Optional) Specifies the Azure Resource ID of the Availability Set 
 Type: `string`
 
 Default: `null`
+
+### <a name="input_azure_backup_configurations"></a> [azure\_backup\_configurations](#input\_azure\_backup\_configurations)
+
+Description: This object describes the backup configuration to use for this VM instance. Provide the backup details for configuring the backup. It defaults to null.
+
+- `<map_key>` - An arbitrary map key to avoid terraform issues with know before apply challenges
+  - `resource_group_name` - (Optional) - The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
+  - `recovery_vault_name` - (Required) - The name of the recovery services vault where the backup will be stored.
+  - `backup_policy_resource_id`    - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
+  - `exclude_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection.
+  - `include_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection.
+  - `protection_state`    - (Optional) - Specifies the protection state of the backup. Possible values are `Invalid`, `Protected`, `ProtectionStopped`, `ProtectionError`, and `ProtectionPaused`.
+
+Example Input:  
+azure\_backup\_configurations = {  
+  arbitrary\_key = {  
+    resource\_group\_name = azurerm\_recovery\_services\_vault.test\_vault.resource\_group\_name  
+    recovery\_vault\_name = azurerm\_recovery\_services\_vault.test\_vault.name  
+    backup\_policy\_resource\_id    = azurerm\_backup\_policy\_vm.test\_policy.id  
+    exclude\_disk\_luns   = [1]
+  }
+}
+
+Type:
+
+```hcl
+map(object({
+    resource_group_name       = optional(string, null)
+    recovery_vault_name       = string
+    backup_policy_resource_id = optional(string, null)
+    exclude_disk_luns         = optional(list(number), null)
+    include_disk_luns         = optional(list(number), null)
+    protection_state          = optional(string, null)
+  }))
+```
+
+Default: `{}`
 
 ### <a name="input_boot_diagnostics"></a> [boot\_diagnostics](#input\_boot\_diagnostics)
 
@@ -704,6 +743,21 @@ object({
 
 Default: `null`
 
+### <a name="input_maintenance_configuration_resource_ids"></a> [maintenance\_configuration\_resource\_ids](#input\_maintenance\_configuration\_resource\_ids)
+
+Description: A map of maintenance configuration Id(s) to apply to this virtual machine. Using a map to avoid any issues with known before apply. The key value is arbitrary as it is only used as the index for terraform.
+
+Example Input:
+```hcl
+{
+  config_1 = "<maintenance configuration Azure resource id>"
+}
+```
+
+Type: `map(string)`
+
+Default: `{}`
+
 ### <a name="input_managed_identities"></a> [managed\_identities](#input\_managed\_identities)
 
 Description: An object that sets the managed identity configuration for the virtual machine being deployed. Be aware that capabilities such as the Azure Monitor Agent and Role Assignments require that a managed identity has been configured.
@@ -797,6 +851,7 @@ Description: A map of objects representing each network virtual machine network 
   - `network_security_groups`                                         = (Optional) - A map describing Network Security Group(s) that this Network Interface should be associated to.
     - `<map key>` - Use a custom map key to define each network security group association.  This is done to handle issues with certain details not being known until after apply.
       - `network_security_group_resource_id` = (Optional) - The Network Security Group (NSG) Azure Resource ID used to associate this Network Interface to the NSG.
+  - `resource_group_name` (Optional) - Specify a resource group name if the network interface should be created in a separate resource group from the virtual machine
   - `role_assignments` = An optional map of objects defining role assignments on the individual network configuration resource
     - `<map key>` - Use a custom map key to define each role assignment configuration  
       - `assign_to_child_public_ip_addresses`        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.
@@ -894,6 +949,7 @@ map(object({
     network_security_groups = optional(map(object({
       network_security_group_resource_id = string
     })), {})
+    resource_group_name = optional(string)
     role_assignments = optional(map(object({
       principal_id                           = string
       role_definition_id_or_name             = string

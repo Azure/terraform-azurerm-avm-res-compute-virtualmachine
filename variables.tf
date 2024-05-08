@@ -141,6 +141,39 @@ variable "availability_set_resource_id" {
   description = "(Optional) Specifies the Azure Resource ID of the Availability Set in which the Virtual Machine should exist. Cannot be used along with `new_availability_set`, `new_capacity_reservation_group`, `capacity_reservation_group_id`, `virtual_machine_scale_set_id`, `zone`. Changing this forces a new resource to be created."
 }
 
+variable "azure_backup_configurations" {
+  type = map(object({
+    resource_group_name       = optional(string, null)
+    recovery_vault_name       = string
+    backup_policy_resource_id = optional(string, null)
+    exclude_disk_luns         = optional(list(number), null)
+    include_disk_luns         = optional(list(number), null)
+    protection_state          = optional(string, null)
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+This object describes the backup configuration to use for this VM instance. Provide the backup details for configuring the backup. It defaults to null.
+
+- `<map_key>` - An arbitrary map key to avoid terraform issues with know before apply challenges
+  - `resource_group_name` - (Optional) - The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
+  - `recovery_vault_name` - (Required) - The name of the recovery services vault where the backup will be stored.
+  - `backup_policy_resource_id`    - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
+  - `exclude_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection.
+  - `include_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection.
+  - `protection_state`    - (Optional) - Specifies the protection state of the backup. Possible values are `Invalid`, `Protected`, `ProtectionStopped`, `ProtectionError`, and `ProtectionPaused`.
+
+Example Input:
+azure_backup_configurations = {
+  arbitrary_key = {
+    resource_group_name = azurerm_recovery_services_vault.test_vault.resource_group_name
+    recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
+    backup_policy_resource_id    = azurerm_backup_policy_vm.test_policy.id
+    exclude_disk_luns   = [1]
+  }
+}
+DESCRIPTION
+}
+
 variable "boot_diagnostics" {
   type        = bool
   default     = false
@@ -592,6 +625,21 @@ LOCK
   }
 }
 
+variable "maintenance_configuration_resource_ids" {
+  type        = map(string)
+  default     = {}
+  description = <<DESCRIPTION
+A map of maintenance configuration Id(s) to apply to this virtual machine. Using a map to avoid any issues with known before apply. The key value is arbitrary as it is only used as the index for terraform.
+
+Example Input:
+```hcl
+{
+  config_1 = "<maintenance configuration Azure resource id>"
+}
+```
+DESCRIPTION
+}
+
 variable "managed_identities" {
   type = object({
     system_assigned            = optional(bool, false)
@@ -680,6 +728,7 @@ variable "network_interfaces" {
     network_security_groups = optional(map(object({
       network_security_group_resource_id = string
     })), {})
+    resource_group_name = optional(string)
     role_assignments = optional(map(object({
       principal_id                           = string
       role_definition_id_or_name             = string
@@ -763,6 +812,7 @@ A map of objects representing each network virtual machine network interface
   - `network_security_groups`                                         = (Optional) - A map describing Network Security Group(s) that this Network Interface should be associated to.
     - `<map key>` - Use a custom map key to define each network security group association.  This is done to handle issues with certain details not being known until after apply.
       - `network_security_group_resource_id` = (Optional) - The Network Security Group (NSG) Azure Resource ID used to associate this Network Interface to the NSG.
+  - `resource_group_name` (Optional) - Specify a resource group name if the network interface should be created in a separate resource group from the virtual machine
   - `role_assignments` = An optional map of objects defining role assignments on the individual network configuration resource 
     - `<map key>` - Use a custom map key to define each role assignment configuration    
       - `assign_to_child_public_ip_addresses`        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.

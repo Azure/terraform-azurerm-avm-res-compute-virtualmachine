@@ -25,7 +25,7 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
 
   location                      = var.location
   name                          = each.value.name
-  resource_group_name           = var.resource_group_name
+  resource_group_name           = coalesce(each.value.resource_group_name, var.resource_group_name)
   dns_servers                   = each.value.dns_servers
   edge_zone                     = var.edge_zone #each.value.edge_zone
   enable_accelerated_networking = each.value.accelerated_networking_enabled
@@ -89,8 +89,9 @@ resource "azurerm_role_assignment" "this_network_interface" {
   condition                              = each.value.role_assignment.condition
   condition_version                      = each.value.role_assignment.condition_version
   delegated_managed_identity_resource_id = each.value.role_assignment.delegated_managed_identity_resource_id
-  role_definition_id                     = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? each.value.role_assignment.role_definition_id_or_name : null
-  role_definition_name                   = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? null : each.value.role_assignment.role_definition_id_or_name
+  principal_type                         = each.value.role_assignment.principal_type
+  role_definition_id                     = (length(split("/", each.value.role_assignment.role_definition_id_or_name))) > 3 ? each.value.role_assignment.role_definition_id_or_name : null
+  role_definition_name                   = (length(split("/", each.value.role_assignment.role_definition_id_or_name))) > 3 ? null : each.value.role_assignment.role_definition_id_or_name
   skip_service_principal_aad_check       = each.value.role_assignment.skip_service_principal_aad_check
 }
 
