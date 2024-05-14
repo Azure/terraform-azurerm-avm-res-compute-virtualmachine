@@ -1,4 +1,4 @@
-# Ubuntu VM with a number of common VM features
+# Attach Virtual Machine to VMSS flex
 
 This example demonstrates the creation of two simple Ubuntu VMs attached to a Flex Scale Set with the following features:  
 
