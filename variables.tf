@@ -560,7 +560,8 @@ variable "gallery_applications" {
   }))
   default     = {}
   description = <<GALLERY_APPLICATIONS
-A list of gallery application objects with the following elements
+A list of gallery application objects with the following elements:
+
 - `<map key>` - Used to designate a unique instance for a gallery application.
   - `version_id` (Required) Specifies the Gallery Application Version resource ID.
   - `configuration_blob_uri` (Optional) Specifies the URI to an Azure Blob that will replace the default configuration for the package if provided.
@@ -587,6 +588,24 @@ variable "generate_admin_password_or_ssh_key" {
   description = "Set this value to true if the deployment should create a strong password for the admin user."
 }
 
+variable "generated_secret_key_vault_secret_name" {
+  type = object({
+    name = optional(string, null)
+    expiration_date_length_in_days = optional(number, 45)
+    content_type = optional(string, "text/plain")
+    not_before_date = optional(string, null)  
+  })
+  default = {}
+  description = <<DESCRIPTION
+For simplicity this module provides the option to use an auto-generated admin user password or SSH key.  That password or key is then stored in a key vault provided in the `admin_credential_key_vault_resource_id` input. This input allows the user to override the configuration for the key vault secret which stores the generated password or ssh key. The object details are:
+
+- `name` - (Optional) - The name to use for the key vault secret that stores the auto-generated ssh key or password
+- `expiration_date_length_in_days` - (Optional) - This value sets the number of days from the installation date to set the key vault expiration value. It defaults to `45` days.  Setting this value to null removes the expiration date. This value will not be overridden in subsequent runs. If you need to maintain this resource for a long period, generate your own password or ssh key.
+- `content_type` - (Optional) - This value sets the secret content type.  Defaults to `text/plain`
+- `not_before_date` - (Optional) - The UTC datetime (Y-m-d'T'H:M:S'Z) date before which this key is not valid.  Defaults to null.
+DESCRIPTION
+}
+
 variable "hotpatching_enabled" {
   type        = bool
   default     = false
@@ -607,6 +626,7 @@ variable "lock" {
   default     = null
   description = <<LOCK
 "The lock configuration to apply to this virtual machine and all of it's child resources. The following properties are specified.
+
 - `kind` - (Required) - The type of the lock.  Possible values are `CanNotDelete` and `ReadOnly`.
 - `name` - (Optional) - The name of the lock.  If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
 
@@ -1185,6 +1205,7 @@ variable "shutdown_schedules" {
   default     = {}
   description = <<SHUTDOWN_SCHEDULES
 This map of objects describes an auto-shutdown schedule for the virtual machine.  The default is to not have a shutdown schedule.
+
 - `<map key>` - Use a custom map key for the shutdown schedule definition
   - `daily_recurrence_time` = (Required) The time each day when the schedule takes effect. Must match the format HHmm where HH is 00-23 and mm is 00-59 (e.g. 0930, 2300, etc.)
   - `enabled` = (Required) Designates whether the shutdown schedule is enabled.  Defaults to true when a schedule is configured.
