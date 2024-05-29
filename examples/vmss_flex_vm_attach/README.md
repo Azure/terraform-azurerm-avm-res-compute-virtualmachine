@@ -299,8 +299,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
-- <a name="requirement_tls"></a> [tls](#requirement\_tls) (~> 4.0)
-
 ## Providers
 
 The following providers are used by this module:

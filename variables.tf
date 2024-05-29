@@ -2,6 +2,7 @@
 variable "location" {
   type        = string
   description = "The Azure region where this and supporting resources should be deployed."
+  nullable    = false
 }
 
 variable "name" {
