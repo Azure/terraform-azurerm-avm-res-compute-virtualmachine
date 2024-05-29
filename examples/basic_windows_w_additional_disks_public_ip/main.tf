@@ -166,6 +166,12 @@ module "testvm" {
       daily_recurrence_time = "1700"
       enabled               = true
       timezone              = "Pacific Standard Time"
+      notification_settings = {
+        enabled         = true
+        email           = "example@example.com;example2@example.com"
+        time_in_minutes = "15"
+        webhook_url     = "https://example-webhook-url.example.com"
+      }
     }
   }
 
