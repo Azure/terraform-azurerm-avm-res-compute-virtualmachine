@@ -1248,7 +1248,7 @@ variable "source_image_reference" {
   })
   default     = null
   description = <<SOURCE_IMAGE_REFERENCE
-The source image to use when building the virtual machine. Either source_image_resource_id or source_image_reference must be set and both can not be null at the same time.
+The source image to use when building the virtual machine. Either `source_image_resource_id` or `source_image_reference` must be set and both can not be null at the same time.
 
 - `publisher` = (Required) Specifies the publisher of the image this virtual machine should be created from.  Changing this forces a new virtual machine to be created.
 - `offer`     = (Required) Specifies the offer of the image used to create this virtual machine.  Changing this forces a new virtual machine to be created.
@@ -1280,7 +1280,7 @@ SOURCE_IMAGE_REFERENCE
 variable "source_image_resource_id" {
   type        = string
   default     = null
-  description = "The Azure resource ID of the source image used to create the VM. Either source_image_resource_id or source_image_reference must be set and both can not be null at the same time."
+  description = "The Azure resource ID of the source image used to create the VM. Either `source_image_resource_id` or `source_image_reference` must be set and both can not be null at the same time."
 }
 
 variable "tags" {
