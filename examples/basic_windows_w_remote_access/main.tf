@@ -260,7 +260,7 @@ resource "azurerm_key_vault_certificate" "self_signed_winrm" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.13.0"
+  #version = "0.14.0"
 
   admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
   admin_username                         = local.admin_username

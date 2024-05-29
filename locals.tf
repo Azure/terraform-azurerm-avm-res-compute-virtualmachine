@@ -27,6 +27,7 @@ locals {
       }
     ]
   ]) : "${ra.disk_key}-${ra.ra_key}" => ra }
+  generated_secret_expiration_date_utc = formatdate("YYYY-MM-DD'T'hh:mm:ssZ", (timeadd(timestamp(), "${var.generated_secrets_key_vault_secret_config.expiration_date_length_in_days * 24}h")))
   linux_virtual_machine_output_map = (lower(var.virtualmachine_os_type) == "linux") ? {
     id                   = azurerm_linux_virtual_machine.this[0].id
     identity             = azurerm_linux_virtual_machine.this[0].identity

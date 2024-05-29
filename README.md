@@ -12,7 +12,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.90)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.105)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
@@ -22,7 +22,7 @@ The following requirements are needed by this module:
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.90)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.105)
 
 - <a name="provider_random"></a> [random](#provider\_random) (~> 3.6)
 
@@ -663,7 +663,8 @@ Default: `"PT1H30M"`
 
 ### <a name="input_gallery_applications"></a> [gallery\_applications](#input\_gallery\_applications)
 
-Description: A list of gallery application objects with the following elements
+Description: A list of gallery application objects with the following elements:
+
 - `<map key>` - Used to designate a unique instance for a gallery application.
   - `version_id` (Required) Specifies the Gallery Application Version resource ID.
   - `configuration_blob_uri` (Optional) Specifies the URI to an Azure Blob that will replace the default configuration for the package if provided.
@@ -702,6 +703,30 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_generated_secrets_key_vault_secret_config"></a> [generated\_secrets\_key\_vault\_secret\_config](#input\_generated\_secrets\_key\_vault\_secret\_config)
+
+Description: For simplicity this module provides the option to use an auto-generated admin user password or SSH key.  That password or key is then stored in a key vault provided in the `admin_credential_key_vault_resource_id` input. This variable allows the user to override the configuration for the key vault secret which stores the generated password or ssh key. The object details are:
+
+- `name` - (Optional) - The name to use for the key vault secret that stores the auto-generated ssh key or password
+- `expiration_date_length_in_days` - (Optional) - This value sets the number of days from the installation date to set the key vault expiration value. It defaults to `45` days.  This value will not be overridden in subsequent runs. If you need to maintain this virtual machine resource for a long period, generate and/or use your own password or ssh key.
+- `content_type` - (Optional) - This value sets the secret content type.  Defaults to `text/plain`
+- `not_before_date` - (Optional) - The UTC datetime (Y-m-d'T'H:M:S'Z) date before which this key is not valid.  Defaults to null.
+- `tags` - (Optional) - Specific tags to assign to this secret resource
+
+Type:
+
+```hcl
+object({
+    name                           = optional(string, null)
+    expiration_date_length_in_days = optional(number, 45)
+    content_type                   = optional(string, "text/plain")
+    not_before_date                = optional(string, null)
+    tags                           = optional(map(string), {})
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_hotpatching_enabled"></a> [hotpatching\_enabled](#input\_hotpatching\_enabled)
 
 Description: (Optional) Should the VM be patched without requiring a reboot? Possible values are `true` or `false`. Defaults to `false`. For more information about hot patching please see the [product documentation](https://docs.microsoft.com/azure/automanage/automanage-hotpatch). Hotpatching can only be enabled if the `patch_mode` is set to `AutomaticByPlatform`, the `provision_vm_agent` is set to `true`, your `source_image_reference` references a hotpatching enabled image, and the VM's `size` is set to a [Azure generation 2](https://docs.microsoft.com/azure/virtual-machines/generation-2#generation-2-vm-sizes) VM. An example of how to correctly configure a Windows Virtual Machine to use the `hotpatching_enabled` field can be found in the [`./examples/virtual-machines/windows/hotpatching-enabled`](https://github.com/hashicorp/terraform-provider-azurerm/tree/main/examples/virtual-machines/windows/hotpatching-enabled) directory within the GitHub Repository.
@@ -721,6 +746,7 @@ Default: `null`
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
 Description: "The lock configuration to apply to this virtual machine and all of it's child resources. The following properties are specified.
+
 - `kind` - (Required) - The type of the lock.  Possible values are `CanNotDelete` and `ReadOnly`.
 - `name` - (Optional) - The name of the lock.  If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
 
@@ -1344,6 +1370,7 @@ Default: `null`
 ### <a name="input_shutdown_schedules"></a> [shutdown\_schedules](#input\_shutdown\_schedules)
 
 Description: This map of objects describes an auto-shutdown schedule for the virtual machine.  The default is to not have a shutdown schedule.
+
 - `<map key>` - Use a custom map key for the shutdown schedule definition
   - `daily_recurrence_time` = (Required) The time each day when the schedule takes effect. Must match the format HHmm where HH is 00-23 and mm is 00-59 (e.g. 0930, 2300, etc.)
   - `enabled` = (Required) Designates whether the shutdown schedule is enabled.  Defaults to true when a schedule is configured.

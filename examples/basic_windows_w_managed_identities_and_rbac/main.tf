@@ -125,7 +125,7 @@ module "avm_res_keyvault_vault" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.13.0"
+  #version = "0.14.0"
 
   enable_telemetry                       = var.enable_telemetry
   location                               = azurerm_resource_group.this_rg.location
@@ -135,6 +135,14 @@ module "testvm" {
   admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
   virtualmachine_sku_size                = module.get_valid_sku_for_deployment_region.sku
   zone                                   = random_integer.zone_index.result
+
+  generated_secrets_key_vault_secret_config = {
+    expiration_date_length_in_days = 30
+    name                           = "example-password-secret-name"
+    tags = {
+      test_tag = "test_tag_value"
+    }
+  }
 
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"

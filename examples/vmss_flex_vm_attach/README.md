@@ -231,14 +231,15 @@ module "testvm" {
   tags = local.tags
 
   depends_on = [
-    module.avm_res_keyvault_vault
+    module.avm_res_keyvault_vault,
+    azurerm_orchestrated_virtual_machine_scale_set.this
   ]
 }
 
 module "testvm2" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.13.0"
+  #version = "0.14.0"
 
   admin_username                        = "azureuser"
   admin_password                        = module.avm_res_keyvault_vault.resource_secrets["admin_password"].value
@@ -281,7 +282,8 @@ module "testvm2" {
   tags = local.tags
 
   depends_on = [
-    module.avm_res_keyvault_vault
+    module.avm_res_keyvault_vault,
+    azurerm_orchestrated_virtual_machine_scale_set.this
   ]
 }
 ```
