@@ -30,6 +30,12 @@ output "public_ips" {
   value       = azurerm_public_ip.virtualmachine_public_ips
 }
 
+output "resource" {
+  description = "The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values"
+  sensitive   = true
+  value       = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0] : azurerm_linux_virtual_machine.this[0]
+}
+
 output "resource_id" {
   description = "The Azure resource id for the deployed virtual machine"
   value       = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azurerm_linux_virtual_machine.this[0].id
@@ -41,7 +47,7 @@ output "system_assigned_mi_principal_id" {
 }
 
 output "virtual_machine" {
-  description = "The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values"
+  description = "The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values. This output has been duplicated to the resource output to comply with the spec and may be deprecated in the future."
   sensitive   = true
   value       = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0] : azurerm_linux_virtual_machine.this[0]
 }

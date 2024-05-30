@@ -1632,6 +1632,10 @@ Description: The full ARM object map associated with the deployed network interf
 
 Description: The full ARM object map associated with any deployed public ip(s). Exporting this in the event that a public ip property not exposed as part of the azurerm vm export is required.
 
+### <a name="output_resource"></a> [resource](#output\_resource)
+
+Description: The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values
+
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
 Description: The Azure resource id for the deployed virtual machine
@@ -1642,7 +1646,7 @@ Description: The principal id of the system managed identity assigned to the vir
 
 ### <a name="output_virtual_machine"></a> [virtual\_machine](#output\_virtual\_machine)
 
-Description: The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values
+Description: The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values. This output has been duplicated to the resource output to comply with the spec and may be deprecated in the future.
 
 ### <a name="output_virtual_machine_azurerm"></a> [virtual\_machine\_azurerm](#output\_virtual\_machine\_azurerm)
 
