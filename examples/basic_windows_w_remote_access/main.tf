@@ -1,11 +1,11 @@
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = ">= 0.3"
+  version = "~> 0.4"
 }
 
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = ">= 0.4"
+  version = "~> 0.6"
 }
 
 locals {
@@ -139,7 +139,7 @@ resource "azurerm_user_assigned_identity" "this" {
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = ">= 0.5"
+  version = "~> 0.5"
 
   enabled_for_deployment = true # Required to deploy the certificates to the VM
   location               = azurerm_resource_group.this_rg.location
@@ -260,7 +260,7 @@ resource "azurerm_key_vault_certificate" "self_signed_winrm" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.13.0"
+  #version = "0.14.0"
 
   admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
   admin_username                         = local.admin_username

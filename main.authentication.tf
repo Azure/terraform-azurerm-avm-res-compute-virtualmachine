@@ -32,10 +32,17 @@ resource "azurerm_key_vault_secret" "admin_password" {
   count = (((var.generate_admin_password_or_ssh_key == true) && (lower(var.virtualmachine_os_type) == "windows")) ||
   ((var.generate_admin_password_or_ssh_key == true) && (lower(var.virtualmachine_os_type) == "linux") && (var.disable_password_authentication == false))) ? 1 : 0
 
-  key_vault_id = var.admin_credential_key_vault_resource_id
-  name         = coalesce(var.admin_password_key_vault_secret_name, "${var.name}-${var.admin_username}-password")
-  value        = random_password.admin_password[0].result
-  tags         = var.tags
+  key_vault_id    = var.admin_credential_key_vault_resource_id
+  name            = coalesce(var.admin_password_key_vault_secret_name, var.generated_secrets_key_vault_secret_config.name, "${var.name}-${var.admin_username}-password")
+  value           = random_password.admin_password[0].result
+  content_type    = var.generated_secrets_key_vault_secret_config.content_type
+  expiration_date = local.generated_secret_expiration_date_utc
+  not_before_date = var.generated_secrets_key_vault_secret_config.not_before_date
+  tags            = var.generated_secrets_key_vault_secret_config.tags != {} ? var.generated_secrets_key_vault_secret_config.tags : var.tags
+
+  lifecycle {
+    ignore_changes = [expiration_date]
+  }
 }
 
 ####Admin SSH key generation related resources
@@ -46,14 +53,22 @@ resource "tls_private_key" "this" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
+
 #Store the created ssh key in the secrets key vault
 resource "azurerm_key_vault_secret" "admin_ssh_key" {
   count = ((var.generate_admin_password_or_ssh_key == true) && (lower(var.virtualmachine_os_type) == "linux")) ? 1 : 0
 
-  key_vault_id = var.admin_credential_key_vault_resource_id
-  name         = coalesce(var.admin_generated_ssh_key_vault_secret_name, "${var.name}-${var.admin_username}-ssh-private-key")
-  value        = tls_private_key.this[0].private_key_pem
-  tags         = var.tags
+  key_vault_id    = var.admin_credential_key_vault_resource_id
+  name            = coalesce(var.admin_generated_ssh_key_vault_secret_name, var.generated_secrets_key_vault_secret_config.name, "${var.name}-${var.admin_username}-ssh-private-key")
+  value           = tls_private_key.this[0].private_key_pem
+  content_type    = var.generated_secrets_key_vault_secret_config.content_type
+  expiration_date = local.generated_secret_expiration_date_utc
+  not_before_date = var.generated_secrets_key_vault_secret_config.not_before_date
+  tags            = var.generated_secrets_key_vault_secret_config.tags != {} ? var.generated_secrets_key_vault_secret_config.tags : var.tags
+
+  lifecycle {
+    ignore_changes = [expiration_date]
+  }
 }
 
 #assign permissions to the managed identity if enabled and role assignments included

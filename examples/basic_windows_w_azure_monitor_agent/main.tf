@@ -1,11 +1,11 @@
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = ">= 0.3.0"
+  version = "~> 0.4"
 }
 
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = ">= 0.4.0"
+  version = "~> 0.6"
 }
 
 locals {
@@ -101,7 +101,7 @@ resource "azurerm_user_assigned_identity" "example_identity" {
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = ">= 0.5.0"
+  version                     = "~> 0.5"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -139,7 +139,7 @@ resource "azurerm_log_analytics_workspace" "this_workspace" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.13.0"
+  #version = "0.14.0"
 
   enable_telemetry                       = var.enable_telemetry
   location                               = azurerm_resource_group.this_rg.location

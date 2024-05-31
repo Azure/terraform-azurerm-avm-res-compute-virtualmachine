@@ -1,11 +1,11 @@
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = ">= 0.3.0"
+  version = "~> 0.4"
 }
 
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = ">= 0.4.0"
+  version = "~> 0.6"
 }
 
 locals {
@@ -207,7 +207,7 @@ data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = ">= 0.5.0"
+  version                     = "~> 0.5"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -276,7 +276,7 @@ resource "azurerm_application_security_group" "test_asg" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.13.0"
+  #version = "0.14.0"
 
   enable_telemetry                       = var.enable_telemetry
   location                               = azurerm_resource_group.this_rg.location
@@ -287,7 +287,6 @@ module "testvm" {
   virtualmachine_sku_size                = module.get_valid_sku_for_deployment_region.sku
   encryption_at_host_enabled             = true
   zone                                   = random_integer.zone_index.result
-
 
   os_disk = {
     caching              = "ReadWrite"

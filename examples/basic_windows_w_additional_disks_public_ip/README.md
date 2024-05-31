@@ -19,12 +19,12 @@ It includes the following resources in addition to the VM resource:
 ```hcl
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = ">= 0.3.0"
+  version = "~> 0.4"
 }
 
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = ">= 0.4.0"
+  version = "~> 0.6"
 }
 
 locals {
@@ -111,7 +111,7 @@ data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
   source              = "Azure/avm-res-keyvault-vault/azurerm"
-  version             = ">= 0.5.0"
+  version             = "~> 0.5"
   tenant_id           = data.azurerm_client_config.current.tenant_id
   name                = module.naming.key_vault.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
@@ -138,7 +138,7 @@ module "avm_res_keyvault_vault" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.13.0"
+  #version = "0.14.0"
 
   enable_telemetry                       = var.enable_telemetry
   location                               = azurerm_resource_group.this_rg.location
@@ -185,6 +185,12 @@ module "testvm" {
       daily_recurrence_time = "1700"
       enabled               = true
       timezone              = "Pacific Standard Time"
+      notification_settings = {
+        enabled         = true
+        email           = "example@example.com;example2@example.com"
+        time_in_minutes = "15"
+        webhook_url     = "https://example-webhook-url.example.com"
+      }
     }
   }
 
@@ -205,7 +211,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.90)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.105)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
@@ -213,7 +219,7 @@ The following requirements are needed by this module:
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.90)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.105)
 
 - <a name="provider_random"></a> [random](#provider\_random) (~> 3.6)
 
@@ -260,7 +266,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: >= 0.5.0
+Version: ~> 0.5
 
 ### <a name="module_get_valid_sku_for_deployment_region"></a> [get\_valid\_sku\_for\_deployment\_region](#module\_get\_valid\_sku\_for\_deployment\_region)
 
@@ -272,13 +278,13 @@ Version:
 
 Source: Azure/naming/azurerm
 
-Version: >= 0.3.0
+Version: ~> 0.4
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
 Source: Azure/regions/azurerm
 
-Version: >= 0.4.0
+Version: ~> 0.6
 
 ### <a name="module_testvm"></a> [testvm](#module\_testvm)
 
