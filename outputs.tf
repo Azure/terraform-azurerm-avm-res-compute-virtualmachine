@@ -10,6 +10,11 @@ output "admin_ssh_keys" {
   value       = local.admin_ssh_keys
 }
 
+output "admin_username" {
+  description = "The admin username used when creating this virtual machine."
+  value       = var.admin_username
+}
+
 output "data_disks" {
   description = "The full ARM object map associated with any deployed data disk(s). Exporting this in the event that a disk property not exposed as part of the azurerm vm export is required."
   value       = azurerm_managed_disk.this

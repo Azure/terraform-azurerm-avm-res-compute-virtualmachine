@@ -1616,6 +1616,10 @@ Description: Returns the admin password if installation is configured to use the
 
 Description: Returns a list containing all of the provided or generated ssh keys. This is a single key if the generation option is selected and no additional keys are provided.
 
+### <a name="output_admin_username"></a> [admin\_username](#output\_admin\_username)
+
+Description: The admin username used when creating this virtual machine.
+
 ### <a name="output_data_disks"></a> [data\_disks](#output\_data\_disks)
 
 Description: The full ARM object map associated with any deployed data disk(s). Exporting this in the event that a disk property not exposed as part of the azurerm vm export is required.

@@ -145,7 +145,7 @@ module "testvm" {
   resource_group_name                    = azurerm_resource_group.this_rg.name
   virtualmachine_os_type                 = "Windows"
   name                                   = module.naming.virtual_machine.name_unique
-  admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
+  admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
   virtualmachine_sku_size                = module.get_valid_sku_for_deployment_region.sku
   zone                                   = random_integer.zone_index.result
 
