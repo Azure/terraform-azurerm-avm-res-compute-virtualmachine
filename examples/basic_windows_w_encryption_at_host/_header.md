@@ -1,4 +1,4 @@
-# Simple Windows VM with managed identities and role assignments
+# Simple Windows VM with Encryption at Host
 
 This example demonstrates the creation of a simple Windows Server 2022 VM with the following features:
 

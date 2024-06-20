@@ -1,4 +1,4 @@
-# Simple Windows VM with load balancing and security associations
+# Simple Windows VM with gallery application
 
 This example demonstrates the creation of a simple Windows Server 2022 VM with the following features:
 

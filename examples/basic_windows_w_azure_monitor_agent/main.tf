@@ -101,7 +101,7 @@ resource "azurerm_user_assigned_identity" "example_identity" {
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "~> 0.5"
+  version                     = "=0.6.2"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -116,7 +116,6 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Administrator"
       principal_id               = data.azurerm_client_config.current.object_id
-      principal_type             = "ServicePrincipal"
     }
   }
 
@@ -136,19 +135,27 @@ resource "azurerm_log_analytics_workspace" "this_workspace" {
   tags                = local.tags
 }
 
+data "azurerm_key_vault" "this" {
+  name                = basename(module.avm_res_keyvault_vault.resource_id)
+  resource_group_name = azurerm_resource_group.this_rg.name
+}
+
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.14.0"
+  #version = "0.15.0"
 
-  enable_telemetry                       = var.enable_telemetry
-  location                               = azurerm_resource_group.this_rg.location
-  resource_group_name                    = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type                 = "Windows"
-  name                                   = module.naming.virtual_machine.name_unique
-  admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
-  virtualmachine_sku_size                = module.get_valid_sku_for_deployment_region.sku
-  zone                                   = random_integer.zone_index.result
+  enable_telemetry    = var.enable_telemetry
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  os_type             = "Windows"
+  name                = module.naming.virtual_machine.name_unique
+  sku_size            = module.get_valid_sku_for_deployment_region.sku
+  zone                = random_integer.zone_index.result
+
+  generated_secrets_key_vault_secret_config = {
+    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  }
 
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
@@ -192,16 +199,16 @@ module "testvm" {
 
   extensions = {
     azure_monitor_agent = {
-      name                       = "${module.testvm.virtual_machine.name}-azure-monitor-agent"
+      name                       = "AzureMonitorWindowsAgent"
       publisher                  = "Microsoft.Azure.Monitor"
       type                       = "AzureMonitorWindowsAgent"
-      type_handler_version       = "1.0"
+      type_handler_version       = "1.2"
       auto_upgrade_minor_version = true
       automatic_upgrade_enabled  = true
       settings                   = null
     }
     azure_disk_encryption = {
-      name                       = "${module.testvm.virtual_machine.name}-azure-disk-encryption"
+      name                       = "AzureDiskEncryption"
       publisher                  = "Microsoft.Azure.Security"
       type                       = "AzureDiskEncryption"
       type_handler_version       = "2.2"
@@ -209,8 +216,8 @@ module "testvm" {
       settings                   = <<SETTINGS
           {
               "EncryptionOperation": "EnableEncryption",
-              "KeyVaultURL": "${module.avm_res_keyvault_vault.resource.vault_uri}",
-              "KeyVaultResourceId": "${module.avm_res_keyvault_vault.resource.id}",						
+              "KeyVaultURL": "${data.azurerm_key_vault.this.vault_uri}",
+              "KeyVaultResourceId": "${module.avm_res_keyvault_vault.resource_id}",						
               "KeyEncryptionAlgorithm": "RSA-OAEP",
               "VolumeType": "All"
           }

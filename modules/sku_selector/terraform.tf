@@ -7,15 +7,11 @@ terraform {
     }
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.105"
+      version = "~> 3.108"
     }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
   }
-}
-
-provider "azapi" {
-  enable_hcl_output_for_data_source = true
 }

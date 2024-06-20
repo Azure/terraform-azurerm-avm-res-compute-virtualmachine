@@ -1,5 +1,5 @@
 resource "azurerm_linux_virtual_machine" "this" {
-  count = (lower(var.virtualmachine_os_type) == "linux") ? 1 : 0
+  count = (lower(var.os_type) == "linux") ? 1 : 0
 
   #required properties
   admin_username        = var.admin_username
@@ -7,7 +7,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   name                  = var.name
   network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
   resource_group_name   = var.resource_group_name
-  size                  = var.virtualmachine_sku_size
+  size                  = var.sku_size
   #optional properties
   admin_password                                         = (var.disable_password_authentication ? null : local.admin_password_linux)
   allow_extension_operations                             = var.allow_extension_operations
@@ -160,7 +160,7 @@ moved {
 
 #set explicit dependencies on all the child resources to ensure that they have finished update and modification prior to locking the vm
 resource "azurerm_management_lock" "this_linux_virtualmachine" {
-  count = (var.lock != null) && !(lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
+  count = (var.lock != null) && !(lower(var.os_type) == "windows") ? 1 : 0
 
   lock_level = var.lock.kind
   name       = coalesce(var.lock.name, "lock-${var.lock.kind}")

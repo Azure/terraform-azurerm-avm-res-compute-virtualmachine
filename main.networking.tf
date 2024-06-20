@@ -23,15 +23,15 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
 resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
   for_each = var.network_interfaces
 
-  location                      = var.location
-  name                          = each.value.name
-  resource_group_name           = coalesce(each.value.resource_group_name, var.resource_group_name)
-  dns_servers                   = each.value.dns_servers
-  edge_zone                     = var.edge_zone #each.value.edge_zone
-  enable_accelerated_networking = each.value.accelerated_networking_enabled
-  enable_ip_forwarding          = each.value.ip_forwarding_enabled
-  internal_dns_name_label       = each.value.internal_dns_name_label
-  tags                          = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
+  location                       = var.location
+  name                           = each.value.name
+  resource_group_name            = coalesce(each.value.resource_group_name, var.resource_group_name)
+  accelerated_networking_enabled = each.value.accelerated_networking_enabled
+  dns_servers                    = each.value.dns_servers
+  edge_zone                      = var.edge_zone #each.value.edge_zone
+  internal_dns_name_label        = each.value.internal_dns_name_label
+  ip_forwarding_enabled          = each.value.ip_forwarding_enabled
+  tags                           = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
 
   dynamic "ip_configuration" {
     for_each = each.value.ip_configurations
