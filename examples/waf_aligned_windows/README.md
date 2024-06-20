@@ -35,7 +35,7 @@ module "regions" {
 
 locals {
   tags = {
-    scenario = "windows_w_gallery_application"
+    scenario = "waf_aligned_windows"
   }
   test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
 }
@@ -125,7 +125,7 @@ data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "~> 0.5.0"
+  version                     = "=0.6.2"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -140,16 +140,14 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
-      #principal_type             = "ServicePrincipal"
     }
     deployment_user_keys = { #give the deployment user access to keys
       role_definition_id_or_name = "Key Vault Crypto Officer"
       principal_id               = data.azurerm_client_config.current.object_id
-      #principal_type             = "ServicePrincipal"
     }
     user_managed_identity_keys = { #give the user assigned managed identity for the disk encryption set access to keys
       role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = azurerm_user_assigned_identity.test.principal_id
+      principal_id               = azurerm_user_assigned_identity.des.principal_id
       principal_type             = "ServicePrincipal"
     }
   }
@@ -272,15 +270,15 @@ module "testnsg" {
   }
 }
 
-resource "azurerm_user_assigned_identity" "test" {
+resource "azurerm_user_assigned_identity" "des" {
   location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.user_assigned_identity.name_unique
+  name                = "${module.naming.user_assigned_identity.name_unique}-des"
   resource_group_name = azurerm_resource_group.this_rg.name
   tags                = local.tags
 }
 
 resource "azurerm_disk_encryption_set" "this" {
-  key_vault_key_id          = module.avm_res_keyvault_vault.resource_keys.des_key.versionless_id
+  key_vault_key_id          = module.avm_res_keyvault_vault.keys_resource_ids.des_key.versionless_id
   location                  = azurerm_resource_group.this_rg.location
   name                      = module.naming.disk_encryption_set.name_unique
   resource_group_name       = azurerm_resource_group.this_rg.name
@@ -289,7 +287,7 @@ resource "azurerm_disk_encryption_set" "this" {
 
   identity {
     type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.test.id]
+    identity_ids = [azurerm_user_assigned_identity.des.id]
   }
 }
 
@@ -298,13 +296,13 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.14.0"
 
-  enable_telemetry                                       = var.enable_telemetry
-  location                                               = azurerm_resource_group.this_rg.location
-  resource_group_name                                    = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type                                 = "Windows"
-  name                                                   = module.naming.virtual_machine.name_unique
-  admin_credential_key_vault_resource_id                 = module.avm_res_keyvault_vault.resource.id
-  virtualmachine_sku_size                                = module.get_valid_sku_for_deployment_region.sku
+  enable_telemetry    = var.enable_telemetry
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  os_type             = "Windows"
+  name                = module.naming.virtual_machine.name_unique
+  #admin_credential_key_vault_resource_id                 = module.avm_res_keyvault_vault.resource_id
+  sku_size                                               = module.get_valid_sku_for_deployment_region.sku
   encryption_at_host_enabled                             = true
   zone                                                   = random_integer.zone_index.result
   patch_assessment_mode                                  = "AutomaticByPlatform"
@@ -312,13 +310,17 @@ module "testvm" {
   bypass_platform_safety_checks_on_user_schedule_enabled = true
   boot_diagnostics                                       = true
 
+  generated_secrets_key_vault_secret_config = {
+    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  }
+
   managed_identities = {
     system_assigned = true
   }
 
   os_disk = {
     caching                = "ReadWrite"
-    storage_account_type   = "Premium_ZRS"
+    storage_account_type   = "Premium_LRS"
     disk_encryption_set_id = azurerm_disk_encryption_set.this.id
   }
 
@@ -349,15 +351,29 @@ module "testvm" {
 
   extensions = {
     azure_monitor_agent = {
-      name                       = "${module.testvm.virtual_machine.name}-azure-monitor-agent"
+      name                       = "AzureMonitorWindowsAgent"
       publisher                  = "Microsoft.Azure.Monitor"
       type                       = "AzureMonitorWindowsAgent"
-      type_handler_version       = "1.0"
+      type_handler_version       = "1.2"
       auto_upgrade_minor_version = true
       automatic_upgrade_enabled  = true
-      settings                   = null
+      settings = jsonencode({
+        authentication = {
+          managedIdentity = {
+            identifier-name  = "mi_res_id"
+            identifier-value = azurerm_user_assigned_identity.change_tracking.id
+          }
+        }
+      })
     }
-
+    change_tracking = {
+      name                       = "ChangeTracking-Windows"
+      publisher                  = "Microsoft.Azure.ChangeTrackingAndInventory"
+      type                       = "ChangeTracking-Windows"
+      type_handler_version       = "2.20"
+      auto_upgrade_minor_version = true
+      automatic_upgrade_enabled  = true
+    }
   }
 
   azure_backup_configurations = {
@@ -518,6 +534,13 @@ resource "azurerm_monitor_data_collection_rule" "test" {
   }
 }
 
+resource "azurerm_monitor_data_collection_rule_association" "ama" {
+  target_resource_id      = module.testvm.virtual_machine.id
+  data_collection_rule_id = azurerm_monitor_data_collection_rule.test.id
+  description             = "Associate the DCR rule with the VM."
+  name                    = "${module.testvm.virtual_machine.name}-ama-dcr"
+}
+
 locals {
   extension_setting_linux   = jsonencode(local.extension_settings_object_linux)
   extension_setting_windows = jsonencode(local.extension_settings_object_windows)
@@ -567,7 +590,7 @@ locals {
         {
           name        = "Registry_1"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Group Policy\\Scripts\\Startup"
@@ -576,7 +599,7 @@ locals {
         {
           name        = "Registry_2"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Group Policy\\Scripts\\Shutdown"
@@ -585,7 +608,7 @@ locals {
         {
           name        = "Registry_3"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run"
@@ -594,7 +617,7 @@ locals {
         {
           name        = "Registry_4"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Active Setup\\Installed Components"
@@ -603,7 +626,7 @@ locals {
         {
           name        = "Registry_5"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Classes\\Directory\\ShellEx\\ContextMenuHandlers"
@@ -612,7 +635,7 @@ locals {
         {
           name        = "Registry_5"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Classes\\Directory\\ShellEx\\ContextMenuHandlers"
@@ -621,7 +644,7 @@ locals {
         {
           name        = "Registry_6"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Classes\\Directory\\Background\\ShellEx\\ContextMenuHandlers"
@@ -630,7 +653,7 @@ locals {
         {
           name        = "Registry_7"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Classes\\Directory\\Shellex\\CopyHookHandlers"
@@ -639,7 +662,7 @@ locals {
         {
           name        = "Registry_8"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ShellIconOverlayIdentifiers"
@@ -648,7 +671,7 @@ locals {
         {
           name        = "Registry_9"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ShellIconOverlayIdentifiers"
@@ -657,7 +680,7 @@ locals {
         {
           name        = "Registry_10"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Browser Helper Objects"
@@ -666,7 +689,7 @@ locals {
         {
           name        = "Registry_11"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Browser Helper Objects"
@@ -675,7 +698,7 @@ locals {
         {
           name        = "Registry_12"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Internet Explorer\\Extensions"
@@ -684,7 +707,7 @@ locals {
         {
           name        = "Registry_13"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Internet Explorer\\Extensions"
@@ -693,7 +716,7 @@ locals {
         {
           name        = "Registry_14"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Drivers32"
@@ -702,7 +725,7 @@ locals {
         {
           name        = "Registry_15"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows NT\\CurrentVersion\\Drivers32"
@@ -711,7 +734,7 @@ locals {
         {
           name        = "Registry_16"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\Session Manager\\KnownDlls"
@@ -720,7 +743,7 @@ locals {
         {
           name        = "Registry_17"
           groupTag    = "Recommended"
-          enabled     = false
+          enabled     = true
           recurse     = true
           description = ""
           keyName     = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\Notify"
@@ -745,19 +768,19 @@ locals {
 
 resource "azurerm_monitor_data_collection_rule" "change_tracking" {
   location            = azurerm_resource_group.this_rg.location
-  name                = "${module.testvm.virtual_machine.name}-dcr-change-tracking"
+  name                = "Microsoft-CT-DCR"
   resource_group_name = azurerm_resource_group.this_rg.name
   tags                = local.tags
 
   data_flow {
-    destinations = [azurerm_log_analytics_workspace.this_workspace.name]
+    destinations = ["Microsoft-CT-Dest"]
     streams = ["Microsoft-ConfigurationChange",
       "Microsoft-ConfigurationChangeV2",
     "Microsoft-ConfigurationData"]
   }
   destinations {
     log_analytics {
-      name                  = azurerm_log_analytics_workspace.this_workspace.name
+      name                  = "Microsoft-CT-Dest"
       workspace_resource_id = azurerm_log_analytics_workspace.this_workspace.id
     }
   }
@@ -783,10 +806,31 @@ resource "azurerm_monitor_data_collection_rule" "change_tracking" {
       extension_json = local.extension_setting_linux
     }
   }
-
-  depends_on = [azurerm_log_analytics_solution.change_tracking]
 }
 
+resource "azurerm_user_assigned_identity" "change_tracking" {
+  location            = azurerm_resource_group.this_rg.location
+  name                = "${module.naming.user_assigned_identity.name_unique}-change-tracking"
+  resource_group_name = azurerm_resource_group.this_rg.name
+  tags                = local.tags
+}
+
+resource "azurerm_automation_account" "change_tracking" {
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.automation_account.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  sku_name            = "Basic"
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+resource "azurerm_log_analytics_linked_service" "change_tracking" {
+  resource_group_name = azurerm_resource_group.this_rg.name
+  workspace_id        = azurerm_log_analytics_workspace.this_workspace.id
+  read_access_id      = azurerm_automation_account.change_tracking.id
+}
 
 resource "azurerm_monitor_data_collection_rule_association" "this_rule_association" {
   target_resource_id      = module.testvm.virtual_machine.id
@@ -794,6 +838,7 @@ resource "azurerm_monitor_data_collection_rule_association" "this_rule_associati
   description             = "Change Tracking data collection rule association"
   name                    = "${azurerm_monitor_data_collection_rule.change_tracking.name}-association"
 }
+
 
 resource "azurerm_log_analytics_solution" "change_tracking" {
   location              = azurerm_resource_group.this_rg.location
@@ -807,6 +852,7 @@ resource "azurerm_log_analytics_solution" "change_tracking" {
     publisher = "Microsoft"
   }
 }
+
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -832,14 +878,17 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
+- [azurerm_automation_account.change_tracking](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/automation_account) (resource)
 - [azurerm_backup_policy_vm.test_policy](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/backup_policy_vm) (resource)
 - [azurerm_bastion_host.bastion](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/bastion_host) (resource)
 - [azurerm_disk_encryption_set.this](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/disk_encryption_set) (resource)
+- [azurerm_log_analytics_linked_service.change_tracking](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/log_analytics_linked_service) (resource)
 - [azurerm_log_analytics_solution.change_tracking](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/log_analytics_solution) (resource)
 - [azurerm_log_analytics_workspace.this_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_maintenance_configuration.test_maintenance_config](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/maintenance_configuration) (resource)
 - [azurerm_monitor_data_collection_rule.change_tracking](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/monitor_data_collection_rule) (resource)
 - [azurerm_monitor_data_collection_rule.test](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/monitor_data_collection_rule) (resource)
+- [azurerm_monitor_data_collection_rule_association.ama](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/monitor_data_collection_rule_association) (resource)
 - [azurerm_monitor_data_collection_rule_association.this_rule_association](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/monitor_data_collection_rule_association) (resource)
 - [azurerm_public_ip.bastionpip](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/public_ip) (resource)
 - [azurerm_recovery_services_vault.test_vault](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/recovery_services_vault) (resource)
@@ -848,7 +897,8 @@ The following resources are used by this module:
 - [azurerm_subnet.this_subnet_1](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/subnet) (resource)
 - [azurerm_subnet.this_subnet_2](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/subnet) (resource)
 - [azurerm_subnet.this_subnet_lb](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/subnet) (resource)
-- [azurerm_user_assigned_identity.test](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/user_assigned_identity) (resource)
+- [azurerm_user_assigned_identity.change_tracking](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/user_assigned_identity) (resource)
+- [azurerm_user_assigned_identity.des](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.this_vnet](https://registry.terraform.io/providers/hashicorp/azurerm/3.105/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
@@ -885,7 +935,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: ~> 0.5.0
+Version: =0.6.2
 
 ### <a name="module_get_valid_sku_for_deployment_region"></a> [get\_valid\_sku\_for\_deployment\_region](#module\_get\_valid\_sku\_for\_deployment\_region)
 

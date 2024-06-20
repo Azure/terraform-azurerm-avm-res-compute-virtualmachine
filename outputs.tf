@@ -1,7 +1,7 @@
 output "admin_password" {
   description = "Returns the admin password if installation is configured to use the password.  Otherwise returns null"
   sensitive   = true
-  value       = (lower(var.virtualmachine_os_type) == "windows") ? local.admin_password_windows : local.admin_password_linux
+  value       = (lower(var.os_type) == "windows") ? local.admin_password_windows : local.admin_password_linux
 }
 
 output "admin_ssh_keys" {
@@ -38,23 +38,23 @@ output "public_ips" {
 output "resource" {
   description = "The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values"
   sensitive   = true
-  value       = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0] : azurerm_linux_virtual_machine.this[0]
+  value       = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0] : azurerm_linux_virtual_machine.this[0]
 }
 
 output "resource_id" {
   description = "The Azure resource id for the deployed virtual machine"
-  value       = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azurerm_linux_virtual_machine.this[0].id
+  value       = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azurerm_linux_virtual_machine.this[0].id
 }
 
 output "system_assigned_mi_principal_id" {
   description = "The principal id of the system managed identity assigned to the virtual machine"
-  value       = var.managed_identities.system_assigned == true ? ((lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : azurerm_linux_virtual_machine.this[0].identity[0].principal_id) : ""
+  value       = var.managed_identities.system_assigned == true ? ((lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : azurerm_linux_virtual_machine.this[0].identity[0].principal_id) : ""
 }
 
 output "virtual_machine" {
   description = "The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values. This output has been duplicated to the resource output to comply with the spec and may be deprecated in the future."
   sensitive   = true
-  value       = (lower(var.virtualmachine_os_type) == "windows") ? azurerm_windows_virtual_machine.this[0] : azurerm_linux_virtual_machine.this[0]
+  value       = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0] : azurerm_linux_virtual_machine.this[0]
 }
 
 output "virtual_machine_azurerm" {
@@ -71,5 +71,5 @@ output "virtual_machine_azurerm" {
     public_ip_addresses  = A list of the Public IP Addresses assigned to this Virtual Machine.
     virtual_machine_id   = A 128-bit identifier which uniquely identifies this Virtual Machine.
     VIRTUAL_MACHINE_AZURERM
-  value       = (lower(var.virtualmachine_os_type) == "windows") ? local.windows_virtual_machine_output_map : local.linux_virtual_machine_output_map
+  value       = (lower(var.os_type) == "windows") ? local.windows_virtual_machine_output_map : local.linux_virtual_machine_output_map
 }

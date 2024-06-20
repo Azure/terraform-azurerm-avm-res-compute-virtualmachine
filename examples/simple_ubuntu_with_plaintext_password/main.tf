@@ -10,7 +10,7 @@ module "regions" {
 
 locals {
   tags = {
-    scenario = "common_centos_with_plaintext_password"
+    scenario = "common_ubuntu_with_plaintext_password"
   }
   test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
 }
@@ -110,7 +110,7 @@ resource "random_password" "admin_password" {
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "~> 0.5"
+  version                     = "=0.6.2"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -125,14 +125,6 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
-    }
-    deployment_user_keys = { #give the deployment user access to keys
-      role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = data.azurerm_client_config.current.object_id
-    }
-    user_managed_identity_keys = { #give the user assigned managed identity for the disk encryption set access to keys
-      role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = azurerm_user_assigned_identity.example_identity.principal_id
     }
   }
 
@@ -163,7 +155,7 @@ module "testvm" {
   #version = "0.14.0"
 
   admin_username                     = "azureuser"
-  admin_password                     = module.avm_res_keyvault_vault.resource_secrets["admin_password"].value
+  admin_password                     = random_password.admin_password.result
   disable_password_authentication    = false
   enable_telemetry                   = var.enable_telemetry
   encryption_at_host_enabled         = true
@@ -171,8 +163,8 @@ module "testvm" {
   location                           = azurerm_resource_group.this_rg.location
   name                               = module.naming.virtual_machine.name_unique
   resource_group_name                = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type             = "Linux"
-  virtualmachine_sku_size            = module.get_valid_sku_for_deployment_region.sku
+  os_type                            = "Linux"
+  sku_size                           = module.get_valid_sku_for_deployment_region.sku
   zone                               = random_integer.zone_index.result
 
   network_interfaces = {
@@ -201,7 +193,4 @@ module "testvm" {
 
   tags = local.tags
 
-  depends_on = [
-    module.avm_res_keyvault_vault
-  ]
 }

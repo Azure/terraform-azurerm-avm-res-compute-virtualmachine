@@ -111,13 +111,6 @@ resource "azurerm_bastion_host" "bastion" {
 
 data "azurerm_client_config" "current" {}
 
-resource "azurerm_user_assigned_identity" "example_identity" {
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  tags                = local.tags
-}
-
 resource "random_password" "admin_password" {
   length           = 22
   min_lower        = 2
@@ -130,7 +123,7 @@ resource "random_password" "admin_password" {
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "~> 0.5"
+  version                     = "=0.6.2"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -145,14 +138,6 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
-    }
-    deployment_user_keys = { #give the deployment user access to keys
-      role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = data.azurerm_client_config.current.object_id
-    }
-    user_managed_identity_keys = { #give the user assigned managed identity for the disk encryption set access to keys
-      role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = azurerm_user_assigned_identity.example_identity.principal_id
     }
   }
 
@@ -191,7 +176,7 @@ module "testvm" {
   #version = "0.13.0"
 
   admin_username                        = "azureuser"
-  admin_password                        = module.avm_res_keyvault_vault.resource_secrets["admin_password"].value
+  admin_password                        = random_password.admin_password.result
   disable_password_authentication       = false
   enable_telemetry                      = var.enable_telemetry
   encryption_at_host_enabled            = true
@@ -199,8 +184,8 @@ module "testvm" {
   location                              = azurerm_resource_group.this_rg.location
   name                                  = module.naming.virtual_machine.name_unique
   resource_group_name                   = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type                = "Linux"
-  virtualmachine_sku_size               = module.get_valid_sku_for_deployment_region.sku
+  os_type                               = "Linux"
+  sku_size                              = module.get_valid_sku_for_deployment_region.sku
   virtual_machine_scale_set_resource_id = azurerm_orchestrated_virtual_machine_scale_set.this.id
   zone                                  = random_integer.zone_index.result
 
@@ -231,7 +216,6 @@ module "testvm" {
   tags = local.tags
 
   depends_on = [
-    module.avm_res_keyvault_vault,
     azurerm_orchestrated_virtual_machine_scale_set.this
   ]
 }
@@ -242,7 +226,7 @@ module "testvm2" {
   #version = "0.14.0"
 
   admin_username                        = "azureuser"
-  admin_password                        = module.avm_res_keyvault_vault.resource_secrets["admin_password"].value
+  admin_password                        = random_password.admin_password.result
   disable_password_authentication       = false
   enable_telemetry                      = var.enable_telemetry
   encryption_at_host_enabled            = true
@@ -250,8 +234,8 @@ module "testvm2" {
   location                              = azurerm_resource_group.this_rg.location
   name                                  = "${module.naming.virtual_machine.name_unique}-01"
   resource_group_name                   = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type                = "Linux"
-  virtualmachine_sku_size               = module.get_valid_sku_for_deployment_region.sku
+  os_type                               = "Linux"
+  sku_size                              = module.get_valid_sku_for_deployment_region.sku
   virtual_machine_scale_set_resource_id = azurerm_orchestrated_virtual_machine_scale_set.this.id
   zone                                  = random_integer.zone_index.result
 
@@ -282,7 +266,6 @@ module "testvm2" {
   tags = local.tags
 
   depends_on = [
-    module.avm_res_keyvault_vault,
     azurerm_orchestrated_virtual_machine_scale_set.this
   ]
 }
@@ -315,7 +298,6 @@ The following resources are used by this module:
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.this_subnet_1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.this_subnet_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_user_assigned_identity.example_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.this_vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
@@ -353,7 +335,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: ~> 0.5
+Version: =0.6.2
 
 ### <a name="module_get_valid_sku_for_deployment_region"></a> [get\_valid\_sku\_for\_deployment\_region](#module\_get\_valid\_sku\_for\_deployment\_region)
 

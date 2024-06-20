@@ -1,5 +1,5 @@
 resource "azurerm_windows_virtual_machine" "this" {
-  count = (lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
+  count = (lower(var.os_type) == "windows") ? 1 : 0
 
   #required properties
   admin_password        = local.admin_password_windows
@@ -8,7 +8,7 @@ resource "azurerm_windows_virtual_machine" "this" {
   name                  = var.name
   network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
   resource_group_name   = var.resource_group_name
-  size                  = var.virtualmachine_sku_size
+  size                  = var.sku_size
   #optional properties
   allow_extension_operations                             = var.allow_extension_operations
   availability_set_id                                    = var.availability_set_resource_id
@@ -173,7 +173,7 @@ resource "azurerm_windows_virtual_machine" "this" {
 }
 
 resource "azurerm_management_lock" "this_windows_virtualmachine" {
-  count = (var.lock != null) && (lower(var.virtualmachine_os_type) == "windows") ? 1 : 0
+  count = (var.lock != null) && (lower(var.os_type) == "windows") ? 1 : 0
 
   lock_level = var.lock.kind
   name       = coalesce(var.lock.name, "lock-${var.lock.kind}")

@@ -1,19 +1,19 @@
 <!-- BEGIN_TF_DOCS -->
-# Default
+# Windows with remote access and winRM
 
 This example demonstrates the creation of a simple Windows VM with the following features:
 
     - how to add Windows SSH and WinRMs (on an alternate port)
-    - connect throw the different protocols to execute a command
+    - connect using the different protocols to execute a command
     - a single private IPv4 address
     - an auto-generated password for an admin user named azureuser
     - a single default OS 128gb OS disk
     - deploys into a randomly selected region
-    - winrm enabled and listener configured to https
+    - winRM enabled and listener configured to https
     - keyvault configured to allow the vm to pull the certificate into the local certificate store
     - a user assigned managed identity is attached to the VM and used to pull the renewed certificates
     - a scheduled task that will monitor if the winrm certificate must be updated (not production ready. Welcoming PR for better production support.)
-    - connect with winrm on the https port to display the local directory.
+    - connect with winRM on the https port to display the local directory.
 
 It includes the following resources in addition to the VM resource:
 
@@ -37,12 +37,12 @@ locals {
   inline_remote_exec = [
     "schtasks /Create /TN \"\\AVM\\RotateWinRMListenerThumbprint\" /SC MINUTE /MO 1 /TR \"\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -ExecutionPolicy Bypass -Command & { . 'C:\\AzureData\\w_sc_task_rotate_winrms_cert.ps1'; Update-WinRMCertificate -CommonName 'CN=${module.naming.virtual_machine.name_unique}' -WinRmsPort ${local.winrms_port} }\" /RU \"SYSTEM\" /RL HIGHEST /F"
   ]
+  os_type = "Windows"
   tags = {
     scenario = "basic_windows_w_winrms"
   }
-  test_regions           = ["centralus", "eastasia", "eastus2", "westus3"]
-  virtualmachine_os_type = "Windows"
-  winrms_port            = 15986
+  test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
+  winrms_port  = 15986
 }
 
 resource "random_integer" "region_index" {
@@ -163,7 +163,7 @@ resource "azurerm_user_assigned_identity" "this" {
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "~> 0.5"
+  version = "=0.6.2"
 
   enabled_for_deployment = true # Required to deploy the certificates to the VM
   location               = azurerm_resource_group.this_rg.location
@@ -180,12 +180,10 @@ module "avm_res_keyvault_vault" {
       # give the deployment user access to certificates
       role_definition_id_or_name = "Key Vault Certificates Officer"
       principal_id               = data.azurerm_client_config.current.object_id
-      principal_type             = "ServicePrincipal"
     }
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
-      principal_type             = "ServicePrincipal"
     }
 
     user_managed_identity_certificates = {
@@ -231,7 +229,7 @@ resource "azurerm_public_ip" "this" {
 
 # For production deployment, use a different keyvault for the winrm certificate from the password
 resource "azurerm_key_vault_certificate" "self_signed_winrm" {
-  key_vault_id = module.avm_res_keyvault_vault.resource.id
+  key_vault_id = module.avm_res_keyvault_vault.resource_id
   name         = try(format("%s-winrms-cert", module.naming.virtual_machine.name_unique))
   tags         = local.tags
 
@@ -286,16 +284,20 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.14.0"
 
-  admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
-  admin_username                         = local.admin_username
-  enable_telemetry                       = var.enable_telemetry
-  generate_admin_password_or_ssh_key     = true
-  location                               = azurerm_resource_group.this_rg.location
-  name                                   = module.naming.virtual_machine.name_unique
-  resource_group_name                    = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type                 = local.virtualmachine_os_type
-  virtualmachine_sku_size                = module.get_valid_sku_for_deployment_region.sku
-  zone                                   = random_integer.zone_index.result
+  #admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  admin_username                     = local.admin_username
+  enable_telemetry                   = var.enable_telemetry
+  generate_admin_password_or_ssh_key = true
+  location                           = azurerm_resource_group.this_rg.location
+  name                               = module.naming.virtual_machine.name_unique
+  resource_group_name                = azurerm_resource_group.this_rg.name
+  os_type                            = local.os_type
+  sku_size                           = module.get_valid_sku_for_deployment_region.sku
+  zone                               = random_integer.zone_index.result
+
+  generated_secrets_key_vault_secret_config = {
+    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  }
 
   # custom_data got injected in the vm at c:\AzureData\CustomData.bin
   custom_data = base64encode(<<-CD
@@ -345,20 +347,20 @@ module "testvm" {
     keyvault_extension = {
       name                       = "KVVMExtension"
       publisher                  = "Microsoft.Azure.KeyVault"
-      type                       = lower(local.virtualmachine_os_type) == "windows" ? "KeyVaultForWindows" : "KeyVaultForLinux"
-      type_handler_version       = lower(local.virtualmachine_os_type) == "windows" ? "3.0" : "2.0"
+      type                       = lower(local.os_type) == "windows" ? "KeyVaultForWindows" : "KeyVaultForLinux"
+      type_handler_version       = lower(local.os_type) == "windows" ? "3.0" : "2.0"
       auto_upgrade_minor_version = true
       settings = jsonencode(
         {
           secretsManagementSettings = {
-            pollingIntervalInS = "60"                                                             #"3600"
-            linkOnRenewal      = lower(local.virtualmachine_os_type) == "windows" ? false : false # always false on Linux.
-            requireInitialSync = true                                                             # requires user msi https://learn.microsoft.com/en-us/azure/virtual-machines/extensions/key-vault-linux#extension-dependency-ordering
+            pollingIntervalInS = "60"                                              #"3600"
+            linkOnRenewal      = lower(local.os_type) == "windows" ? false : false # always false on Linux.
+            requireInitialSync = true                                              # requires user msi https://learn.microsoft.com/en-us/azure/virtual-machines/extensions/key-vault-linux#extension-dependency-ordering
             observedCertificates = [
               {
                 url                      = azurerm_key_vault_certificate.self_signed_winrm.versionless_secret_id
-                certificateStoreName     = lower(local.virtualmachine_os_type) == "windows" ? "MY" : null
-                certificateStoreLocation = lower(local.virtualmachine_os_type) == "windows" ? "LocalMachine" : "/var/lib/waagent/Microsoft.Azure.KeyVault"
+                certificateStoreName     = lower(local.os_type) == "windows" ? "MY" : null
+                certificateStoreLocation = lower(local.os_type) == "windows" ? "LocalMachine" : "/var/lib/waagent/Microsoft.Azure.KeyVault"
               }
             ]
           }
@@ -400,7 +402,7 @@ module "testvm" {
   # Install the certiciate for WinRMs in the computer certificate store
   secrets = [
     {
-      key_vault_id = module.avm_res_keyvault_vault.resource.id
+      key_vault_id = module.avm_res_keyvault_vault.resource_id
       certificate = [
         {
           url   = azurerm_key_vault_certificate.self_signed_winrm.secret_id
@@ -559,7 +561,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: ~> 0.5
+Version: =0.6.2
 
 ### <a name="module_get_valid_sku_for_deployment_region"></a> [get\_valid\_sku\_for\_deployment\_region](#module\_get\_valid\_sku\_for\_deployment\_region)
 

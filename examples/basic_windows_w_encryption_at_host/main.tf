@@ -100,7 +100,7 @@ resource "azurerm_user_assigned_identity" "test" {
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "~> 0.5"
+  version                     = "=0.6.2"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -115,12 +115,10 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
-      principal_type             = "ServicePrincipal"
     }
     deployment_user_keys = { #give the deployment user access to keys
       role_definition_id_or_name = "Key Vault Crypto Officer"
       principal_id               = data.azurerm_client_config.current.object_id
-      principal_type             = "ServicePrincipal"
     }
     user_managed_identity_keys = { #give the user assigned managed identity for the disk encryption set access to keys
       role_definition_id_or_name = "Key Vault Crypto Officer"
@@ -158,7 +156,7 @@ module "avm_res_keyvault_vault" {
 }
 
 resource "azurerm_disk_encryption_set" "this" {
-  key_vault_key_id    = module.avm_res_keyvault_vault.resource_keys.des_key.id
+  key_vault_key_id    = module.avm_res_keyvault_vault.keys_resource_ids.des_key.id
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.disk_encryption_set.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
@@ -175,16 +173,18 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.14.0"
 
-  enable_telemetry                       = var.enable_telemetry
-  location                               = azurerm_resource_group.this_rg.location
-  resource_group_name                    = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type                 = "Windows"
-  name                                   = module.naming.virtual_machine.name_unique
-  admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
-  virtualmachine_sku_size                = module.get_valid_sku_for_deployment_region.sku
-  encryption_at_host_enabled             = true
-  zone                                   = random_integer.zone_index.result
+  enable_telemetry           = var.enable_telemetry
+  location                   = azurerm_resource_group.this_rg.location
+  resource_group_name        = azurerm_resource_group.this_rg.name
+  os_type                    = "Windows"
+  name                       = module.naming.virtual_machine.name_unique
+  sku_size                   = module.get_valid_sku_for_deployment_region.sku
+  encryption_at_host_enabled = true
+  zone                       = random_integer.zone_index.result
 
+  generated_secrets_key_vault_secret_config = {
+    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  }
 
   os_disk = {
     caching                = "ReadWrite"

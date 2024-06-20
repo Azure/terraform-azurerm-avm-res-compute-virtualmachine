@@ -1,5 +1,5 @@
 <!-- BEGIN_TF_DOCS -->
-# Simple Windows VM with load balancing and security associations
+# Simple Windows VM with gallery application
 
 This example demonstrates the creation of a simple Windows Server 2022 VM with the following features:
 
@@ -125,7 +125,7 @@ data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "~> 0.5"
+  version                     = "=0.6.2"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -261,20 +261,22 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.14.0"
 
-  enable_telemetry                                       = var.enable_telemetry
-  location                                               = azurerm_resource_group.this_rg.location
-  resource_group_name                                    = azurerm_resource_group.this_rg.name
-  virtualmachine_os_type                                 = "Windows"
-  name                                                   = module.naming.virtual_machine.name_unique
-  admin_credential_key_vault_resource_id                 = module.avm_res_keyvault_vault.resource.id
-  virtualmachine_sku_size                                = module.get_valid_sku_for_deployment_region.sku
+  enable_telemetry    = var.enable_telemetry
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  os_type             = "Windows"
+  name                = module.naming.virtual_machine.name_unique
+  #admin_credential_key_vault_resource_id                 = module.avm_res_keyvault_vault.resource_id
+  sku_size                                               = module.get_valid_sku_for_deployment_region.sku
   encryption_at_host_enabled                             = true
   zone                                                   = random_integer.zone_index.result
   patch_assessment_mode                                  = "AutomaticByPlatform"
   patch_mode                                             = "AutomaticByPlatform"
   bypass_platform_safety_checks_on_user_schedule_enabled = true
 
-
+  generated_secrets_key_vault_secret_config = {
+    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  }
 
   os_disk = {
     caching              = "ReadWrite"
@@ -409,7 +411,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: ~> 0.5
+Version: =0.6.2
 
 ### <a name="module_get_valid_sku_for_deployment_region"></a> [get\_valid\_sku\_for\_deployment\_region](#module\_get\_valid\_sku\_for\_deployment\_region)
 

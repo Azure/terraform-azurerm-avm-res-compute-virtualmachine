@@ -10,9 +10,9 @@ module "regions" {
 
 locals {
   tags = {
-    scenario = "windows_w_data_disk_and_public_ip"
+    scenario = "Minimal"
   }
-  test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
+  test_regions = ["westus3"]
 }
 
 resource "random_integer" "region_index" {
@@ -88,56 +88,18 @@ resource "azurerm_bastion_host" "bastion" {
 }
 */
 
+
 data "azurerm_client_config" "current" {}
-
-module "avm_res_keyvault_vault" {
-  source              = "Azure/avm-res-keyvault-vault/azurerm"
-  version             = "=0.6.2"
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  name                = module.naming.key_vault.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  location            = azurerm_resource_group.this_rg.location
-  network_acls = {
-    default_action = "Allow"
-  }
-
-  role_assignments = {
-    deployment_user_secrets = {
-      role_definition_id_or_name = "Key Vault Secrets Officer"
-      principal_id               = data.azurerm_client_config.current.object_id
-    }
-  }
-
-  wait_for_rbac_before_secret_operations = {
-    create = "60s"
-  }
-
-  tags = local.tags
-}
 
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.14.0"
 
-  enable_telemetry    = var.enable_telemetry
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
-  os_type             = "Windows"
   name                = module.naming.virtual_machine.name_unique
-  sku_size            = module.get_valid_sku_for_deployment_region.sku
   zone                = random_integer.zone_index.result
-
-  generated_secrets_key_vault_secret_config = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
-  }
-
-  source_image_reference = {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2022-datacenter-g2"
-    version   = "latest"
-  }
 
   network_interfaces = {
     network_interface_1 = {
@@ -146,42 +108,8 @@ module "testvm" {
         ip_configuration_1 = {
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
           private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
-          create_public_ip_address      = true
-          public_ip_address_name        = module.naming.public_ip.name_unique
         }
       }
     }
   }
-
-  data_disk_managed_disks = {
-    disk1 = {
-      name                 = "${module.naming.managed_disk.name_unique}-lun0"
-      storage_account_type = "StandardSSD_LRS"
-      lun                  = 0
-      caching              = "ReadWrite"
-      disk_size_gb         = 32
-    }
-  }
-
-  shutdown_schedules = {
-    test_schedule = {
-      daily_recurrence_time = "1700"
-      enabled               = true
-      timezone              = "Pacific Standard Time"
-      notification_settings = {
-        enabled         = true
-        email           = "example@example.com;example2@example.com"
-        time_in_minutes = "15"
-        webhook_url     = "https://example-webhook-url.example.com"
-      }
-    }
-  }
-
-  tags = {
-    scenario = "windows_w_data_disk_and_public_ip"
-  }
-
-  depends_on = [
-    module.avm_res_keyvault_vault
-  ]
 }

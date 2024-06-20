@@ -55,7 +55,7 @@ resource "azurerm_managed_disk" "this" {
 
 #attach the disk(s) to the virtual machine
 resource "azurerm_virtual_machine_data_disk_attachment" "this_linux" {
-  for_each = { for disk, values in var.data_disk_managed_disks : disk => values if(lower(var.virtualmachine_os_type) == "linux") }
+  for_each = { for disk, values in var.data_disk_managed_disks : disk => values if(lower(var.os_type) == "linux") }
 
   caching                   = each.value.caching
   lun                       = each.value.lun
@@ -66,7 +66,7 @@ resource "azurerm_virtual_machine_data_disk_attachment" "this_linux" {
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "this_windows" {
-  for_each = { for disk, values in var.data_disk_managed_disks : disk => values if(lower(var.virtualmachine_os_type) == "windows") }
+  for_each = { for disk, values in var.data_disk_managed_disks : disk => values if(lower(var.os_type) == "windows") }
 
   caching                   = each.value.caching
   lun                       = each.value.lun
