@@ -94,7 +94,7 @@ data "azurerm_client_config" "current" {}
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.14.0"
+  #version = "0.15.0"
 
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name

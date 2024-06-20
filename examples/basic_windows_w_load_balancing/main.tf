@@ -275,7 +275,7 @@ resource "azurerm_application_security_group" "test_asg" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.14.0"
+  #version = "0.15.0"
 
   enable_telemetry           = var.enable_telemetry
   location                   = azurerm_resource_group.this_rg.location
