@@ -88,14 +88,12 @@ resource "azurerm_bastion_host" "bastion" {
 }
 */
 
-
-data "azurerm_client_config" "current" {}
-
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.15.0"
 
+  enable_telemetry    = var.enable_telemetry
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
   name                = module.naming.virtual_machine.name_unique

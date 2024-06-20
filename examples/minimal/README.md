@@ -94,14 +94,12 @@ resource "azurerm_bastion_host" "bastion" {
 }
 */
 
-
-data "azurerm_client_config" "current" {}
-
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.15.0"
 
+  enable_telemetry    = var.enable_telemetry
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
   name                = module.naming.virtual_machine.name_unique
@@ -150,7 +148,6 @@ The following resources are used by this module:
 - [azurerm_virtual_network.this_vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
-- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
