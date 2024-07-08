@@ -112,7 +112,7 @@ Description: A map of objects representing each network virtual machine network 
   - `accelerated_networking_enabled`                                  = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.  
   - `application_security_groups`                                     = (Optional) - A map defining the Application Security Group(s) that this network interface should be a part of.
     - `<map key>` - Use a custom map key to define each Application Security Group association.  This is done to handle issues with certain details not being known until after apply.   
-      - `application_security_group_resource_ids`                     = (Required) - The Application Security Group (ASG) Azure Resource ID for this Network Interface to be associated to.
+      - `application_security_group_resource_id`                     = (Required) - The Application Security Group (ASG) Azure Resource ID for this Network Interface to be associated to.
   - `diagnostic_settings`                                             = (Optional) - A map of objects defining the network interface resource diagnostic settings
     - `<map key>` - Use a custom map key to define each diagnostic setting configuration
       - `name`                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
