@@ -237,7 +237,7 @@ module "testvm" {
   data_disk_managed_disks = {
     disk1 = {
       name                   = "${module.naming.managed_disk.name_unique}-lun0"
-      storage_account_type   = "StandardSSD_LRS"
+      storage_account_type   = "Premium_LRS"
       lun                    = 0
       caching                = "ReadWrite"
       disk_size_gb           = 32
@@ -286,7 +286,7 @@ module "testvm" {
 
   os_disk = {
     caching                = "ReadWrite"
-    storage_account_type   = "StandardSSD_LRS"
+    storage_account_type   = "Premium_LRS"
     disk_encryption_set_id = azurerm_disk_encryption_set.this.id
   }
 

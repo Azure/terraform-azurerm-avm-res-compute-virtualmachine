@@ -498,7 +498,7 @@ Example Inputs:
 data_disk_managed_disks = {
   disk1 = {
     name                 = "testdisk1-win-lun0"
-    storage_account_type = "StandardSSD_LRS"
+    storage_account_type = "Premium_LRS"
     lun                  = 0
     caching              = "ReadWrite"
     disk_size_gb         = 32
@@ -875,13 +875,13 @@ variable "os_disk" {
   })
   default = {
     caching              = "ReadWrite"
-    storage_account_type = "StandardSSD_LRS"
+    storage_account_type = "Premium_LRS"
   }
   description = <<OS_DISK
 Required configuration values for the OS disk on the virtual machine.
 
 - `caching`                          = (Required) - The type of caching which should be used for the internal OS disk.  Possible values are `None`, `ReadOnly`, and `ReadWrite`.
-- `storage_account_type`             = (Required) - The Type of Storage Account which should back this the Internal OS Disk. Possible values are `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and `Premium_ZRS`. Changing this forces a new resource to be created
+- `storage_account_type`             = (Required) - The Type of Storage Account which should back this the Internal OS Disk. Possible values are `Standard_LRS`, `Premium_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and `Premium_ZRS`. Changing this forces a new resource to be created
 - `disk_encryption_set_id`           = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. Conflicts with secure_vm_disk_encryption_set_id. The Disk Encryption Set must have the Reader Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault
 - `disk_size_gb`                     = (Optional) - The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from.
 - `name`                             = (Optional) - The name which should be used for the Internal OS Disk. Changing this forces a new resource to be created.
@@ -898,7 +898,7 @@ Example Inputs:
 #basic example:
 os_disk = {
   caching              = "ReadWrite"
-  storage_account_type = "StandardSSD_LRS"
+  storage_account_type = "Premium_LRS"
 }
 
 #increased disk size and write acceleration example
