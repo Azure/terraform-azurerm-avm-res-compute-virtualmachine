@@ -214,7 +214,7 @@ resource "azurerm_disk_encryption_set" "this" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.15.0"
+  #version = "0.15.1"
 
   admin_username                     = "azureuser"
   enable_telemetry                   = var.enable_telemetry

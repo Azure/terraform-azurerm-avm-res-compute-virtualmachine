@@ -203,7 +203,7 @@ module "testvm" {
 module "testvm2" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.15.0"
+  #version = "0.15.1"
 
   admin_username                        = "azureuser"
   admin_password                        = random_password.admin_password.result
