@@ -29,7 +29,7 @@ module "naming" {
 
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = "~> 0.6"
+  version = "=0.8.1"
 }
 
 locals {
@@ -579,7 +579,7 @@ Version: ~> 0.4
 
 Source: Azure/regions/azurerm
 
-Version: ~> 0.6
+Version: =0.8.1
 
 ### <a name="module_testvm"></a> [testvm](#module\_testvm)
 
