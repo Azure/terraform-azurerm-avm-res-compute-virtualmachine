@@ -188,6 +188,7 @@ resource "azurerm_recovery_services_vault" "test_vault" {
   resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
   soft_delete_enabled = false
+  storage_mode_type   = "LocallyRedundant"
 }
 
 resource "azurerm_backup_policy_vm" "test_policy" {
