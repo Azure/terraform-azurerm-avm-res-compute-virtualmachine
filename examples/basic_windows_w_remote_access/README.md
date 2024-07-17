@@ -29,7 +29,7 @@ module "naming" {
 
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = "~> 0.6"
+  version = "=0.8.1"
 }
 
 locals {
@@ -41,28 +41,27 @@ locals {
   tags = {
     scenario = "basic_windows_w_winrms"
   }
-  test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
-  winrms_port  = 15986
+  winrms_port = 15986
 }
 
 resource "random_integer" "region_index" {
-  max = length(local.test_regions) - 1
+  max = length(module.regions.regions_by_name) - 1
   min = 0
 }
 
 resource "random_integer" "zone_index" {
-  max = length(module.regions.regions_by_name[local.test_regions[random_integer.region_index.result]].zones)
+  max = length(module.regions.regions_by_name[module.regions.regions[random_integer.region_index.result].name].zones)
   min = 1
 }
 
 module "get_valid_sku_for_deployment_region" {
   source = "../../modules/sku_selector"
 
-  deployment_region = local.test_regions[random_integer.region_index.result]
+  deployment_region = module.regions.regions[random_integer.region_index.result].name
 }
 
 resource "azurerm_resource_group" "this_rg" {
-  location = local.test_regions[random_integer.region_index.result]
+  location = module.regions.regions[random_integer.region_index.result].name
   name     = module.naming.resource_group.name_unique
   tags     = local.tags
 }
@@ -163,7 +162,7 @@ resource "azurerm_user_assigned_identity" "this" {
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.6.2"
+  version = "=0.7.1"
 
   enabled_for_deployment = true # Required to deploy the certificates to the VM
   location               = azurerm_resource_group.this_rg.location
@@ -282,7 +281,7 @@ resource "azurerm_key_vault_certificate" "self_signed_winrm" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.15.0"
+  #version = "0.15.1"
 
   #admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
   admin_username                     = local.admin_username
@@ -561,7 +560,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: =0.6.2
+Version: =0.7.1
 
 ### <a name="module_get_valid_sku_for_deployment_region"></a> [get\_valid\_sku\_for\_deployment\_region](#module\_get\_valid\_sku\_for\_deployment\_region)
 
@@ -579,7 +578,7 @@ Version: ~> 0.4
 
 Source: Azure/regions/azurerm
 
-Version: ~> 0.6
+Version: =0.8.1
 
 ### <a name="module_testvm"></a> [testvm](#module\_testvm)
 

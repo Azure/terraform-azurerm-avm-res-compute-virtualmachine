@@ -14,6 +14,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.108)
 
+- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
+
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
 - <a name="requirement_tls"></a> [tls](#requirement\_tls) (~> 4.0)
@@ -24,7 +26,7 @@ The following providers are used by this module:
 
 - <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.108)
 
-- <a name="provider_modtm"></a> [modtm](#provider\_modtm)
+- <a name="provider_modtm"></a> [modtm](#provider\_modtm) (~> 0.3)
 
 - <a name="provider_random"></a> [random](#provider\_random) (~> 3.6)
 
@@ -63,12 +65,12 @@ The following resources are used by this module:
 - [azurerm_virtual_machine_data_disk_attachment.this_windows](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_extension.this_extension](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
 - [azurerm_windows_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/windows_virtual_machine) (resource)
-- [modtm_telemetry.telemetry](https://registry.terraform.io/providers/hashicorp/modtm/latest/docs/resources/telemetry) (resource)
+- [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [tls_private_key.this](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) (resource)
 - [azurerm_client_config.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
-- [modtm_module_source.telemetry](https://registry.terraform.io/providers/hashicorp/modtm/latest/docs/data-sources/module_source) (data source)
+- [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -536,7 +538,7 @@ Example Inputs:
 data_disk_managed_disks = {
   disk1 = {
     name                 = "testdisk1-win-lun0"
-    storage_account_type = "StandardSSD_LRS"
+    storage_account_type = "Premium_LRS"
     lun                  = 0
     caching              = "ReadWrite"
     disk_size_gb         = 32
@@ -995,7 +997,7 @@ Default: `-1`
 Description: Required configuration values for the OS disk on the virtual machine.
 
 - `caching`                          = (Required) - The type of caching which should be used for the internal OS disk.  Possible values are `None`, `ReadOnly`, and `ReadWrite`.
-- `storage_account_type`             = (Required) - The Type of Storage Account which should back this the Internal OS Disk. Possible values are `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and `Premium_ZRS`. Changing this forces a new resource to be created
+- `storage_account_type`             = (Required) - The Type of Storage Account which should back this the Internal OS Disk. Possible values are `Standard_LRS`, `Premium_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and `Premium_ZRS`. Changing this forces a new resource to be created
 - `disk_encryption_set_id`           = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. Conflicts with secure\_vm\_disk\_encryption\_set\_id. The Disk Encryption Set must have the Reader Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault
 - `disk_size_gb`                     = (Optional) - The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from.
 - `name`                             = (Optional) - The name which should be used for the Internal OS Disk. Changing this forces a new resource to be created.
@@ -1012,7 +1014,7 @@ Example Inputs:
 #basic example:
 os_disk = {
   caching              = "ReadWrite"
-  storage_account_type = "StandardSSD_LRS"
+  storage_account_type = "Premium_LRS"
 }
 
 #increased disk size and write acceleration example
@@ -1049,7 +1051,7 @@ Default:
 ```json
 {
   "caching": "ReadWrite",
-  "storage_account_type": "StandardSSD_LRS"
+  "storage_account_type": "Premium_LRS"
 }
 ```
 

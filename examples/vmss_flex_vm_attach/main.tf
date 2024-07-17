@@ -5,38 +5,36 @@ module "naming" {
 
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = "~> 0.6"
+  version = "=0.8.1"
 }
 
 locals {
   tags = {
     scenario = "common_centos_with_plaintext_password"
   }
-  test_regions = ["centralus", "eastasia", "eastus2", "westus3"]
 }
 
 resource "random_integer" "region_index" {
-  max = length(local.test_regions) - 1
+  max = length(module.regions.regions_by_name) - 1
   min = 0
 }
 
 resource "random_integer" "zone_index" {
-  max = length(module.regions.regions_by_name[local.test_regions[random_integer.region_index.result]].zones)
+  max = length(module.regions.regions_by_name[module.regions.regions[random_integer.region_index.result].name].zones)
   min = 1
 }
 
 module "get_valid_sku_for_deployment_region" {
   source = "../../modules/sku_selector"
 
-  deployment_region = local.test_regions[random_integer.region_index.result]
+  deployment_region = module.regions.regions[random_integer.region_index.result].name
 }
 
 resource "azurerm_resource_group" "this_rg" {
-  location = local.test_regions[random_integer.region_index.result]
+  location = module.regions.regions[random_integer.region_index.result].name
   name     = module.naming.resource_group.name_unique
   tags     = local.tags
 }
-
 resource "azurerm_virtual_network" "this_vnet" {
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this_rg.location
@@ -103,7 +101,7 @@ resource "random_password" "admin_password" {
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "=0.6.2"
+  version                     = "=0.7.1"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -183,7 +181,7 @@ module "testvm" {
 
   os_disk = {
     caching              = "ReadWrite"
-    storage_account_type = "StandardSSD_LRS"
+    storage_account_type = "Premium_LRS"
   }
 
   source_image_reference = {
@@ -203,7 +201,7 @@ module "testvm" {
 module "testvm2" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.15.0"
+  #version = "0.15.1"
 
   admin_username                        = "azureuser"
   admin_password                        = random_password.admin_password.result
@@ -233,7 +231,7 @@ module "testvm2" {
 
   os_disk = {
     caching              = "ReadWrite"
-    storage_account_type = "StandardSSD_LRS"
+    storage_account_type = "Premium_LRS"
   }
 
   source_image_reference = {
