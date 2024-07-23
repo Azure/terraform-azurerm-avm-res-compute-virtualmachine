@@ -499,16 +499,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
-## Providers
-
-The following providers are used by this module:
-
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.108)
-
-- <a name="provider_random"></a> [random](#provider\_random) (~> 3.6)
-
-- <a name="provider_terraform"></a> [terraform](#provider\_terraform)
-
 ## Resources
 
 The following resources are used by this module:
