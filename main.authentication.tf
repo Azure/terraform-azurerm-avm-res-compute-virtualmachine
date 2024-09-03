@@ -56,7 +56,7 @@ resource "tls_private_key" "this" {
 
 #Store the created ssh key in the secrets key vault
 resource "azurerm_key_vault_secret" "admin_ssh_key" {
-  count = ((var.generate_admin_password_or_ssh_key == true) && (lower(var.os_type) == "linux") && (var.generated_secrets_key_vault_secret_config != null || var.admin_credential_key_vault_resource_id != null)) ? 1 : 0
+  count = ((var.generate_admin_password_or_ssh_key == true) && (lower(var.os_type) == "linux") && (var.disable_password_authentication == true) && (var.generated_secrets_key_vault_secret_config != null || var.admin_credential_key_vault_resource_id != null)) ? 1 : 0
 
   key_vault_id    = coalesce(var.admin_credential_key_vault_resource_id, var.generated_secrets_key_vault_secret_config.key_vault_resource_id)
   name            = coalesce(var.admin_generated_ssh_key_vault_secret_name, var.generated_secrets_key_vault_secret_config.name, "${var.name}-${var.admin_username}-ssh-private-key")

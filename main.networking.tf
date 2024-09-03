@@ -35,6 +35,7 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
 
   dynamic "ip_configuration" {
     for_each = each.value.ip_configurations
+
     content {
       name                                               = ip_configuration.value.name
       private_ip_address_allocation                      = ip_configuration.value.private_ip_address_allocation

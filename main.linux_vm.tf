@@ -68,7 +68,7 @@ resource "azurerm_linux_virtual_machine" "this" {
     }
   }
   dynamic "admin_ssh_key" {
-    for_each = { for key in local.admin_ssh_keys : key.username => key }
+    for_each = toset(local.admin_ssh_keys)
 
     content {
       public_key = admin_ssh_key.value.public_key
@@ -94,6 +94,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
   dynamic "identity" {
     for_each = local.managed_identity_type == null ? [] : ["identity"]
+
     content {
       type         = local.managed_identity_type
       identity_ids = var.managed_identities.user_assigned_resource_ids
