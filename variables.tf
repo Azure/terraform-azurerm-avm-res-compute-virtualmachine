@@ -564,7 +564,7 @@ DIAGNOSTIC_SETTINGS
 variable "disable_password_authentication" {
   type        = bool
   default     = true
-  description = "If true this value will disallow password authentication on linux vm's. This will require at least one public key to be configured."
+  description = "If true this value will disallow password authentication on linux vm's. This will require at least one public key to be configured. If using the option to auto generate passwords and keys, setting this value to `false` will cause a password to be generated an stored instead of an SSH key."
 }
 
 variable "disk_controller_type" {
@@ -742,7 +742,7 @@ GALLERY_APPLICATIONS
 variable "generate_admin_password_or_ssh_key" {
   type        = bool
   default     = true
-  description = "Set this value to true if the deployment should create a strong password for the admin user."
+  description = "Set this value to true if the deployment should create a strong password for the admin user. If `os_type` is Linux, this will generate and store an SSH key as the default. However, setting `disable_password_authentication` to `false` will generate and store a password value instead of an ssh key."
 }
 
 variable "generated_secrets_key_vault_secret_config" {

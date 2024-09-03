@@ -39,7 +39,6 @@ resource "azurerm_managed_disk" "this" {
   dynamic "encryption_settings" {
     for_each = each.value.encryption_settings
 
-
     content {
       disk_encryption_key {
         secret_url      = encryption_settings.value.disk_encryption_key_vault_secret_url

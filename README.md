@@ -660,7 +660,7 @@ Default: `{}`
 
 ### <a name="input_disable_password_authentication"></a> [disable\_password\_authentication](#input\_disable\_password\_authentication)
 
-Description: If true this value will disallow password authentication on linux vm's. This will require at least one public key to be configured.
+Description: If true this value will disallow password authentication on linux vm's. This will require at least one public key to be configured. If using the option to auto generate passwords and keys, setting this value to `false` will cause a password to be generated an stored instead of an SSH key.
 
 Type: `bool`
 
@@ -849,7 +849,7 @@ Default: `{}`
 
 ### <a name="input_generate_admin_password_or_ssh_key"></a> [generate\_admin\_password\_or\_ssh\_key](#input\_generate\_admin\_password\_or\_ssh\_key)
 
-Description: Set this value to true if the deployment should create a strong password for the admin user.
+Description: Set this value to true if the deployment should create a strong password for the admin user. If `os_type` is Linux, this will generate and store an SSH key as the default. However, setting `disable_password_authentication` to `false` will generate and store a password value instead of an ssh key.
 
 Type: `bool`
 

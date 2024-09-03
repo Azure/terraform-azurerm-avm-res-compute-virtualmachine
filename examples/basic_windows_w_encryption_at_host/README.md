@@ -177,10 +177,10 @@ module "avm_res_keyvault_vault" {
 }
 
 resource "azurerm_disk_encryption_set" "this" {
-  key_vault_key_id    = module.avm_res_keyvault_vault.keys_resource_ids.des_key.id
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.disk_encryption_set.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
+  key_vault_key_id    = module.avm_res_keyvault_vault.keys_resource_ids.des_key.id
   tags                = local.tags
 
   identity {
