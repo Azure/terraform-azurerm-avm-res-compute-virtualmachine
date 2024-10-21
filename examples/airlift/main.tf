@@ -60,30 +60,30 @@ resource "azurerm_subnet" "this_subnet_2" {
 
 # Uncomment this section if you would like to include a bastion resource with this example.
 resource "azurerm_subnet" "bastion_subnet" {
+  address_prefixes     = ["10.0.3.0/24"]
   name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.this_rg.name
   virtual_network_name = azurerm_virtual_network.this_vnet.name
-  address_prefixes     = ["10.0.3.0/24"]
 }
 
 resource "azurerm_public_ip" "bastionpip" {
-  name                = module.naming.public_ip.name_unique
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
   allocation_method   = "Static"
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.public_ip.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
-  zones = ["1"]
+  zones               = ["1"]
 }
 
 resource "azurerm_bastion_host" "bastion" {
-  name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.bastion_host.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
 
   ip_configuration {
     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
-    subnet_id            = azurerm_subnet.bastion_subnet.id
     public_ip_address_id = azurerm_public_ip.bastionpip.id
+    subnet_id            = azurerm_subnet.bastion_subnet.id
   }
 }
 
