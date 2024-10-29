@@ -1355,16 +1355,16 @@ vm_additional_capabilities = {
 VM_ADDITIONAL_CAPABILITIES
 }
 
-variable "vtpm_enabled" {
-  type        = bool
-  default     = null
-  description = "(Optional) Specifies whether vTPM should be enabled on the virtual machine. Changing this forces a new resource to be created."
-}
-
 variable "vm_agent_platform_updates_enabled" {
   type        = bool
   default     = false
   description = "(Optional) Specifies whether VMAgent Platform Updates is enabled. Defaults to false"
+}
+
+variable "vtpm_enabled" {
+  type        = bool
+  default     = null
+  description = "(Optional) Specifies whether vTPM should be enabled on the virtual machine. Changing this forces a new resource to be created."
 }
 
 variable "winrm_listeners" {

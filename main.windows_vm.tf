@@ -40,8 +40,8 @@ resource "azurerm_windows_virtual_machine" "this" {
   timezone                                               = var.timezone
   user_data                                              = var.user_data
   virtual_machine_scale_set_id                           = var.virtual_machine_scale_set_resource_id
-  vtpm_enabled                                           = var.vtpm_enabled
   vm_agent_platform_updates_enabled                      = var.vm_agent_platform_updates_enabled
+  vtpm_enabled                                           = var.vtpm_enabled
   zone                                                   = var.zone
 
   os_disk {
