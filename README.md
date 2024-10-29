@@ -1539,6 +1539,14 @@ object({
 
 Default: `null`
 
+### <a name="input_vm_agent_platform_updates_enabled"></a> [vm\_agent\_platform\_updates\_enabled](#input\_vm\_agent\_platform\_updates\_enabled)
+
+Description: (Optional) Specifies whether VMAgent Platform Updates is enabled. Defaults to false
+
+Type: `bool`
+
+Default: `false`
+
 ### <a name="input_vtpm_enabled"></a> [vtpm\_enabled](#input\_vtpm\_enabled)
 
 Description: (Optional) Specifies whether vTPM should be enabled on the virtual machine. Changing this forces a new resource to be created.

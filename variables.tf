@@ -1361,6 +1361,12 @@ variable "vtpm_enabled" {
   description = "(Optional) Specifies whether vTPM should be enabled on the virtual machine. Changing this forces a new resource to be created."
 }
 
+variable "vm_agent_platform_updates_enabled" {
+  type        = bool
+  default     = false
+  description = "(Optional) Specifies whether VMAgent Platform Updates is enabled. Defaults to false"
+}
+
 variable "winrm_listeners" {
   type = set(object({
     protocol        = string

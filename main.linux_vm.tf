@@ -39,6 +39,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   user_data                                              = var.user_data
   virtual_machine_scale_set_id                           = var.virtual_machine_scale_set_resource_id
   vtpm_enabled                                           = var.vtpm_enabled
+  vm_agent_platform_updates_enabled                      = var.vm_agent_platform_updates_enabled
   zone                                                   = var.zone
 
   os_disk {
