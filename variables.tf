@@ -1355,6 +1355,13 @@ vm_additional_capabilities = {
 VM_ADDITIONAL_CAPABILITIES
 }
 
+variable "vm_agent_platform_updates_enabled" {
+  type = bool
+  default = false
+  description = "(Optional) Specifies whether VMAgent Platform Updates is enabled. Defaults to `false`."
+  
+}
+
 variable "vtpm_enabled" {
   type        = bool
   default     = null

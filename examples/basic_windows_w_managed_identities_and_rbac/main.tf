@@ -132,6 +132,7 @@ module "testvm" {
   os_type             = "Windows"
   name                = module.naming.virtual_machine.name_unique
   sku_size            = module.get_valid_sku_for_deployment_region.sku
+  vm_agent_platform_updates_enabled = true
   zone                = random_integer.zone_index.result
 
   generated_secrets_key_vault_secret_config = {
