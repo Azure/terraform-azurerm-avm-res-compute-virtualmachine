@@ -12,7 +12,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.108)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
@@ -1538,6 +1538,14 @@ object({
 ```
 
 Default: `null`
+
+### <a name="input_vm_agent_platform_updates_enabled"></a> [vm\_agent\_platform\_updates\_enabled](#input\_vm\_agent\_platform\_updates\_enabled)
+
+Description: (Optional) Specifies whether VMAgent Platform Updates is enabled. Defaults to `false`.
+
+Type: `bool`
+
+Default: `false`
 
 ### <a name="input_vtpm_enabled"></a> [vtpm\_enabled](#input\_vtpm\_enabled)
 

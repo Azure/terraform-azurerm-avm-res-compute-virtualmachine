@@ -4,6 +4,29 @@
 This example demonstrates the smallest possible input for the module with only defaults defined. The minimal defaults create a Windows server 2022 gen2 VM with a single private network interface on a Standard\_D2ds\_v5 sku.
 
 ```hcl
+terraform {
+  required_version = "~> 1.6"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">= 3.116, < 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
+  }
+}
+
+# tflint-ignore: terraform_module_provider_declaration, terraform_output_separate, terraform_variable_separate
+provider "azurerm" {
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
+}
+
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4"
@@ -96,7 +119,7 @@ resource "azurerm_bastion_host" "bastion" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.15.1"
+  #version = "0.17.0
 
   enable_telemetry    = var.enable_telemetry
   location            = azurerm_resource_group.this_rg.location
@@ -125,7 +148,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.108)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 

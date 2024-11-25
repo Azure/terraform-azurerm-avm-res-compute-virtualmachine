@@ -1,14 +1,12 @@
 <!-- BEGIN_TF_DOCS -->
-# Ubuntu VM with a number of common VM features
+# Default
 
-This example demonstrates the creation of a simple Ubuntu VM with the following features:  
-
-**Note: This configuration example shows the use of a plaintext password. This is strongly discouraged but is included here to ensure testing of the feature during example testing.
+This example demonstrates the creation of a simple Ubuntu VM with the following features using the v3 version of the AzureRM provider:
 
     - a single private IPv4 address
-    - an user provided plaintext password for an admin user named azureuser
-    - password authentication enabled
-    - a default OS 128gb OS disk
+    - an auto-generated SSH key for an admin user named azureuser
+    - password authentication disabled
+    - a single default OS 128gb OS disk
     - deploys into a randomly selected region
 
 It includes the following resources in addition to the VM resource:
@@ -23,7 +21,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.116, < 5.0"
+      version = "~> 3.116"
     }
     random = {
       source  = "hashicorp/random"
@@ -53,7 +51,7 @@ module "regions" {
 
 locals {
   tags = {
-    scenario = "common_ubuntu_with_plaintext_password"
+    scenario = "Default"
   }
 }
 
@@ -66,7 +64,6 @@ resource "random_integer" "zone_index" {
   max = length(module.regions.regions_by_name[module.regions.regions[random_integer.region_index.result].name].zones)
   min = 1
 }
-
 
 module "get_valid_sku_for_deployment_region" {
   source = "../../modules/sku_selector"
@@ -134,45 +131,22 @@ resource "azurerm_bastion_host" "bastion" {
 
 data "azurerm_client_config" "current" {}
 
-resource "azurerm_user_assigned_identity" "example_identity" {
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  tags                = local.tags
-}
-
-resource "random_password" "admin_password" {
-  length           = 22
-  min_lower        = 2
-  min_numeric      = 2
-  min_special      = 2
-  min_upper        = 2
-  override_special = "!#$%&()*+,-./:;<=>?@[]^_{|}~"
-  special          = true
-}
-
 module "avm_res_keyvault_vault" {
-  source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "=0.7.1"
-  tenant_id                   = data.azurerm_client_config.current.tenant_id
-  name                        = module.naming.key_vault.name_unique
-  resource_group_name         = azurerm_resource_group.this_rg.name
-  location                    = azurerm_resource_group.this_rg.location
-  enabled_for_disk_encryption = true
+  source              = "Azure/avm-res-keyvault-vault/azurerm"
+  version             = "=0.7.1"
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  name                = module.naming.key_vault.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  location            = azurerm_resource_group.this_rg.location
   network_acls = {
     default_action = "Allow"
-    bypass         = "AzureServices"
   }
 
   role_assignments = {
-    deployment_user_secrets = { #give the deployment user access to secrets
+    deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
     }
-  }
-
-  wait_for_rbac_before_key_operations = {
-    create = "60s"
   }
 
   wait_for_rbac_before_secret_operations = {
@@ -180,16 +154,6 @@ module "avm_res_keyvault_vault" {
   }
 
   tags = local.tags
-
-  secrets = {
-    admin_password = {
-      name = "admin-password"
-    }
-  }
-
-  secrets_value = {
-    admin_password = random_password.admin_password.result
-  }
 }
 
 module "testvm" {
@@ -197,18 +161,24 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
 
-  admin_username                     = "azureuser"
-  admin_password                     = random_password.admin_password.result
-  disable_password_authentication    = false
-  enable_telemetry                   = var.enable_telemetry
-  encryption_at_host_enabled         = true
-  generate_admin_password_or_ssh_key = false
-  location                           = azurerm_resource_group.this_rg.location
-  name                               = module.naming.virtual_machine.name_unique
-  resource_group_name                = azurerm_resource_group.this_rg.name
-  os_type                            = "Linux"
-  sku_size                           = module.get_valid_sku_for_deployment_region.sku
-  zone                               = random_integer.zone_index.result
+  enable_telemetry    = var.enable_telemetry
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  os_type             = "Linux"
+  name                = module.naming.virtual_machine.name_unique
+  sku_size            = module.get_valid_sku_for_deployment_region.sku
+  zone                = random_integer.zone_index.result
+
+  generated_secrets_key_vault_secret_config = {
+    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  }
+
+  source_image_reference = {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
+    version   = "latest"
+  }
 
   network_interfaces = {
     network_interface_1 = {
@@ -222,20 +192,11 @@ module "testvm" {
     }
   }
 
-  os_disk = {
-    caching              = "ReadWrite"
-    storage_account_type = "Premium_LRS"
-  }
-
-  source_image_reference = {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-focal"
-    sku       = "20_04-lts-gen2"
-    version   = "latest"
-  }
-
   tags = local.tags
 
+  depends_on = [
+    module.avm_res_keyvault_vault
+  ]
 }
 ```
 
@@ -246,7 +207,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.116)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
@@ -257,11 +218,9 @@ The following resources are used by this module:
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.this_subnet_1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.this_subnet_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_user_assigned_identity.example_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.this_vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
-- [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
