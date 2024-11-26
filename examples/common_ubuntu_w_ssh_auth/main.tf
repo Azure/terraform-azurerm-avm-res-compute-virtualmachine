@@ -31,8 +31,10 @@ module "naming" {
 }
 
 module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "=0.8.1"
+  source  = "Azure/avm-utl-regions/azurerm"
+  version = "0.3.0"
+
+  availability_zones_filter = true
 }
 
 locals {
