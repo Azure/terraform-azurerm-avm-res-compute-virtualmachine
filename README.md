@@ -740,7 +740,7 @@ Example Inputs:
 
 ```hcl
 #custom script extension example - linux
-extensions = [
+extensions = {
   {
     name = "CustomScriptExtension"
     publisher = "Microsoft.Azure.Extensions"
@@ -752,10 +752,10 @@ extensions = [
       }
     SETTINGS
   }
-]
+}
 
 #custom script extension example - windows
-extensions = [
+extensions = {
   {
     name = "CustomScriptExtension"
     publisher = "Microsoft.Compute"
@@ -778,7 +778,7 @@ extensions = [
       }
     PROTECTED_SETTINGS        
   }
-]
+}
 ```
 
 Type:
