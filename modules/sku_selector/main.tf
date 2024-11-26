@@ -23,7 +23,7 @@ locals {
   ]
   #filter the location output for the current region, virtual machine resources, and filter out entries that don't include the capabilities list
   location_valid_vms = [
-    for location in jsondecode(data.azapi_resource_list.example.output).value : location
+    for location in data.azapi_resource_list.example.output.value : location
     if length(location.restrictions) < 1 &&       #there are no restrictions on deploying the sku (i.e. allowed for deployment)
     location.resourceType == "virtualMachines" && #and the sku is a virtual machine
     !strcontains(location.name, "C") &&           #no confidential vm skus
