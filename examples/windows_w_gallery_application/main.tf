@@ -158,7 +158,7 @@ resource "azurerm_storage_account" "app_account" {
 resource "azurerm_storage_container" "app_container" {
   name                  = module.naming.storage_container.name_unique
   container_access_type = "blob"
-  storage_account_id    = azurerm_storage_account.app_account.id
+  storage_account_name    = azurerm_storage_account.app_account.name
 }
 
 resource "azurerm_storage_blob" "app" {
