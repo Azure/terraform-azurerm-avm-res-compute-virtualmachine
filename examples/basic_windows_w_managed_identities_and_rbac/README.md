@@ -171,14 +171,13 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
 
-  enable_telemetry                  = var.enable_telemetry
-  location                          = azurerm_resource_group.this_rg.location
-  resource_group_name               = azurerm_resource_group.this_rg.name
-  os_type                           = "Windows"
-  name                              = module.naming.virtual_machine.name_unique
-  sku_size                          = module.get_valid_sku_for_deployment_region.sku
-  vm_agent_platform_updates_enabled = true
-  zone                              = random_integer.zone_index.result
+  enable_telemetry    = var.enable_telemetry
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  os_type             = "Windows"
+  name                = module.naming.virtual_machine.name_unique
+  sku_size            = module.get_valid_sku_for_deployment_region.sku
+  zone                = random_integer.zone_index.result
 
   generated_secrets_key_vault_secret_config = {
     key_vault_resource_id          = module.avm_res_keyvault_vault.resource_id

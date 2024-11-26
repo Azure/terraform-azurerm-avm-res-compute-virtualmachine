@@ -244,6 +244,7 @@ module "testvm" {
   resource_group_name                = azurerm_resource_group.this_rg.name
   os_type                            = "Linux"
   sku_size                           = module.get_valid_sku_for_deployment_region.sku
+  vm_agent_platform_updates_enabled  = true
   zone                               = random_integer.zone_index.result
 
   admin_ssh_keys = [
