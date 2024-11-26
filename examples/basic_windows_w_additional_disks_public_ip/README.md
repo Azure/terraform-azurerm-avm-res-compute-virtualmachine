@@ -53,8 +53,10 @@ module "regions" {
 }
 
 locals {
+  #deployment_region = module.regions.regions[random_integer.region_index.result].name
+  deployment_region = "canadacentral" #temporarily pinning on single region 
   tags = {
-    scenario = "windows_w_data_disk_and_public_ip"
+    scenario = "Default"
   }
 }
 
@@ -64,18 +66,18 @@ resource "random_integer" "region_index" {
 }
 
 resource "random_integer" "zone_index" {
-  max = length(module.regions.regions_by_name[module.regions.regions[random_integer.region_index.result].name].zones)
+  max = length(module.regions.regions_by_name[local.deployment_region].zones)
   min = 1
 }
 
 module "get_valid_sku_for_deployment_region" {
   source = "../../modules/sku_selector"
 
-  deployment_region = module.regions.regions[random_integer.region_index.result].name
+  deployment_region = local.deployment_region
 }
 
 resource "azurerm_resource_group" "this_rg" {
-  location = module.regions.regions[random_integer.region_index.result].name
+  location = local.deployment_region
   name     = module.naming.resource_group.name_unique
   tags     = local.tags
 }
