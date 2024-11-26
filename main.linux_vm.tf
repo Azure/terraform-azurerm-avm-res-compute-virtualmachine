@@ -65,7 +65,8 @@ resource "azurerm_linux_virtual_machine" "this" {
     for_each = var.vm_additional_capabilities == null ? [] : ["additional_capabilities"]
 
     content {
-      ultra_ssd_enabled = var.vm_additional_capabilities.ultra_ssd_enabled
+      hibernation_enabled = var.vm_additional_capabilities.hibernation_enabled
+      ultra_ssd_enabled   = var.vm_additional_capabilities.ultra_ssd_enabled
     }
   }
   dynamic "admin_ssh_key" {

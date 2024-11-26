@@ -1520,10 +1520,11 @@ Default: `null`
 Description: Object describing virtual machine additional capabilities using the following attributes:
 
 - `ultra_ssd_enabled` = (Optional) Should the capacity to enable Data Disks of the `UltraSSD_LRS` storage account type be supported on this Virtual Machine? Defaults to `false`.
+- `hibernation_enabled = (Optional) Whether to enable the hiberation capability or not.
 
 Example Inputs:
 
-```hcl
+````hcl
 vm_additional_capabilities = {
   ultra_ssd_enabled = true
 }
@@ -1533,7 +1534,8 @@ Type:
 
 ```hcl
 object({
-    ultra_ssd_enabled = optional(bool, false)
+    ultra_ssd_enabled  = optional(bool, false)
+    hiberation_enabled = optional(bool, null)
   })
 ```
 
