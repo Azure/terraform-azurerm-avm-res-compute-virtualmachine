@@ -188,7 +188,7 @@ resource "azurerm_user_assigned_identity" "this" {
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.7.1"
+  version = "=0.9.1"
 
   enabled_for_deployment = true # Required to deploy the certificates to the VM
   location               = azurerm_resource_group.this_rg.location
@@ -576,7 +576,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: =0.7.1
+Version: =0.9.1
 
 ### <a name="module_get_valid_sku_for_deployment_region"></a> [get\_valid\_sku\_for\_deployment\_region](#module\_get\_valid\_sku\_for\_deployment\_region)
 
