@@ -214,4 +214,6 @@ module "testvm" {
 
   tags = local.tags
 
+  depends_on = [module.avm_res_keyvault_vault]
+
 }
