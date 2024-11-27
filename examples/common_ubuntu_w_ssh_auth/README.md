@@ -269,7 +269,6 @@ module "testvm" {
   name                               = module.naming.virtual_machine.name_unique
   resource_group_name                = azurerm_resource_group.this_rg.name
   os_type                            = "Linux"
-  provision_vm_agent                 = true
   sku_size                           = module.get_valid_sku_for_deployment_region.sku
   zone                               = random_integer.zone_index.result
 
