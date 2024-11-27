@@ -650,7 +650,7 @@ Example Inputs:
 
 ```hcl
 #custom script extension example - linux
-extensions = [
+extensions = {
   {
     name = "CustomScriptExtension"
     publisher = "Microsoft.Azure.Extensions"
@@ -662,10 +662,10 @@ extensions = [
       }
     SETTINGS
   }
-]
+}
 
 #custom script extension example - windows
-extensions = [
+extensions = {
   {
     name = "CustomScriptExtension"
     publisher = "Microsoft.Compute"
@@ -688,7 +688,7 @@ extensions = [
       }
     PROTECTED_SETTINGS        
   }
-]
+}
 ```
 EXTENSIONS
   nullable    = false
@@ -1337,13 +1337,15 @@ variable "virtual_machine_scale_set_resource_id" {
 
 variable "vm_additional_capabilities" {
   type = object({
-    ultra_ssd_enabled = optional(bool, false)
+    ultra_ssd_enabled  = optional(bool, false)
+    hiberation_enabled = optional(bool, null)
   })
   default     = null
   description = <<VM_ADDITIONAL_CAPABILITIES
 Object describing virtual machine additional capabilities using the following attributes:
 
 - `ultra_ssd_enabled` = (Optional) Should the capacity to enable Data Disks of the `UltraSSD_LRS` storage account type be supported on this Virtual Machine? Defaults to `false`.
+- `hibernation_enabled = (Optional) Whether to enable the hiberation capability or not.
 
 Example Inputs:
 
@@ -1353,6 +1355,12 @@ vm_additional_capabilities = {
 }
 ```
 VM_ADDITIONAL_CAPABILITIES
+}
+
+variable "vm_agent_platform_updates_enabled" {
+  type        = bool
+  default     = false
+  description = "(Optional) Specifies whether VMAgent Platform Updates is enabled. Defaults to `false`."
 }
 
 variable "vtpm_enabled" {

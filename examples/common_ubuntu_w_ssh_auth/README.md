@@ -20,19 +20,50 @@ It includes the following resources in addition to the VM resource:
     - An optional subnet, public ip, and bastion which can be enabled by uncommenting the bastion resources when running the example.
 
 ```hcl
+terraform {
+  required_version = "~> 1.6"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">= 3.116, < 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+  }
+}
+
+# tflint-ignore: terraform_module_provider_declaration, terraform_output_separate, terraform_variable_separate
+provider "azurerm" {
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
+}
+
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4"
 }
 
 module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "=0.8.1"
+  source  = "Azure/avm-utl-regions/azurerm"
+  version = "0.3.0"
+
+  availability_zones_filter = true
 }
 
 locals {
+  #deployment_region = module.regions.regions[random_integer.region_index.result].name
+  deployment_region = "canadacentral" #temporarily pinning on single region 
   tags = {
-    scenario = "common_ubuntu_w_ssh"
+    scenario = "Default"
   }
 }
 
@@ -42,24 +73,24 @@ resource "random_integer" "region_index" {
 }
 
 resource "random_integer" "zone_index" {
-  max = length(module.regions.regions_by_name[module.regions.regions[random_integer.region_index.result].name].zones)
+  max = length(module.regions.regions_by_name[local.deployment_region].zones)
   min = 1
 }
 
 module "get_valid_sku_for_deployment_region" {
   source = "../../modules/sku_selector"
 
-  deployment_region = module.regions.regions[random_integer.region_index.result].name
+  deployment_region = local.deployment_region
 }
 
 resource "azurerm_resource_group" "this_rg" {
-  location = module.regions.regions[random_integer.region_index.result].name
+  location = local.deployment_region
   name     = module.naming.resource_group.name_unique
   tags     = local.tags
 }
 
 resource "azurerm_resource_group" "this_rg_secondary" {
-  location = module.regions.regions[random_integer.region_index.result].name
+  location = local.deployment_region
   name     = "${module.naming.resource_group.name_unique}-alt"
   tags     = local.tags
 }
@@ -127,7 +158,7 @@ resource "azurerm_user_assigned_identity" "example_identity" {
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "=0.7.1"
+  version                     = "=0.9.1"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -228,7 +259,7 @@ resource "azurerm_disk_encryption_set" "this" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.15.1"
+  #version = "0.17.0
 
   admin_username                     = "azureuser"
   enable_telemetry                   = var.enable_telemetry
@@ -348,7 +379,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.108)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
@@ -407,7 +438,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: =0.7.1
+Version: =0.9.1
 
 ### <a name="module_get_valid_sku_for_deployment_region"></a> [get\_valid\_sku\_for\_deployment\_region](#module\_get\_valid\_sku\_for\_deployment\_region)
 
@@ -423,9 +454,9 @@ Version: ~> 0.4
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
-Source: Azure/regions/azurerm
+Source: Azure/avm-utl-regions/azurerm
 
-Version: =0.8.1
+Version: 0.3.0
 
 ### <a name="module_testvm"></a> [testvm](#module\_testvm)
 

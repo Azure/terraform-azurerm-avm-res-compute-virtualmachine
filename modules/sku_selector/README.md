@@ -29,7 +29,7 @@ locals {
   ]
   #filter the location output for the current region, virtual machine resources, and filter out entries that don't include the capabilities list
   location_valid_vms = [
-    for location in jsondecode(data.azapi_resource_list.example.output).value : location
+    for location in data.azapi_resource_list.example.output.value : location
     if length(location.restrictions) < 1 &&       #there are no restrictions on deploying the sku (i.e. allowed for deployment)
     location.resourceType == "virtualMachines" && #and the sku is a virtual machine
     !strcontains(location.name, "C") &&           #no confidential vm skus
@@ -51,9 +51,9 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 1.13, != 1.13.0)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.108)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
@@ -61,9 +61,9 @@ The following requirements are needed by this module:
 
 The following providers are used by this module:
 
-- <a name="provider_azapi"></a> [azapi](#provider\_azapi) (~> 1.13, != 1.13.0)
+- <a name="provider_azapi"></a> [azapi](#provider\_azapi) (~> 2.0)
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.108)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.116, < 5.0)
 
 - <a name="provider_random"></a> [random](#provider\_random) (~> 3.6)
 

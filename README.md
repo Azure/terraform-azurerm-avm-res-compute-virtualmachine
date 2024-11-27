@@ -12,7 +12,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.108)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
@@ -740,7 +740,7 @@ Example Inputs:
 
 ```hcl
 #custom script extension example - linux
-extensions = [
+extensions = {
   {
     name = "CustomScriptExtension"
     publisher = "Microsoft.Azure.Extensions"
@@ -752,10 +752,10 @@ extensions = [
       }
     SETTINGS
   }
-]
+}
 
 #custom script extension example - windows
-extensions = [
+extensions = {
   {
     name = "CustomScriptExtension"
     publisher = "Microsoft.Compute"
@@ -778,7 +778,7 @@ extensions = [
       }
     PROTECTED_SETTINGS        
   }
-]
+}
 ```
 
 Type:
@@ -1520,10 +1520,11 @@ Default: `null`
 Description: Object describing virtual machine additional capabilities using the following attributes:
 
 - `ultra_ssd_enabled` = (Optional) Should the capacity to enable Data Disks of the `UltraSSD_LRS` storage account type be supported on this Virtual Machine? Defaults to `false`.
+- `hibernation_enabled = (Optional) Whether to enable the hiberation capability or not.
 
 Example Inputs:
 
-```hcl
+````hcl
 vm_additional_capabilities = {
   ultra_ssd_enabled = true
 }
@@ -1533,11 +1534,20 @@ Type:
 
 ```hcl
 object({
-    ultra_ssd_enabled = optional(bool, false)
+    ultra_ssd_enabled  = optional(bool, false)
+    hiberation_enabled = optional(bool, null)
   })
 ```
 
 Default: `null`
+
+### <a name="input_vm_agent_platform_updates_enabled"></a> [vm\_agent\_platform\_updates\_enabled](#input\_vm\_agent\_platform\_updates\_enabled)
+
+Description: (Optional) Specifies whether VMAgent Platform Updates is enabled. Defaults to `false`.
+
+Type: `bool`
+
+Default: `false`
 
 ### <a name="input_vtpm_enabled"></a> [vtpm\_enabled](#input\_vtpm\_enabled)
 

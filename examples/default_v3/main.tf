@@ -3,7 +3,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.116, < 5.0"
+      version = "~> 3.116"
     }
     random = {
       source  = "hashicorp/random"
@@ -114,6 +114,7 @@ resource "azurerm_bastion_host" "bastion" {
 }
 */
 
+
 data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
@@ -149,7 +150,7 @@ module "testvm" {
   enable_telemetry    = var.enable_telemetry
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
-  os_type             = "Windows"
+  os_type             = "Linux"
   name                = module.naming.virtual_machine.name_unique
   sku_size            = module.get_valid_sku_for_deployment_region.sku
   zone                = random_integer.zone_index.result
@@ -159,9 +160,9 @@ module "testvm" {
   }
 
   source_image_reference = {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2022-datacenter-g2"
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
     version   = "latest"
   }
 
@@ -172,40 +173,12 @@ module "testvm" {
         ip_configuration_1 = {
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
           private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
-          create_public_ip_address      = true
-          public_ip_address_name        = module.naming.public_ip.name_unique
         }
       }
     }
   }
 
-  data_disk_managed_disks = {
-    disk1 = {
-      name                 = "${module.naming.managed_disk.name_unique}-lun0"
-      storage_account_type = "Premium_LRS"
-      lun                  = 0
-      caching              = "ReadWrite"
-      disk_size_gb         = 32
-    }
-  }
-
-  shutdown_schedules = {
-    test_schedule = {
-      daily_recurrence_time = "1700"
-      enabled               = true
-      timezone              = "Pacific Standard Time"
-      notification_settings = {
-        enabled         = true
-        email           = "example@example.com;example2@example.com"
-        time_in_minutes = "15"
-        webhook_url     = "https://example-webhook-url.example.com"
-      }
-    }
-  }
-
-  tags = {
-    scenario = "windows_w_data_disk_and_public_ip"
-  }
+  tags = local.tags
 
   depends_on = [
     module.avm_res_keyvault_vault
