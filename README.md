@@ -706,7 +706,7 @@ Description: (Optional) Should all of the disks (including the temp disk) attach
 
 Type: `bool`
 
-Default: `null`
+Default: `true`
 
 ### <a name="input_eviction_policy"></a> [eviction\_policy](#input\_eviction\_policy)
 
