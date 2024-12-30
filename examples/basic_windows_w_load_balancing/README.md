@@ -81,7 +81,7 @@ resource "azurerm_resource_group" "this_rg" {
 
 module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
-  version = "0.1.0"
+  version = "0.2.0"
 
   location      = azurerm_resource_group.this_rg.location
   cache_results = true
@@ -91,6 +91,7 @@ module "vm_sku" {
     max_vcpus                      = 2
     encryption_at_host_supported   = true
     accelerated_networking_enabled = true
+    premium_io_supported           = true
   }
 }
 
@@ -213,13 +214,13 @@ module "loadbalancer" {
 
 # copied over from the AzureRM example - simplifies naming for the appgw resources
 locals {
-  app_gw_public_ip_name          = "${azurerm_virtual_network.this_vnet.name}-pip"
-  backend_address_pool_name      = "${azurerm_virtual_network.this_vnet.name}-beap"
-  frontend_ip_configuration_name = "${azurerm_virtual_network.this_vnet.name}-feip"
-  frontend_port_name             = "${azurerm_virtual_network.this_vnet.name}-feport"
-  http_setting_name              = "${azurerm_virtual_network.this_vnet.name}-be-htst"
-  listener_name                  = "${azurerm_virtual_network.this_vnet.name}-httplstn"
-  request_routing_rule_name      = "${azurerm_virtual_network.this_vnet.name}-rqrt"
+  app_gw_public_ip_name          = "${module.vnet.name}-pip"
+  backend_address_pool_name      = "${module.vnet.name}-beap"
+  frontend_ip_configuration_name = "${module.vnet.name}-feip"
+  frontend_port_name             = "${module.vnet.name}-feport"
+  http_setting_name              = "${module.vnet.name}-be-htst"
+  listener_name                  = "${module.vnet.name}-httplstn"
+  request_routing_rule_name      = "${module.vnet.name}-rqrt"
 }
 
 resource "azurerm_public_ip" "app_gw_pip" {
@@ -518,7 +519,7 @@ Version:
 
 Source: Azure/avm-utl-sku-finder/azapi
 
-Version: 0.1.0
+Version: 0.2.0
 
 ### <a name="module_vnet"></a> [vnet](#module\_vnet)
 

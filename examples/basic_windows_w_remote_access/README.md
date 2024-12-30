@@ -88,7 +88,7 @@ resource "azurerm_resource_group" "this_rg" {
 
 module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
-  version = "0.1.0"
+  version = "0.2.0"
 
   location      = azurerm_resource_group.this_rg.location
   cache_results = true
@@ -98,6 +98,7 @@ module "vm_sku" {
     max_vcpus                      = 2
     encryption_at_host_supported   = true
     accelerated_networking_enabled = true
+    premium_io_supported           = true
   }
 }
 
@@ -133,6 +134,9 @@ module "vnet" {
       address_prefixes = ["10.0.1.0/24"]
       nat_gateway = {
         id = module.natgateway.resource_id
+      }
+      network_security_group = {
+        id = azurerm_network_security_group.remote.id
       }
     }
     vm_subnet_2 = {
@@ -176,11 +180,6 @@ resource "azurerm_network_security_group" "remote" {
     source_address_prefix      = "*"
     source_port_range          = "*"
   }
-}
-
-resource "azurerm_subnet_network_security_group_association" "remote_office" {
-  network_security_group_id = azurerm_network_security_group.remote.id
-  subnet_id                 = module.vnet.subnets["vm_subnet_1"].resource_id
 }
 
 /* Uncomment this section if you would like to include a bastion resource with this example.
@@ -562,7 +561,6 @@ The following resources are used by this module:
 - [azurerm_network_security_group.remote](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) (resource)
 - [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_subnet_network_security_group_association.remote_office](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) (resource)
 - [azurerm_user_assigned_identity.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
@@ -632,7 +630,7 @@ Version:
 
 Source: Azure/avm-utl-sku-finder/azapi
 
-Version: 0.1.0
+Version: 0.2.0
 
 ### <a name="module_vnet"></a> [vnet](#module\_vnet)
 

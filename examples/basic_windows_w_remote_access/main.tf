@@ -64,7 +64,7 @@ resource "azurerm_resource_group" "this_rg" {
 
 module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
-  version = "0.1.0"
+  version = "0.2.0"
 
   location      = azurerm_resource_group.this_rg.location
   cache_results = true
@@ -74,6 +74,7 @@ module "vm_sku" {
     max_vcpus                      = 2
     encryption_at_host_supported   = true
     accelerated_networking_enabled = true
+    premium_io_supported           = true
   }
 }
 
@@ -109,6 +110,9 @@ module "vnet" {
       address_prefixes = ["10.0.1.0/24"]
       nat_gateway = {
         id = module.natgateway.resource_id
+      }
+      network_security_group = {
+        id = azurerm_network_security_group.remote.id
       }
     }
     vm_subnet_2 = {
@@ -152,11 +156,6 @@ resource "azurerm_network_security_group" "remote" {
     source_address_prefix      = "*"
     source_port_range          = "*"
   }
-}
-
-resource "azurerm_subnet_network_security_group_association" "remote_office" {
-  network_security_group_id = azurerm_network_security_group.remote.id
-  subnet_id                 = module.vnet.subnets["vm_subnet_1"].resource_id
 }
 
 /* Uncomment this section if you would like to include a bastion resource with this example.

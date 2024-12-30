@@ -80,7 +80,7 @@ resource "azurerm_resource_group" "this_rg" {
 
 module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
-  version = "0.1.0"
+  version = "0.2.0"
 
   location      = azurerm_resource_group.this_rg.location
   cache_results = true
@@ -90,6 +90,7 @@ module "vm_sku" {
     max_vcpus                      = 2
     encryption_at_host_supported   = true
     accelerated_networking_enabled = true
+    premium_io_supported           = true
   }
 }
 
@@ -219,13 +220,14 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
 
-  enable_telemetry    = var.enable_telemetry
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  os_type             = "Windows"
-  name                = module.naming.virtual_machine.name_unique
-  sku_size            = module.vm_sku.sku
-  zone                = random_integer.zone_index.result
+  enable_telemetry           = var.enable_telemetry
+  location                   = azurerm_resource_group.this_rg.location
+  resource_group_name        = azurerm_resource_group.this_rg.name
+  os_type                    = "Windows"
+  name                       = module.naming.virtual_machine.name_unique
+  sku_size                   = module.vm_sku.sku
+  zone                       = random_integer.zone_index.result
+  encryption_at_host_enabled = false
 
   generated_secrets_key_vault_secret_config = {
     key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
@@ -533,7 +535,7 @@ Version:
 
 Source: Azure/avm-utl-sku-finder/azapi
 
-Version: 0.1.0
+Version: 0.2.0
 
 ### <a name="module_vnet"></a> [vnet](#module\_vnet)
 
