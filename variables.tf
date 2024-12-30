@@ -597,7 +597,7 @@ DESCRIPTION
 
 variable "encryption_at_host_enabled" {
   type        = bool
-  default     = null
+  default     = true
   description = "(Optional) Should all of the disks (including the temp disk) attached to this Virtual Machine be encrypted by enabling Encryption at Host?"
 }
 

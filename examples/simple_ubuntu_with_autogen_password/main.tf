@@ -51,16 +51,25 @@ resource "random_integer" "zone_index" {
   min = 1
 }
 
-module "get_valid_sku_for_deployment_region" {
-  source = "../../modules/sku_selector"
-
-  deployment_region = local.deployment_region
-}
-
 resource "azurerm_resource_group" "this_rg" {
   location = local.deployment_region
   name     = module.naming.resource_group.name_unique
   tags     = local.tags
+}
+
+module "vm_sku" {
+  source  = "Azure/avm-utl-sku-finder/azapi"
+  version = "0.1.0"
+
+  location = azurerm_resource_group.this.location
+  cache_results = true
+
+  vm_filters = {
+    min_vcpus = 2
+    max_vcpus = 2
+    encryption_at_host_supported = true
+    accelerated_networking_enabled = true
+  }
 }
 
 resource "azurerm_virtual_network" "this_vnet" {
@@ -180,7 +189,7 @@ module "testvm" {
   name                               = module.naming.virtual_machine.name_unique
   resource_group_name                = azurerm_resource_group.this_rg.name
   os_type                            = "Linux"
-  sku_size                           = module.get_valid_sku_for_deployment_region.sku
+  sku_size                           = module.vm_sku.sku
   zone                               = random_integer.zone_index.result
 
   generated_secrets_key_vault_secret_config = {
