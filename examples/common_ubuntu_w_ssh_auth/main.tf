@@ -65,7 +65,7 @@ module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
   version = "0.1.0"
 
-  location = azurerm_resource_group.this.location
+  location = azurerm_resource_group.this_rg.location
   cache_results = true
 
   vm_filters = {
@@ -76,40 +76,57 @@ module "vm_sku" {
   }
 }
 
+module "natgateway" {
+  source  = "Azure/avm-res-network-natgateway/azurerm"
+  version = "0.2.0"
+
+  name                = module.naming.nat_gateway.name_unique
+  enable_telemetry    = true
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+
+  public_ips = {
+    public_ip_1 = {
+      name = "nat_gw_pip1"
+    }
+  }  
+}
+
+module "vnet" {
+  source  = "Azure/avm-res-network-virtualnetwork/azurerm"
+  version = "=0.7.1"
+
+  resource_group_name = azurerm_resource_group.this_rg.name
+  address_space       = ["10.0.0.0/16"]
+  name                = module.naming.virtual_network.name_unique
+  location            = azurerm_resource_group.this_rg.location
+
+  subnets = {
+    vm_subnet_1 = {
+      name = "${module.naming.subnet.name_unique}-1"
+      address_prefixes = ["10.0.1.0/24"]
+      nat_gateway = {
+        id = module.natgateway.resource_id
+      }
+    }
+    vm_subnet_2 = {
+      name = "${module.naming.subnet.name_unique}-2"
+      address_prefixes = ["10.0.2.0/24"]
+      nat_gateway = {
+        id = module.natgateway.resource_id
+      }
+    }
+    AzureBastionSubnet = {
+      name = "AzureBastionSubnet"
+      address_prefixes = ["10.0.3.0/24"]
+    }
+  }
+}
+
 resource "azurerm_resource_group" "this_rg_secondary" {
   location = local.deployment_region
   name     = "${module.naming.resource_group.name_unique}-alt"
   tags     = local.tags
-}
-
-resource "azurerm_virtual_network" "this_vnet" {
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.virtual_network.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  tags                = local.tags
-}
-
-resource "azurerm_subnet" "this_subnet_1" {
-  address_prefixes     = ["10.0.1.0/24"]
-  name                 = "${module.naming.subnet.name_unique}-1"
-  resource_group_name  = azurerm_resource_group.this_rg.name
-  virtual_network_name = azurerm_virtual_network.this_vnet.name
-}
-
-resource "azurerm_subnet" "this_subnet_2" {
-  address_prefixes     = ["10.0.2.0/24"]
-  name                 = "${module.naming.subnet.name_unique}-2"
-  resource_group_name  = azurerm_resource_group.this_rg.name
-  virtual_network_name = azurerm_virtual_network.this_vnet.name
-}
-
-#Uncomment this section if you would like to include a bastion resource with this example.
-resource "azurerm_subnet" "bastion_subnet" {
-  address_prefixes     = ["10.0.3.0/24"]
-  name                 = "AzureBastionSubnet"
-  resource_group_name  = azurerm_resource_group.this_rg.name
-  virtual_network_name = azurerm_virtual_network.this_vnet.name
 }
 
 resource "azurerm_public_ip" "bastionpip" {
@@ -128,11 +145,9 @@ resource "azurerm_bastion_host" "bastion" {
   ip_configuration {
     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
     public_ip_address_id = azurerm_public_ip.bastionpip.id
-    subnet_id            = azurerm_subnet.bastion_subnet.id
+    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
-
-
 
 data "azurerm_client_config" "current" {}
 
@@ -303,7 +318,7 @@ module "testvm" {
       ip_configurations = {
         ip_configuration_1 = {
           name                          = "${module.naming.network_interface.name_unique}-nic1-ipconfig1"
-          private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
         }
       }
       resource_group_name = azurerm_resource_group.this_rg_secondary.name
@@ -314,7 +329,7 @@ module "testvm" {
       ip_configurations = {
         ip_configuration_avs_facing = {
           name                          = "${module.naming.network_interface.name_unique}-nic2-ipconfig1"
-          private_ip_subnet_resource_id = azurerm_subnet.this_subnet_2.id
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_2"].resource_id
         }
       }
     }
