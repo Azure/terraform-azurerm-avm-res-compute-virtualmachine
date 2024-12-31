@@ -78,7 +78,7 @@ resource "azurerm_resource_group" "this_rg" {
 
 module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
-  version = "0.2.0"
+  version = "0.3.0"
 
   location      = azurerm_resource_group.this_rg.location
   cache_results = true
@@ -91,6 +91,8 @@ module "vm_sku" {
     premium_io_supported           = true
     location_zone                  = random_integer.zone_index.result
   }
+
+  depends_on = [random_integer.zone_index]
 }
 
 module "natgateway" {
@@ -343,7 +345,7 @@ Version:
 
 Source: Azure/avm-utl-sku-finder/azapi
 
-Version: 0.2.0
+Version: 0.3.0
 
 ### <a name="module_vnet"></a> [vnet](#module\_vnet)
 
