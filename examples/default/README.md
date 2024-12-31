@@ -88,6 +88,7 @@ module "vm_sku" {
     encryption_at_host_supported   = true
     accelerated_networking_enabled = true
     premium_io_supported           = true
+    location_zone                  = random_integer.zone_index.result
   }
 }
 

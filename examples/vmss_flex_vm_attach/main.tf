@@ -70,6 +70,7 @@ module "vm_sku" {
     encryption_at_host_supported   = true
     accelerated_networking_enabled = true
     premium_io_supported           = true
+    location_zone                  = random_integer.zone_index.result
   }
 }
 
@@ -219,7 +220,7 @@ module "testvm" {
   name                                  = module.naming.virtual_machine.name_unique
   resource_group_name                   = azurerm_resource_group.this_rg.name
   os_type                               = "Linux"
-  sku_size                              = module.get_valid_sku_for_deployment_region.sku
+  sku_size                              = module.vm_sku.sku
   virtual_machine_scale_set_resource_id = azurerm_orchestrated_virtual_machine_scale_set.this.id
   zone                                  = random_integer.zone_index.result
 
