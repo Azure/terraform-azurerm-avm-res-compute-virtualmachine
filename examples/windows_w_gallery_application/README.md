@@ -256,10 +256,16 @@ resource "azurerm_gallery_application_version" "test_app_version" {
   }
 }
 
+resource "azurerm_resource_group" "rsv_rg" {
+  location = local.deployment_region
+  name     = "RSV-rg"
+  tags     = local.tags
+}
+
 resource "azurerm_recovery_services_vault" "test_vault" {
-  location            = azurerm_resource_group.this_rg.location
+  location            = azurerm_resource_group.rsv_rg.location
   name                = module.naming.recovery_services_vault.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
+  resource_group_name = azurerm_resource_group.rsv_rg.name
   sku                 = "Standard"
   soft_delete_enabled = false
   storage_mode_type   = "LocallyRedundant"
@@ -268,7 +274,7 @@ resource "azurerm_recovery_services_vault" "test_vault" {
 resource "azurerm_backup_policy_vm" "test_policy" {
   name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
   recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
-  resource_group_name = azurerm_resource_group.this_rg.name
+  resource_group_name = azurerm_resource_group.rsv_rg.name
 
   backup {
     frequency = "Daily"
@@ -331,6 +337,17 @@ module "testvm" {
     storage_account_type = "Premium_LRS"
   }
 
+
+  data_disk_managed_disks = {
+    disk1 = {
+      name                 = "${module.naming.managed_disk.name_unique}-lun0"
+      storage_account_type = "Premium_LRS"
+      lun                  = 0
+      caching              = "ReadWrite"
+      disk_size_gb         = 32
+    }
+  }
+
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
@@ -367,9 +384,11 @@ module "testvm" {
 
   azure_backup_configurations = {
     backup_config = {
-      resource_group_name       = azurerm_recovery_services_vault.test_vault.resource_group_name
-      recovery_vault_name       = azurerm_recovery_services_vault.test_vault.name
-      backup_policy_resource_id = azurerm_backup_policy_vm.test_policy.id
+      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
+      recovery_vault_name        = azurerm_recovery_services_vault.test_vault.name
+      resource_group_name        = azurerm_recovery_services_vault.test_vault.resource_group_name
+      backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
+      exclude_disk_luns          = [0]
     }
   }
 
@@ -406,6 +425,7 @@ The following resources are used by this module:
 - [azurerm_maintenance_configuration.test_maintenance_config](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/maintenance_configuration) (resource)
 - [azurerm_public_ip.bastionpip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_recovery_services_vault.test_vault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault) (resource)
+- [azurerm_resource_group.rsv_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_shared_image_gallery.app_gallery](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/shared_image_gallery) (resource)
 - [azurerm_storage_account.app_account](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)

@@ -12,6 +12,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
 
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
+
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
@@ -24,7 +26,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_backup_protected_vm.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_protected_vm) (resource)
+- [azapi_resource.this_backup_intent](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azurerm_dev_test_global_vm_shutdown_schedule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule) (resource)
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
@@ -52,6 +54,8 @@ The following resources are used by this module:
 - [azurerm_virtual_machine_data_disk_attachment.this_linux](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_windows](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_extension.this_extension](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
+- [azurerm_virtual_machine_extension.this_extension_1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
+- [azurerm_virtual_machine_extension.this_extension_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
 - [azurerm_windows_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/windows_virtual_machine) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
@@ -380,33 +384,34 @@ Default: `null`
 Description: This object describes the backup configuration to use for this VM instance. Provide the backup details for configuring the backup. It defaults to null.
 
 - `<map_key>` - An arbitrary map key to avoid terraform issues with know before apply challenges
-  - `resource_group_name` - (Optional) - The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
-  - `recovery_vault_name` - (Required) - The name of the recovery services vault where the backup will be stored.
-  - `backup_policy_resource_id`    - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
-  - `exclude_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection.
-  - `include_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection.
-  - `protection_state`    - (Optional) - Specifies the protection state of the backup. Possible values are `Invalid`, `Protected`, `ProtectionStopped`, `ProtectionError`, and `ProtectionPaused`.
+  - `recovery_vault_resource_id - (Required) - The Azure Resource ID of the recovery services vault where the backup will be stored.
+  - `resource\_group\_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV resource group name will be extracted from the RSV resource id. The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
+  - `recovery\_vault\_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV information will be pulled from the RSV resource id.The name of the recovery services vault where the backup will be stored.
+  - `backup\_policy\_resource\_id` - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
+  - `exclude\_disk\_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection. Only one of `exclude\_disk\_luns` or `include\_disk\_luns` can be set. If both are set then only the `exclude\_disk\_luns` value will be used.
+  - `include\_disk\_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection. Only one of `exclude\_disk\_luns` or `include\_disk\_luns` can be set. If both are set then only the `exclude\_disk\_luns` value will be used.
 
 Example Input:  
-azure\_backup\_configurations = {  
-  arbitrary\_key = {  
-    resource\_group\_name = azurerm\_recovery\_services\_vault.test\_vault.resource\_group\_name  
-    recovery\_vault\_name = azurerm\_recovery\_services\_vault.test\_vault.name  
-    backup\_policy\_resource\_id    = azurerm\_backup\_policy\_vm.test\_policy.id  
-    exclude\_disk\_luns   = [1]
+azure_backup_configurations = {  
+  arbitrary_key = {  
+    recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id  
+    backup_policy_resource_id    = azurerm_backup_policy_vm.test_policy.id  
+    exclude_disk_luns   = [0,1]
   }
 }
+`
 
 Type:
 
 ```hcl
 map(object({
-    resource_group_name       = optional(string, null)
-    recovery_vault_name       = string
-    backup_policy_resource_id = optional(string, null)
-    exclude_disk_luns         = optional(list(number), null)
-    include_disk_luns         = optional(list(number), null)
-    protection_state          = optional(string, null)
+    resource_group_name        = optional(string, null)
+    recovery_vault_name        = optional(string, null)
+    recovery_vault_resource_id = string
+    backup_policy_resource_id  = optional(string, null)
+    exclude_disk_luns          = optional(list(number), null)
+    include_disk_luns          = optional(list(number), null)
+
   }))
 ```
 
@@ -727,6 +732,7 @@ Description: This map of objects is used to create additional `azurerm_virtual_m
   - `type_handler_version` (Required) - The type handler version for the extension. A common value is 1.0.
   - `auto_upgrade_minor_version` (Optional) - Set this to false to avoid automatic upgrades for minor versions on the extension.  Defaults to true
   - `automatic_upgrade_enabled` (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
+  - `deploy_sequence` (Optional) - The sequence number in which the extension should be provisioned. This value allows for serialization of two extensions. Sequence numbers of 3 and higher are deployed in parallel after the first two serialized extensions. Defaults to 3 to be non-breaking for previous versions of the module.
   - `failure_suppression_enabled` (Optional) - Should failures from the extension be suppressed? Possible values are true or false. Defaults to false. Operational failures such as not connecting to the VM will not be suppressed regardless of the failure\_suppression\_enabled value.
   - `settings` (Optional) - The settings passed to the extension, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
   - `protected_settings` (Optional) - The protected\_settings passed to the extension, like settings, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the protected\_settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
@@ -791,6 +797,7 @@ map(object({
     type_handler_version        = string
     auto_upgrade_minor_version  = optional(bool)
     automatic_upgrade_enabled   = optional(bool)
+    deploy_sequence             = optional(number, 3)
     failure_suppression_enabled = optional(bool, false)
     settings                    = optional(string)
     protected_settings          = optional(string)
