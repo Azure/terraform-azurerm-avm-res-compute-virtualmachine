@@ -209,7 +209,7 @@ module "avm_res_keyvault_vault" {
 }
 
 resource "azurerm_storage_account" "this" {
-  account_replication_type = "LRS"
+  account_replication_type = "ZRS"
   account_tier             = "Standard"
   location                 = azurerm_resource_group.this_rg.location
   name                     = "avmresstorage${random_integer.region_index.result}"
