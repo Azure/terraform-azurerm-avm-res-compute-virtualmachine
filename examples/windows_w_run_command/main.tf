@@ -189,11 +189,17 @@ module "avm_res_keyvault_vault" {
   }
 }
 
+resource "random_string" "name_suffix" {
+  length  = 4
+  special = false
+  upper   = false
+}
+
 resource "azurerm_storage_account" "this" {
   account_replication_type = "ZRS"
   account_tier             = "Standard"
   location                 = azurerm_resource_group.this_rg.location
-  name                     = "avmresstorage${random_integer.region_index.result}"
+  name                     = "avmstorage${random_string.name_suffix.result}"
   resource_group_name      = azurerm_resource_group.this_rg.name
 }
 

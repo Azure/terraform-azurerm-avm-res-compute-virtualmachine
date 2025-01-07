@@ -208,11 +208,17 @@ module "avm_res_keyvault_vault" {
   }
 }
 
+resource "random_string" "name_suffix" {
+  length  = 4
+  special = false
+  upper   = false
+}
+
 resource "azurerm_storage_account" "this" {
   account_replication_type = "ZRS"
   account_tier             = "Standard"
   location                 = azurerm_resource_group.this_rg.location
-  name                     = "avmresstorage${random_integer.region_index.result}"
+  name                     = "avmstorage${random_string.name_suffix.result}"
   resource_group_name      = azurerm_resource_group.this_rg.name
 }
 
@@ -385,6 +391,7 @@ The following resources are used by this module:
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
+- [random_string.name_suffix](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
