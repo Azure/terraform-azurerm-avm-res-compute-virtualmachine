@@ -362,50 +362,12 @@ module "testvm" {
 
       tags = local.tags
     }
-
-    test_example_storage_with_sas = {
-      location        = azurerm_resource_group.this_rg.location
-      name            = "example-command-storage-sas"
-      error_blob_uri  = "${azurerm_storage_blob.example3.id}${data.azurerm_storage_account_sas.this.sas}"
-      output_blob_uri = "${azurerm_storage_blob.example2.id}${data.azurerm_storage_account_sas.this.sas}"
-      source = {
-        script_uri = "${azurerm_storage_blob.example1.id}${data.azurerm_storage_account_sas.this.sas}"
-      }
-
-      parameters = [
-        {
-          name  = "example_param_1"
-          value = "example_value_1"
-        },
-        {
-          name  = "example_param_2"
-          value = "example_value_2"
-        }
-      ]
-
-      tags = local.tags
-    }
   }
 
   run_commands_secrets = {
     test_example_from_storage = {
       run_as_password = random_password.admin_password.result
       run_as_user     = "azureuser"
-    }
-
-    test_example_storage_with_sas = {
-      run_as_password = random_password.admin_password.result
-      run_as_user     = "azureuser"
-      protected_parameters = [
-        {
-          name  = "example_sensitive_param_1"
-          value = random_password.admin_password.result
-        },
-        {
-          name  = "example_sensitive_param_2"
-          value = random_password.admin_password.result
-        }
-      ]
     }
   }
 
