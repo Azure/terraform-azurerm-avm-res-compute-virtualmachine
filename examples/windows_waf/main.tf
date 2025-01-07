@@ -1,6 +1,10 @@
 terraform {
   required_version = "~> 1.6"
   required_providers {
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.15"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116, < 5.0"
@@ -37,7 +41,7 @@ locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
   deployment_region = "canadacentral" #temporarily pinning on single region 
   tags = {
-    scenario = "Default"
+    scenario = "WAF example"
   }
 }
 

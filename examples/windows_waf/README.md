@@ -28,6 +28,10 @@ It includes the following resources in addition to the VM resource:
 terraform {
   required_version = "~> 1.6"
   required_providers {
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.15"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116, < 5.0"
@@ -64,7 +68,7 @@ locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
   deployment_region = "canadacentral" #temporarily pinning on single region 
   tags = {
-    scenario = "Default"
+    scenario = "WAF example"
   }
 }
 
@@ -557,6 +561,8 @@ resource "azurerm_monitor_data_collection_rule_association" "this_rule_associati
 The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
+
+- <a name="requirement_azuread"></a> [azuread](#requirement\_azuread) (~> 2.15)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 

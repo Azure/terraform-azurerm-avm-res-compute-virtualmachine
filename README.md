@@ -56,6 +56,7 @@ The following resources are used by this module:
 - [azurerm_virtual_machine_extension.this_extension](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
 - [azurerm_virtual_machine_extension.this_extension_1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
 - [azurerm_virtual_machine_extension.this_extension_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
+- [azurerm_virtual_machine_run_command.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_run_command) (resource)
 - [azurerm_windows_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/windows_virtual_machine) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
@@ -386,7 +387,7 @@ Description: This object describes the backup configuration to use for this VM i
 - `<map_key>` - An arbitrary map key to avoid terraform issues with know before apply challenges
   - `recovery_vault_resource_id - (Required) - The Azure Resource ID of the recovery services vault where the backup will be stored.
   - `resource\_group\_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV resource group name will be extracted from the RSV resource id. The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
-  - `recovery\_vault\_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV information will be pulled from the RSV resource id.The name of the recovery services vault where the backup will be stored.
+  - `recovery\_vault\_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV information will be pulled from the RSV resource id. The name of the recovery services vault where the backup will be stored.
   - `backup\_policy\_resource\_id` - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
   - `exclude\_disk\_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection. Only one of `exclude\_disk\_luns` or `include\_disk\_luns` can be set. If both are set then only the `exclude\_disk\_luns` value will be used.
   - `include\_disk\_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection. Only one of `exclude\_disk\_luns` or `include\_disk\_luns` can be set. If both are set then only the `exclude\_disk\_luns` value will be used.
@@ -1293,6 +1294,108 @@ map(object({
     principal_type                         = optional(string, null)
     }
   ))
+```
+
+Default: `{}`
+
+### <a name="input_run_commands"></a> [run\_commands](#input\_run\_commands)
+
+Description: The `run_commands` variable defines the configuration for Virtual Machine Run Commands. Note that the run command configuration is split into two parts, the `run_commands` and `run_commands_secrets` variables. Ensure that the map keys match when using both variables.  
+The following arguments are supported:
+
+ - `location` (Required): The Azure Region where the Virtual Machine Run Command should exist. Changing this forces a new Virtual Machine Run Command to be created.
+ - `name` (Required): Specifies the name of this Virtual Machine Run Command. Changing this forces a new Virtual Machine Run Command to be created.
+ - `source` (Required): A source block as defined below. The source of the run command script.
+ - `error_blob_managed_identity` (Optional): An error\_blob\_managed\_identity block as defined below. User-assigned managed Identity that has access to errorBlobUri storage blob.
+ - `error_blob_uri` (Optional): Specifies the Azure storage blob where script error stream will be uploaded.
+ - `output_blob_managed_identity` (Optional): An output\_blob\_managed\_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.
+ - `output_blob_uri` (Optional): Specifies the Azure storage blob where script output stream will be uploaded. It can be basic blob URI with SAS token.
+ - `parameter` (Optional): A list of parameter blocks as defined below. The parameters used by the script.
+ - `protected_parameter` (Optional): A list of protected\_parameter blocks as defined below. The protected parameters used by the script.
+ - `tags` (Optional): A mapping of tags which should be assigned to the Virtual Machine Run Command.
+
+ An error\_blob\_managed\_identity block supports the following arguments:
+ - `client_id` (Optional): The client ID of the managed identity.
+ - `object_id` (Optional): The object ID of the managed identity.
+
+ An output\_blob\_managed\_identity block supports the following arguments:
+ - `client_id` (Optional): The client ID of the managed identity.
+ - `object_id` (Optional): The object ID of the managed identity.
+
+ A parameter block supports the following arguments:
+ - `name` (Required): The run parameter name.
+ - `value` (Required): The run parameter value.
+
+ A script\_uri\_managed\_identity block supports the following arguments:
+ - `client_id` (Optional): The client ID of the managed identity.
+ - `object_id` (Optional): The object ID of the managed identity.
+
+ A source block supports the following arguments:
+ - `command_id` (Optional)
+ - `script` (Optional)
+ - `script_uri` (Optional)
+ - `script_uri_managed_identity` (Optional): A script\_uri\_managed\_identity block as defined above.
+
+Type:
+
+```hcl
+map(object({
+    location = string
+    name     = string
+    source = object({
+      command_id = optional(string)
+      script     = optional(string)
+      script_uri = optional(string)
+      script_uri_managed_identity = optional(object({
+        client_id = optional(string)
+        object_id = optional(string)
+      }))
+    })
+    error_blob_managed_identity = optional(object({
+      client_id = optional(string)
+      object_id = optional(string)
+    }))
+    error_blob_uri = optional(string)
+    output_blob_managed_identity = optional(object({
+      client_id = optional(string)
+      object_id = optional(string)
+    }))
+    output_blob_uri = optional(string)
+    parameters = optional(list(object({
+      name  = string
+      value = string
+    })), [])
+
+    tags = optional(map(string))
+  }))
+```
+
+Default: `{}`
+
+### <a name="input_run_commands_secrets"></a> [run\_commands\_secrets](#input\_run\_commands\_secrets)
+
+Description: The `run_commands_secrets` variable defines the configuration for Virtual Machine Run Command Sensitive values. This requires that the `run_commands_secrets` map key match the `run_commands` map key.   
+The following arguments are supported:
+
+ - `protected_parameters` (Optional): A list of protected\_parameter blocks as defined below. The protected parameters used by the script.
+ - `run_as_password` (Optional): Specifies the user account password on the VM when executing the Virtual Machine Run Command.
+ - `run_as_user` (Optional): Specifies the user account on the VM when executing the Virtual Machine Run Command.
+
+ A protected\_parameter block supports the following arguments:
+ - `name` (Required): The run parameter name.
+ - `value` (Required): The run parameter value.
+
+Type:
+
+```hcl
+map(object({
+    protected_parameters = optional(list(object({
+      name  = string
+      value = string
+    })), [])
+    run_as_password = optional(string)
+    run_as_user     = optional(string)
+  }))
 ```
 
 Default: `{}`

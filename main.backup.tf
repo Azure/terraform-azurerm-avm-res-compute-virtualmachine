@@ -39,7 +39,7 @@ locals {
     sourceResourceId  = local.virtualmachine_resource_id
     policyId          = value.backup_policy_resource_id
     containerName     = "iaasvmcontainerv2;${var.resource_group_name};${var.name}"
-    policyName        = "${basename(value.backup_policy_resource_id)}"
+    policyName        = basename(value.backup_policy_resource_id)
     }
   }
   rsv_resource_group = { for key, value in var.azure_backup_configurations : key => try(split("/", split("resourceGroups/", value.recovery_vault_resource_id)[1])[0], null) }
