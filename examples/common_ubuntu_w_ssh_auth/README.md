@@ -155,6 +155,7 @@ resource "azurerm_resource_group" "this_rg_secondary" {
   tags     = local.tags
 }
 
+/* #uncomment these resources to enable bastion
 resource "azurerm_public_ip" "bastionpip" {
   allocation_method   = "Static"
   location            = azurerm_resource_group.this_rg.location
@@ -174,6 +175,7 @@ resource "azurerm_bastion_host" "bastion" {
     subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
+*/
 
 data "azurerm_client_config" "current" {}
 
@@ -417,11 +419,9 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_bastion_host.bastion](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/bastion_host) (resource)
 - [azurerm_disk_encryption_set.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/disk_encryption_set) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
-- [azurerm_public_ip.bastionpip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_resource_group.this_rg_secondary](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_user_assigned_identity.example_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)

@@ -133,6 +133,7 @@ resource "azurerm_resource_group" "this_rg_secondary" {
   tags     = local.tags
 }
 
+/* #uncomment these resources to enable bastion
 resource "azurerm_public_ip" "bastionpip" {
   allocation_method   = "Static"
   location            = azurerm_resource_group.this_rg.location
@@ -152,6 +153,7 @@ resource "azurerm_bastion_host" "bastion" {
     subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
+*/
 
 data "azurerm_client_config" "current" {}
 

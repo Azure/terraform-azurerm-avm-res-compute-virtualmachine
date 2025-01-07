@@ -143,6 +143,7 @@ module "vnet" {
   }
 }
 
+/* #uncomment these resources to enable bastion
 resource "azurerm_public_ip" "bastionpip" {
   allocation_method   = "Static"
   location            = azurerm_resource_group.this_rg.location
@@ -162,6 +163,7 @@ resource "azurerm_bastion_host" "bastion" {
     subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
+*/
 
 data "azurerm_client_config" "current" {}
 
@@ -282,8 +284,6 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_bastion_host.bastion](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/bastion_host) (resource)
-- [azurerm_public_ip.bastionpip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_user_assigned_identity.example_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)

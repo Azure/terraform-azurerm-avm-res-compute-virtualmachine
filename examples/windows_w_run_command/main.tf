@@ -123,6 +123,7 @@ module "vnet" {
   }
 }
 
+/*
 #uncomment this block to enable bastion host
 resource "azurerm_public_ip" "bastionpip" {
   allocation_method   = "Static"
@@ -143,7 +144,7 @@ resource "azurerm_bastion_host" "bastion" {
     subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
-
+*/
 
 data "azurerm_client_config" "current" {}
 
@@ -228,38 +229,6 @@ resource "azurerm_role_assignment" "this" {
   principal_id         = azurerm_user_assigned_identity.example_identity.principal_id
   scope                = azurerm_storage_account.this.id
   role_definition_name = "Storage Blob Data Contributor"
-}
-
-data "azurerm_storage_account_sas" "this" {
-  connection_string = azurerm_storage_account.this.primary_connection_string
-  expiry            = timeadd(timestamp(), "1h")
-  start             = timestamp()
-  https_only        = true
-  signed_version    = "2019-10-10"
-
-  permissions {
-    add     = true
-    create  = true
-    delete  = false
-    filter  = false
-    list    = false
-    process = false
-    read    = true
-    tag     = false
-    update  = false
-    write   = true
-  }
-  resource_types {
-    container = false
-    object    = true
-    service   = false
-  }
-  services {
-    blob  = true
-    file  = false
-    queue = false
-    table = false
-  }
 }
 
 resource "azurerm_user_assigned_identity" "example_identity" {
