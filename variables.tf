@@ -658,7 +658,7 @@ Example Inputs:
 ```hcl
 #custom script extension example - linux
 extensions = {
-  {
+  custom_script_extension_linux = {
     name = "CustomScriptExtension"
     publisher = "Microsoft.Azure.Extensions"
     type = "CustomScript"
@@ -673,7 +673,7 @@ extensions = {
 
 #custom script extension example - windows
 extensions = {
-  {
+  custom_script_extension_windows = {
     name = "CustomScriptExtension"
     publisher = "Microsoft.Compute"
     type = "CustomScriptExtension"
