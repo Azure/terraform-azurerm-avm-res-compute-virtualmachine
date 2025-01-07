@@ -1,6 +1,10 @@
 terraform {
   required_version = "~> 1.6"
   required_providers {
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.15"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116, < 5.0"
@@ -37,7 +41,7 @@ locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
   deployment_region = "canadacentral" #temporarily pinning on single region 
   tags = {
-    scenario = "Default"
+    scenario = "WAF example"
   }
 }
 
@@ -53,8 +57,9 @@ resource "random_integer" "zone_index" {
 
 resource "azurerm_resource_group" "this_rg" {
   location = local.deployment_region
-  name     = module.naming.resource_group.name_unique
-  tags     = local.tags
+  #name     = module.naming.resource_group.name_unique
+  name = "Waf-Test-RG"
+  tags = local.tags
 }
 
 module "vm_sku" {
@@ -155,6 +160,10 @@ resource "azurerm_user_assigned_identity" "example_identity" {
   tags                = local.tags
 }
 
+data "azuread_service_principal" "backup_service_app" {
+  display_name = "Backup Management Service"
+}
+
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
@@ -173,6 +182,14 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Administrator"
       principal_id               = data.azurerm_client_config.current.object_id
+    }
+    backup_vault_identity = {
+      role_definition_id_or_name = "Key Vault Secrets Officer"
+      principal_id               = azurerm_recovery_services_vault.test_vault.identity[0].principal_id
+    }
+    backup_mgmt_service = {
+      role_definition_id_or_name = "Key Vault Administrator"
+      principal_id               = data.azuread_service_principal.backup_service_app.object_id
     }
   }
 
@@ -197,19 +214,75 @@ data "azurerm_key_vault" "this" {
   resource_group_name = azurerm_resource_group.this_rg.name
 }
 
+resource "azurerm_recovery_services_vault" "test_vault" {
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.recovery_services_vault.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  sku                 = "Standard"
+  soft_delete_enabled = false
+  storage_mode_type   = "LocallyRedundant"
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+resource "azurerm_backup_policy_vm" "test_policy" {
+  name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
+  recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
+  resource_group_name = azurerm_resource_group.this_rg.name
+
+  backup {
+    frequency = "Daily"
+    time      = "23:00"
+  }
+  retention_daily {
+    count = 10
+  }
+}
+
+resource "azurerm_maintenance_configuration" "test_maintenance_config" {
+  location                 = azurerm_resource_group.this_rg.location
+  name                     = "${module.naming.virtual_machine.name_unique}-test-maint-config"
+  resource_group_name      = azurerm_resource_group.this_rg.name
+  scope                    = "InGuestPatch"
+  in_guest_user_patch_mode = "User"
+
+  install_patches {
+    reboot = "Always"
+
+    windows {
+      classifications_to_include = ["Critical", "Security", "UpdateRollup"]
+    }
+  }
+  window {
+    start_date_time = formatdate("YYYY-MM-DD hh:mm", timeadd(timestamp(), "30m"))
+    time_zone       = "Pacific Standard Time"
+    duration        = "04:00"
+    recur_every     = "Month Second Friday"
+  }
+
+  lifecycle {
+    ignore_changes = [window[0].start_date_time]
+  }
+}
+
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
 
-  enable_telemetry           = var.enable_telemetry
-  location                   = azurerm_resource_group.this_rg.location
-  resource_group_name        = azurerm_resource_group.this_rg.name
-  os_type                    = "Windows"
-  name                       = module.naming.virtual_machine.name_unique
-  sku_size                   = module.vm_sku.sku
-  zone                       = random_integer.zone_index.result
-  encryption_at_host_enabled = false
+  enable_telemetry                                       = var.enable_telemetry
+  location                                               = azurerm_resource_group.this_rg.location
+  resource_group_name                                    = azurerm_resource_group.this_rg.name
+  os_type                                                = "Windows"
+  name                                                   = module.naming.virtual_machine.name_unique
+  sku_size                                               = module.vm_sku.sku
+  zone                                                   = random_integer.zone_index.result
+  encryption_at_host_enabled                             = false
+  patch_mode                                             = "AutomaticByPlatform"
+  patch_assessment_mode                                  = "AutomaticByPlatform"
+  bypass_platform_safety_checks_on_user_schedule_enabled = true
 
   generated_secrets_key_vault_secret_config = {
     key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
@@ -220,6 +293,19 @@ module "testvm" {
     offer     = "WindowsServer"
     sku       = "2022-datacenter-g2"
     version   = "latest"
+  }
+
+  azure_backup_configurations = {
+    backup_config = {
+      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
+      recovery_vault_name        = azurerm_recovery_services_vault.test_vault.name
+      resource_group_name        = azurerm_recovery_services_vault.test_vault.resource_group_name
+      backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
+    }
+  }
+
+  maintenance_configuration_resource_ids = {
+    base_window = azurerm_maintenance_configuration.test_maintenance_config.id
   }
 
   managed_identities = {
@@ -263,6 +349,7 @@ module "testvm" {
       type_handler_version       = "1.2"
       auto_upgrade_minor_version = true
       automatic_upgrade_enabled  = true
+      deploy_sequence            = 1
       settings                   = null
     }
     azure_disk_encryption = {
@@ -271,6 +358,7 @@ module "testvm" {
       type                       = "AzureDiskEncryption"
       type_handler_version       = "2.2"
       auto_upgrade_minor_version = true
+      deploy_sequence            = 2
       settings                   = <<SETTINGS
           {
               "EncryptionOperation": "EnableEncryption",
@@ -280,6 +368,15 @@ module "testvm" {
               "VolumeType": "All"
           }
       SETTINGS
+    }
+    guest_configuration = {
+      name                       = "AzurePolicyforWindows"
+      publisher                  = "Microsoft.GuestConfiguration"
+      type                       = "ConfigurationforWindows"
+      type_handler_version       = "1.0"
+      auto_upgrade_minor_version = true
+      deploy_sequence            = 3
+      settings                   = null
     }
   }
 

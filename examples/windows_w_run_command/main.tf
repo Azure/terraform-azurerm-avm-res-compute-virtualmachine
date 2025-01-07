@@ -37,7 +37,7 @@ locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
   deployment_region = "canadacentral" #temporarily pinning on single region 
   tags = {
-    scenario = "Default"
+    scenario = "Run Command"
   }
 }
 
@@ -123,37 +123,29 @@ module "vnet" {
   }
 }
 
-/*
-# Uncomment this section if you would like to include a bastion resource with this example.
+#uncomment this block to enable bastion host
 resource "azurerm_public_ip" "bastionpip" {
-  name                = module.naming.public_ip.name_unique
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
   allocation_method   = "Static"
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.public_ip.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
 }
 
 resource "azurerm_bastion_host" "bastion" {
-  name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.bastion_host.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
 
   ip_configuration {
     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
-    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
     public_ip_address_id = azurerm_public_ip.bastionpip.id
+    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
-*/
+
 
 data "azurerm_client_config" "current" {}
-
-resource "azurerm_user_assigned_identity" "test" {
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  tags                = local.tags
-}
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
@@ -173,15 +165,6 @@ module "avm_res_keyvault_vault" {
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
     }
-    deployment_user_keys = { #give the deployment user access to keys
-      role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = data.azurerm_client_config.current.object_id
-    }
-    user_managed_identity_keys = { #give the user assigned managed identity for the disk encryption set access to keys
-      role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = azurerm_user_assigned_identity.test.principal_id
-      principal_type             = "ServicePrincipal"
-    }
   }
 
   wait_for_rbac_before_key_operations = {
@@ -194,35 +177,106 @@ module "avm_res_keyvault_vault" {
 
   tags = local.tags
 
-  keys = {
-    des_key = {
-      name     = "des-disk-key"
-      key_type = "RSA"
-      key_size = 2048
-
-      key_opts = [
-        "decrypt",
-        "encrypt",
-        "sign",
-        "unwrapKey",
-        "verify",
-        "wrapKey",
-      ]
+  secrets = {
+    admin_password = {
+      name = "admin-password"
     }
+  }
+
+  secrets_value = {
+    admin_password = random_password.admin_password.result
   }
 }
 
-resource "azurerm_disk_encryption_set" "this" {
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.disk_encryption_set.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  key_vault_key_id    = module.avm_res_keyvault_vault.keys_resource_ids.des_key.id
-  tags                = local.tags
+resource "azurerm_storage_account" "this" {
+  account_replication_type = "LRS"
+  account_tier             = "Standard"
+  location                 = azurerm_resource_group.this_rg.location
+  name                     = "avmresstorage${random_integer.region_index.result}"
+  resource_group_name      = azurerm_resource_group.this_rg.name
+}
 
-  identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.test.id]
+resource "azurerm_storage_container" "this" {
+  name                  = "example-sc"
+  storage_account_name  = azurerm_storage_account.this.name
+  container_access_type = "blob"
+}
+
+resource "azurerm_storage_blob" "example1" {
+  name                   = "script1"
+  storage_account_name   = azurerm_storage_account.this.name
+  storage_container_name = azurerm_storage_container.this.name
+  type                   = "Block"
+  source_content         = "echo hello world"
+}
+
+resource "azurerm_storage_blob" "example2" {
+  name                   = "output"
+  storage_account_name   = azurerm_storage_account.this.name
+  storage_container_name = azurerm_storage_container.this.name
+  type                   = "Append"
+}
+
+resource "azurerm_storage_blob" "example3" {
+  name                   = "error"
+  storage_account_name   = azurerm_storage_account.this.name
+  storage_container_name = azurerm_storage_container.this.name
+  type                   = "Append"
+}
+
+resource "azurerm_role_assignment" "this" {
+  principal_id         = azurerm_user_assigned_identity.example_identity.principal_id
+  scope                = azurerm_storage_account.this.id
+  role_definition_name = "Storage Blob Data Contributor"
+}
+
+data "azurerm_storage_account_sas" "this" {
+  connection_string = azurerm_storage_account.this.primary_connection_string
+  expiry            = timeadd(timestamp(), "1h")
+  start             = timestamp()
+  https_only        = true
+  signed_version    = "2019-10-10"
+
+  permissions {
+    add     = true
+    create  = true
+    delete  = false
+    filter  = false
+    list    = false
+    process = false
+    read    = true
+    tag     = false
+    update  = false
+    write   = true
   }
+  resource_types {
+    container = false
+    object    = true
+    service   = false
+  }
+  services {
+    blob  = true
+    file  = false
+    queue = false
+    table = false
+  }
+}
+
+resource "azurerm_user_assigned_identity" "example_identity" {
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.user_assigned_identity.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  tags                = local.tags
+}
+
+resource "random_password" "admin_password" {
+  length           = 22
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
+  min_upper        = 2
+  override_special = "!#$%&()*+,-./:;<=>?@[]^_{|}~"
+  special          = true
 }
 
 module "testvm" {
@@ -230,23 +284,26 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
 
-  enable_telemetry           = var.enable_telemetry
-  location                   = azurerm_resource_group.this_rg.location
-  resource_group_name        = azurerm_resource_group.this_rg.name
-  os_type                    = "Windows"
-  name                       = module.naming.virtual_machine.name_unique
-  sku_size                   = module.vm_sku.sku
-  encryption_at_host_enabled = true
-  zone                       = random_integer.zone_index.result
+  admin_username                     = "azureuser"
+  admin_password                     = random_password.admin_password.result
+  generate_admin_password_or_ssh_key = false
+  enable_telemetry                   = var.enable_telemetry
+  location                           = azurerm_resource_group.this_rg.location
+  resource_group_name                = azurerm_resource_group.this_rg.name
+  os_type                            = "Windows"
+  name                               = module.naming.virtual_machine.name_unique
+  sku_size                           = module.vm_sku.sku
+  encryption_at_host_enabled         = true
+  zone                               = random_integer.zone_index.result
 
-  generated_secrets_key_vault_secret_config = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  managed_identities = {
+    system_assigned            = true
+    user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
   }
 
   os_disk = {
-    caching                = "ReadWrite"
-    storage_account_type   = "Premium_LRS"
-    disk_encryption_set_id = azurerm_disk_encryption_set.this.id
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
   }
 
   source_image_reference = {
@@ -254,6 +311,45 @@ module "testvm" {
     offer     = "WindowsServer"
     sku       = "2022-datacenter-g2"
     version   = "latest"
+  }
+
+  run_commands = {
+    test_example_simple = {
+      location = azurerm_resource_group.this_rg.location
+      name     = "example-command"
+      source = {
+        script = "echo Hello World"
+      }
+
+      tags = local.tags
+    }
+
+    test_example_from_storage = {
+      location        = azurerm_resource_group.this_rg.location
+      name            = "example-command-storage"
+      error_blob_uri  = azurerm_storage_blob.example3.url
+      output_blob_uri = azurerm_storage_blob.example2.url
+      source = {
+        script_uri = azurerm_storage_blob.example1.url
+      }
+
+      error_blob_managed_identity = {
+        client_id = azurerm_user_assigned_identity.example_identity.client_id
+      }
+
+      output_blob_managed_identity = {
+        client_id = azurerm_user_assigned_identity.example_identity.client_id
+      }
+
+      tags = local.tags
+    }
+  }
+
+  run_commands_secrets = {
+    test_example_from_storage = {
+      run_as_password = random_password.admin_password.result
+      run_as_user     = "azureuser"
+    }
   }
 
   network_interfaces = {
@@ -268,21 +364,8 @@ module "testvm" {
     }
   }
 
-  data_disk_managed_disks = {
-    disk1 = {
-      name                   = "${module.naming.managed_disk.name_unique}-lun0"
-      storage_account_type   = "Premium_LRS"
-      lun                    = 0
-      caching                = "ReadWrite"
-      disk_size_gb           = 32
-      disk_encryption_set_id = azurerm_disk_encryption_set.this.id
-    }
-  }
+  tags = local.tags
 
-  tags = {
-    scenario = "windows_w_encryption_at_host"
-  }
-
-  depends_on = [module.avm_res_keyvault_vault]
+  depends_on = [module.avm_res_keyvault_vault, azurerm_user_assigned_identity.example_identity, azurerm_role_assignment.this]
 
 }

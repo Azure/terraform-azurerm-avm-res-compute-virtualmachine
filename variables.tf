@@ -1,3 +1,7 @@
+# The `run_commands` variable defines the configuration for Virtual Machine Run Commands in Azure.
+# 
+# The following arguments are supported:
+
 ########## Required variables
 variable "location" {
   type        = string
@@ -300,32 +304,33 @@ variable "availability_set_resource_id" {
 
 variable "azure_backup_configurations" {
   type = map(object({
-    resource_group_name       = optional(string, null)
-    recovery_vault_name       = string
-    backup_policy_resource_id = optional(string, null)
-    exclude_disk_luns         = optional(list(number), null)
-    include_disk_luns         = optional(list(number), null)
-    protection_state          = optional(string, null)
+    resource_group_name        = optional(string, null)
+    recovery_vault_name        = optional(string, null)
+    recovery_vault_resource_id = string
+    backup_policy_resource_id  = optional(string, null)
+    exclude_disk_luns          = optional(list(number), null)
+    include_disk_luns          = optional(list(number), null)
+
   }))
   default     = {}
   description = <<DESCRIPTION
 This object describes the backup configuration to use for this VM instance. Provide the backup details for configuring the backup. It defaults to null.
 
 - `<map_key>` - An arbitrary map key to avoid terraform issues with know before apply challenges
-  - `resource_group_name` - (Optional) - The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
-  - `recovery_vault_name` - (Required) - The name of the recovery services vault where the backup will be stored.
-  - `backup_policy_resource_id`    - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
-  - `exclude_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection.
-  - `include_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection.
-  - `protection_state`    - (Optional) - Specifies the protection state of the backup. Possible values are `Invalid`, `Protected`, `ProtectionStopped`, `ProtectionError`, and `ProtectionPaused`.
+  - `recovery_vault_resource_id - (Required) - The Azure Resource ID of the recovery services vault where the backup will be stored.
+  - `resource_group_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV resource group name will be extracted from the RSV resource id. The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
+  - `recovery_vault_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV information will be pulled from the RSV resource id. The name of the recovery services vault where the backup will be stored.
+  - `backup_policy_resource_id` - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
+  - `exclude_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection. Only one of `exclude_disk_luns` or `include_disk_luns` can be set. If both are set then only the `exclude_disk_luns` value will be used.
+  - `include_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection. Only one of `exclude_disk_luns` or `include_disk_luns` can be set. If both are set then only the `exclude_disk_luns` value will be used.
+
 
 Example Input:
 azure_backup_configurations = {
   arbitrary_key = {
-    resource_group_name = azurerm_recovery_services_vault.test_vault.resource_group_name
-    recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
+    recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
     backup_policy_resource_id    = azurerm_backup_policy_vm.test_policy.id
-    exclude_disk_luns   = [1]
+    exclude_disk_luns   = [0,1]
   }
 }
 DESCRIPTION
@@ -597,7 +602,7 @@ DESCRIPTION
 
 variable "encryption_at_host_enabled" {
   type        = bool
-  default     = null
+  default     = true
   description = "(Optional) Should all of the disks (including the temp disk) attached to this Virtual Machine be encrypted by enabling Encryption at Host?"
 }
 
@@ -615,6 +620,7 @@ variable "extensions" {
     type_handler_version        = string
     auto_upgrade_minor_version  = optional(bool)
     automatic_upgrade_enabled   = optional(bool)
+    deploy_sequence             = optional(number, 3)
     failure_suppression_enabled = optional(bool, false)
     settings                    = optional(string)
     protected_settings          = optional(string)
@@ -637,6 +643,7 @@ This map of objects is used to create additional `azurerm_virtual_machine_extens
   - `type_handler_version` (Required) - The type handler version for the extension. A common value is 1.0.
   - `auto_upgrade_minor_version` (Optional) - Set this to false to avoid automatic upgrades for minor versions on the extension.  Defaults to true
   - `automatic_upgrade_enabled` (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
+  - `deploy_sequence` (Optional) - The sequence number in which the extension should be provisioned. This value allows for serialization of two extensions. Sequence numbers of 3 and higher are deployed in parallel after the first two serialized extensions. Defaults to 3 to be non-breaking for previous versions of the module.
   - `failure_suppression_enabled` (Optional) - Should failures from the extension be suppressed? Possible values are true or false. Defaults to false. Operational failures such as not connecting to the VM will not be suppressed regardless of the failure_suppression_enabled value.
   - `settings` (Optional) - The settings passed to the extension, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
   - `protected_settings` (Optional) - The protected_settings passed to the extension, like settings, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the protected_settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
@@ -650,7 +657,7 @@ Example Inputs:
 
 ```hcl
 #custom script extension example - linux
-extensions = [
+extensions = {
   {
     name = "CustomScriptExtension"
     publisher = "Microsoft.Azure.Extensions"
@@ -662,10 +669,10 @@ extensions = [
       }
     SETTINGS
   }
-]
+}
 
 #custom script extension example - windows
-extensions = [
+extensions = {
   {
     name = "CustomScriptExtension"
     publisher = "Microsoft.Compute"
@@ -688,7 +695,7 @@ extensions = [
       }
     PROTECTED_SETTINGS        
   }
-]
+}
 ```
 EXTENSIONS
   nullable    = false
@@ -1136,6 +1143,103 @@ SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS
   nullable    = false
 }
 
+variable "run_commands" {
+  type = map(object({
+    location = string
+    name     = string
+    source = object({
+      command_id = optional(string)
+      script     = optional(string)
+      script_uri = optional(string)
+      script_uri_managed_identity = optional(object({
+        client_id = optional(string)
+        object_id = optional(string)
+      }))
+    })
+    error_blob_managed_identity = optional(object({
+      client_id = optional(string)
+      object_id = optional(string)
+    }))
+    error_blob_uri = optional(string)
+    output_blob_managed_identity = optional(object({
+      client_id = optional(string)
+      object_id = optional(string)
+    }))
+    output_blob_uri = optional(string)
+    parameters = optional(list(object({
+      name  = string
+      value = string
+    })), [])
+
+    tags = optional(map(string))
+  }))
+  default     = {}
+  description = <<RUN_COMMANDS
+The `run_commands` variable defines the configuration for Virtual Machine Run Commands. Note that the run command configuration is split into two parts, the `run_commands` and `run_commands_secrets` variables. Ensure that the map keys match when using both variables.
+The following arguments are supported:
+
+ - `location` (Required): The Azure Region where the Virtual Machine Run Command should exist. Changing this forces a new Virtual Machine Run Command to be created.
+ - `name` (Required): Specifies the name of this Virtual Machine Run Command. Changing this forces a new Virtual Machine Run Command to be created.
+ - `source` (Required): A source block as defined below. The source of the run command script.
+ - `error_blob_managed_identity` (Optional): An error_blob_managed_identity block as defined below. User-assigned managed Identity that has access to errorBlobUri storage blob.
+ - `error_blob_uri` (Optional): Specifies the Azure storage blob where script error stream will be uploaded.
+ - `output_blob_managed_identity` (Optional): An output_blob_managed_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.
+ - `output_blob_uri` (Optional): Specifies the Azure storage blob where script output stream will be uploaded. It can be basic blob URI with SAS token.
+ - `parameter` (Optional): A list of parameter blocks as defined below. The parameters used by the script.
+ - `protected_parameter` (Optional): A list of protected_parameter blocks as defined below. The protected parameters used by the script.
+ - `tags` (Optional): A mapping of tags which should be assigned to the Virtual Machine Run Command.
+
+ An error_blob_managed_identity block supports the following arguments:
+ - `client_id` (Optional): The client ID of the managed identity.
+ - `object_id` (Optional): The object ID of the managed identity.
+
+ An output_blob_managed_identity block supports the following arguments:
+ - `client_id` (Optional): The client ID of the managed identity.
+ - `object_id` (Optional): The object ID of the managed identity.
+
+ A parameter block supports the following arguments:
+ - `name` (Required): The run parameter name.
+ - `value` (Required): The run parameter value.
+
+ A script_uri_managed_identity block supports the following arguments:
+ - `client_id` (Optional): The client ID of the managed identity.
+ - `object_id` (Optional): The object ID of the managed identity.
+
+ A source block supports the following arguments:
+ - `command_id` (Optional)
+ - `script` (Optional)
+ - `script_uri` (Optional)
+ - `script_uri_managed_identity` (Optional): A script_uri_managed_identity block as defined above.
+
+RUN_COMMANDS
+}
+
+variable "run_commands_secrets" {
+  type = map(object({
+    protected_parameters = optional(list(object({
+      name  = string
+      value = string
+    })), [])
+    run_as_password = optional(string)
+    run_as_user     = optional(string)
+  }))
+  default     = {}
+  description = <<RUN_COMMANDS_SECRETS
+The `run_commands_secrets` variable defines the configuration for Virtual Machine Run Command Sensitive values. This requires that the `run_commands_secrets` map key match the `run_commands` map key. 
+The following arguments are supported:
+
+ - `protected_parameters` (Optional): A list of protected_parameter blocks as defined below. The protected parameters used by the script.
+ - `run_as_password` (Optional): Specifies the user account password on the VM when executing the Virtual Machine Run Command.
+ - `run_as_user` (Optional): Specifies the user account on the VM when executing the Virtual Machine Run Command.
+
+ A protected_parameter block supports the following arguments:
+ - `name` (Required): The run parameter name.
+ - `value` (Required): The run parameter value.
+
+RUN_COMMANDS_SECRETS
+  sensitive   = true
+}
+
 variable "secrets" {
   type = list(object({
     key_vault_id = string
@@ -1337,13 +1441,15 @@ variable "virtual_machine_scale_set_resource_id" {
 
 variable "vm_additional_capabilities" {
   type = object({
-    ultra_ssd_enabled = optional(bool, false)
+    ultra_ssd_enabled  = optional(bool, false)
+    hiberation_enabled = optional(bool, null)
   })
   default     = null
   description = <<VM_ADDITIONAL_CAPABILITIES
 Object describing virtual machine additional capabilities using the following attributes:
 
 - `ultra_ssd_enabled` = (Optional) Should the capacity to enable Data Disks of the `UltraSSD_LRS` storage account type be supported on this Virtual Machine? Defaults to `false`.
+- `hibernation_enabled = (Optional) Whether to enable the hiberation capability or not.
 
 Example Inputs:
 
@@ -1353,6 +1459,12 @@ vm_additional_capabilities = {
 }
 ```
 VM_ADDITIONAL_CAPABILITIES
+}
+
+variable "vm_agent_platform_updates_enabled" {
+  type        = bool
+  default     = false
+  description = "(Optional) Specifies whether VMAgent Platform Updates is enabled. Defaults to `false`."
 }
 
 variable "vtpm_enabled" {

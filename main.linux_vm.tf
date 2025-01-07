@@ -38,6 +38,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   tags                                                   = local.tags
   user_data                                              = var.user_data
   virtual_machine_scale_set_id                           = var.virtual_machine_scale_set_resource_id
+  vm_agent_platform_updates_enabled                      = var.vm_agent_platform_updates_enabled
   vtpm_enabled                                           = var.vtpm_enabled
   zone                                                   = var.zone
 
@@ -64,7 +65,8 @@ resource "azurerm_linux_virtual_machine" "this" {
     for_each = var.vm_additional_capabilities == null ? [] : ["additional_capabilities"]
 
     content {
-      ultra_ssd_enabled = var.vm_additional_capabilities.ultra_ssd_enabled
+      hibernation_enabled = var.vm_additional_capabilities.hibernation_enabled
+      ultra_ssd_enabled   = var.vm_additional_capabilities.ultra_ssd_enabled
     }
   }
   dynamic "admin_ssh_key" {
