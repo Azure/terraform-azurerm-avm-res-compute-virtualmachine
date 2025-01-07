@@ -77,16 +77,76 @@ resource "random_integer" "zone_index" {
   min = 1
 }
 
-module "get_valid_sku_for_deployment_region" {
-  source = "../../modules/sku_selector"
-
-  deployment_region = local.deployment_region
-}
-
 resource "azurerm_resource_group" "this_rg" {
   location = local.deployment_region
   name     = module.naming.resource_group.name_unique
   tags     = local.tags
+}
+
+module "vm_sku" {
+  source  = "Azure/avm-utl-sku-finder/azapi"
+  version = "0.3.0"
+
+  location      = azurerm_resource_group.this_rg.location
+  cache_results = true
+
+  vm_filters = {
+    min_vcpus                      = 2
+    max_vcpus                      = 2
+    encryption_at_host_supported   = true
+    accelerated_networking_enabled = true
+    premium_io_supported           = true
+    location_zone                  = random_integer.zone_index.result
+  }
+
+  depends_on = [random_integer.zone_index]
+}
+
+module "natgateway" {
+  source  = "Azure/avm-res-network-natgateway/azurerm"
+  version = "0.2.0"
+
+  name                = module.naming.nat_gateway.name_unique
+  enable_telemetry    = true
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+
+  public_ips = {
+    public_ip_1 = {
+      name = "nat_gw_pip1"
+    }
+  }
+}
+
+module "vnet" {
+  source  = "Azure/avm-res-network-virtualnetwork/azurerm"
+  version = "=0.7.1"
+
+  resource_group_name = azurerm_resource_group.this_rg.name
+  address_space       = ["10.0.0.0/16"]
+  name                = module.naming.virtual_network.name_unique
+  location            = azurerm_resource_group.this_rg.location
+
+  subnets = {
+    vm_subnet_1 = {
+      name             = "${module.naming.subnet.name_unique}-1"
+      address_prefixes = ["10.0.1.0/24"]
+      nat_gateway = {
+        id = module.natgateway.resource_id
+      }
+    }
+    vm_subnet_2 = {
+      name             = "${module.naming.subnet.name_unique}-2"
+      address_prefixes = ["10.0.2.0/24"]
+      nat_gateway = {
+        id = module.natgateway.resource_id
+      }
+    }
+    AzureBastionSubnet = {
+      name             = "AzureBastionSubnet"
+      address_prefixes = ["10.0.3.0/24"]
+    }
+  }
 }
 
 resource "azurerm_resource_group" "this_rg_secondary" {
@@ -95,36 +155,7 @@ resource "azurerm_resource_group" "this_rg_secondary" {
   tags     = local.tags
 }
 
-resource "azurerm_virtual_network" "this_vnet" {
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.virtual_network.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  tags                = local.tags
-}
-
-resource "azurerm_subnet" "this_subnet_1" {
-  address_prefixes     = ["10.0.1.0/24"]
-  name                 = "${module.naming.subnet.name_unique}-1"
-  resource_group_name  = azurerm_resource_group.this_rg.name
-  virtual_network_name = azurerm_virtual_network.this_vnet.name
-}
-
-resource "azurerm_subnet" "this_subnet_2" {
-  address_prefixes     = ["10.0.2.0/24"]
-  name                 = "${module.naming.subnet.name_unique}-2"
-  resource_group_name  = azurerm_resource_group.this_rg.name
-  virtual_network_name = azurerm_virtual_network.this_vnet.name
-}
-
-#Uncomment this section if you would like to include a bastion resource with this example.
-resource "azurerm_subnet" "bastion_subnet" {
-  address_prefixes     = ["10.0.3.0/24"]
-  name                 = "AzureBastionSubnet"
-  resource_group_name  = azurerm_resource_group.this_rg.name
-  virtual_network_name = azurerm_virtual_network.this_vnet.name
-}
-
+/* #uncomment these resources to enable bastion
 resource "azurerm_public_ip" "bastionpip" {
   allocation_method   = "Static"
   location            = azurerm_resource_group.this_rg.location
@@ -141,11 +172,10 @@ resource "azurerm_bastion_host" "bastion" {
   ip_configuration {
     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
     public_ip_address_id = azurerm_public_ip.bastionpip.id
-    subnet_id            = azurerm_subnet.bastion_subnet.id
+    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
-
-
+*/
 
 data "azurerm_client_config" "current" {}
 
@@ -269,7 +299,7 @@ module "testvm" {
   name                               = module.naming.virtual_machine.name_unique
   resource_group_name                = azurerm_resource_group.this_rg.name
   os_type                            = "Linux"
-  sku_size                           = module.get_valid_sku_for_deployment_region.sku
+  sku_size                           = module.vm_sku.sku
   zone                               = random_integer.zone_index.result
 
   admin_ssh_keys = [
@@ -316,7 +346,7 @@ module "testvm" {
       ip_configurations = {
         ip_configuration_1 = {
           name                          = "${module.naming.network_interface.name_unique}-nic1-ipconfig1"
-          private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
         }
       }
       resource_group_name = azurerm_resource_group.this_rg_secondary.name
@@ -327,7 +357,7 @@ module "testvm" {
       ip_configurations = {
         ip_configuration_avs_facing = {
           name                          = "${module.naming.network_interface.name_unique}-nic2-ipconfig1"
-          private_ip_subnet_resource_id = azurerm_subnet.this_subnet_2.id
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_2"].resource_id
         }
       }
     }
@@ -389,18 +419,12 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_bastion_host.bastion](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/bastion_host) (resource)
 - [azurerm_disk_encryption_set.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/disk_encryption_set) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
-- [azurerm_public_ip.bastionpip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_resource_group.this_rg_secondary](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_subnet.bastion_subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_subnet.this_subnet_1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_subnet.this_subnet_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_user_assigned_identity.example_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
-- [azurerm_virtual_network.this_vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [tls_private_key.this](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) (resource)
@@ -440,17 +464,17 @@ Source: Azure/avm-res-keyvault-vault/azurerm
 
 Version: =0.9.1
 
-### <a name="module_get_valid_sku_for_deployment_region"></a> [get\_valid\_sku\_for\_deployment\_region](#module\_get\_valid\_sku\_for\_deployment\_region)
-
-Source: ../../modules/sku_selector
-
-Version:
-
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
 Source: Azure/naming/azurerm
 
 Version: ~> 0.4
+
+### <a name="module_natgateway"></a> [natgateway](#module\_natgateway)
+
+Source: Azure/avm-res-network-natgateway/azurerm
+
+Version: 0.2.0
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
@@ -463,6 +487,18 @@ Version: 0.3.0
 Source: ../../
 
 Version:
+
+### <a name="module_vm_sku"></a> [vm\_sku](#module\_vm\_sku)
+
+Source: Azure/avm-utl-sku-finder/azapi
+
+Version: 0.3.0
+
+### <a name="module_vnet"></a> [vnet](#module\_vnet)
+
+Source: Azure/avm-res-network-virtualnetwork/azurerm
+
+Version: =0.7.1
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

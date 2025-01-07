@@ -51,56 +51,79 @@ resource "random_integer" "zone_index" {
   min = 1
 }
 
-module "get_valid_sku_for_deployment_region" {
-  source = "../../modules/sku_selector"
-
-  deployment_region = local.deployment_region
-}
-
 resource "azurerm_resource_group" "this_rg" {
   location = local.deployment_region
   name     = module.naming.resource_group.name_unique
   tags     = local.tags
 }
 
-resource "azurerm_virtual_network" "this_vnet" {
-  address_space       = ["10.0.0.0/16"]
+module "vm_sku" {
+  source  = "Azure/avm-utl-sku-finder/azapi"
+  version = "0.3.0"
+
+  location      = azurerm_resource_group.this_rg.location
+  cache_results = true
+
+  vm_filters = {
+    min_vcpus                      = 2
+    max_vcpus                      = 2
+    encryption_at_host_supported   = true
+    accelerated_networking_enabled = true
+    premium_io_supported           = true
+    location_zone                  = random_integer.zone_index.result
+  }
+
+  depends_on = [random_integer.zone_index]
+}
+
+module "natgateway" {
+  source  = "Azure/avm-res-network-natgateway/azurerm"
+  version = "0.2.0"
+
+  name                = module.naming.nat_gateway.name_unique
+  enable_telemetry    = true
   location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
-  tags                = local.tags
+
+  public_ips = {
+    public_ip_1 = {
+      name = "nat_gw_pip1"
+    }
+  }
 }
 
-resource "azurerm_subnet" "this_subnet_1" {
-  address_prefixes     = ["10.0.1.0/24"]
-  name                 = "${module.naming.subnet.name_unique}-1"
-  resource_group_name  = azurerm_resource_group.this_rg.name
-  virtual_network_name = azurerm_virtual_network.this_vnet.name
+module "vnet" {
+  source  = "Azure/avm-res-network-virtualnetwork/azurerm"
+  version = "=0.7.1"
+
+  resource_group_name = azurerm_resource_group.this_rg.name
+  address_space       = ["10.0.0.0/16"]
+  name                = module.naming.virtual_network.name_unique
+  location            = azurerm_resource_group.this_rg.location
+
+  subnets = {
+    vm_subnet_1 = {
+      name             = "${module.naming.subnet.name_unique}-1"
+      address_prefixes = ["10.0.1.0/24"]
+      nat_gateway = {
+        id = module.natgateway.resource_id
+      }
+    }
+    vm_subnet_2 = {
+      name             = "${module.naming.subnet.name_unique}-2"
+      address_prefixes = ["10.0.2.0/24"]
+      nat_gateway = {
+        id = module.natgateway.resource_id
+      }
+    }
+    AzureBastionSubnet = {
+      name             = "AzureBastionSubnet"
+      address_prefixes = ["10.0.3.0/24"]
+    }
+  }
 }
 
-resource "azurerm_subnet" "this_subnet_lb" {
-  address_prefixes     = ["10.0.2.0/24"]
-  name                 = "${module.naming.subnet.name_unique}-lb"
-  resource_group_name  = azurerm_resource_group.this_rg.name
-  virtual_network_name = azurerm_virtual_network.this_vnet.name
-}
-
-resource "azurerm_subnet" "this_subnet_2" {
-  address_prefixes     = ["10.0.3.0/24"]
-  name                 = "${module.naming.subnet.name_unique}-2"
-  resource_group_name  = azurerm_resource_group.this_rg.name
-  virtual_network_name = azurerm_virtual_network.this_vnet.name
-}
-
-
-# Uncomment this section if you would like to include a bastion resource with this example.
-resource "azurerm_subnet" "bastion_subnet" {
-  address_prefixes     = ["10.0.4.0/24"]
-  name                 = "AzureBastionSubnet"
-  resource_group_name  = azurerm_resource_group.this_rg.name
-  virtual_network_name = azurerm_virtual_network.this_vnet.name
-}
-
+/* #uncomment these resources to enable bastion
 resource "azurerm_public_ip" "bastionpip" {
   allocation_method   = "Static"
   location            = azurerm_resource_group.this_rg.location
@@ -117,10 +140,10 @@ resource "azurerm_bastion_host" "bastion" {
   ip_configuration {
     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
     public_ip_address_id = azurerm_public_ip.bastionpip.id
-    subnet_id            = azurerm_subnet.bastion_subnet.id
+    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
-
+*/
 
 data "azurerm_client_config" "current" {}
 
@@ -209,10 +232,16 @@ resource "azurerm_gallery_application_version" "test_app_version" {
   }
 }
 
+resource "azurerm_resource_group" "rsv_rg" {
+  location = local.deployment_region
+  name     = "RSV-rg"
+  tags     = local.tags
+}
+
 resource "azurerm_recovery_services_vault" "test_vault" {
-  location            = azurerm_resource_group.this_rg.location
+  location            = azurerm_resource_group.rsv_rg.location
   name                = module.naming.recovery_services_vault.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
+  resource_group_name = azurerm_resource_group.rsv_rg.name
   sku                 = "Standard"
   soft_delete_enabled = false
   storage_mode_type   = "LocallyRedundant"
@@ -221,7 +250,7 @@ resource "azurerm_recovery_services_vault" "test_vault" {
 resource "azurerm_backup_policy_vm" "test_policy" {
   name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
   recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
-  resource_group_name = azurerm_resource_group.this_rg.name
+  resource_group_name = azurerm_resource_group.rsv_rg.name
 
   backup {
     frequency = "Daily"
@@ -263,13 +292,12 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
 
-  enable_telemetry    = var.enable_telemetry
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  os_type             = "Windows"
-  name                = module.naming.virtual_machine.name_unique
-  #admin_credential_key_vault_resource_id                 = module.avm_res_keyvault_vault.resource_id
-  sku_size                                               = module.get_valid_sku_for_deployment_region.sku
+  enable_telemetry                                       = var.enable_telemetry
+  location                                               = azurerm_resource_group.this_rg.location
+  resource_group_name                                    = azurerm_resource_group.this_rg.name
+  os_type                                                = "Windows"
+  name                                                   = module.naming.virtual_machine.name_unique
+  sku_size                                               = module.vm_sku.sku
   encryption_at_host_enabled                             = true
   zone                                                   = random_integer.zone_index.result
   patch_assessment_mode                                  = "AutomaticByPlatform"
@@ -285,6 +313,17 @@ module "testvm" {
     storage_account_type = "Premium_LRS"
   }
 
+
+  data_disk_managed_disks = {
+    disk1 = {
+      name                 = "${module.naming.managed_disk.name_unique}-lun0"
+      storage_account_type = "Premium_LRS"
+      lun                  = 0
+      caching              = "ReadWrite"
+      disk_size_gb         = 32
+    }
+  }
+
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
@@ -298,7 +337,7 @@ module "testvm" {
       ip_configurations = {
         ip_configuration_1 = {
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
         }
       }
       role_assignments = {
@@ -321,9 +360,11 @@ module "testvm" {
 
   azure_backup_configurations = {
     backup_config = {
-      resource_group_name       = azurerm_recovery_services_vault.test_vault.resource_group_name
-      recovery_vault_name       = azurerm_recovery_services_vault.test_vault.name
-      backup_policy_resource_id = azurerm_backup_policy_vm.test_policy.id
+      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
+      recovery_vault_name        = azurerm_recovery_services_vault.test_vault.name
+      resource_group_name        = azurerm_recovery_services_vault.test_vault.resource_group_name
+      backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
+      exclude_disk_luns          = [0]
     }
   }
 
