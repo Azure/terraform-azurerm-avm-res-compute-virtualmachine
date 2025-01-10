@@ -22,7 +22,7 @@ resource "azurerm_virtual_machine_extension" "this_extension" {
   }
 
   timeouts {
-   create = var.timeouts.create
+    create = var.timeouts.create
     delete = var.timeouts.delete
     read   = var.timeouts.read
     update = var.timeouts.update
