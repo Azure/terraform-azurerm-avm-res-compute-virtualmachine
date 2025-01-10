@@ -9,16 +9,16 @@ resource "azurerm_virtual_machine_run_command" "this" {
   tags               = var.tags
 
   source {
-    command_id = var.source.command_id
-    script     = var.source.script
-    script_uri = var.source.script_uri
+    command_id = var.script_source.command_id
+    script     = var.script_source.script
+    script_uri = var.script_source.script_uri
 
     dynamic "script_uri_managed_identity" {
-      for_each = var.source.script_uri_managed_identity == null ? [] : ["script_uri_managed_identity"]
+      for_each = var.script_source.script_uri_managed_identity == null ? [] : ["script_uri_managed_identity"]
 
       content {
-        client_id = var.source.script_uri_managed_identity.client_id
-        object_id = var.source.script_uri_managed_identity.object_id
+        client_id = var.script_source.script_uri_managed_identity.client_id
+        object_id = var.script_source.script_uri_managed_identity.object_id
       }
     }
   }
