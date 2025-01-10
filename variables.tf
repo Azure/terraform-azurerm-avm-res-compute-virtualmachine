@@ -1156,7 +1156,7 @@ variable "run_commands" {
     location        = string
     name            = string
     deploy_sequence = optional(number, 3)
-    source = object({
+    script_source = object({
       command_id = optional(string)
       script     = optional(string)
       script_uri = optional(string)
