@@ -13,7 +13,7 @@ resource "azurerm_virtual_machine_extension" "this_extension" {
   tags                        = var.tags
 
   dynamic "protected_settings_from_key_vault" {
-    for_each = var.protected_settings_from_key_vault != null ? [each.key] : []
+    for_each = var.protected_settings_from_key_vault != null ? [var.protected_settings_from_key_vault] : []
 
     content {
       secret_url      = var.protected_settings_from_key_vault.secret_url

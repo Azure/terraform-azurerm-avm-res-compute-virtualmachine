@@ -32,7 +32,7 @@ module "run_command" {
     azurerm_role_assignment.system_managed_identity,
     module.run_command_1,
     module.run_command_2,
-    azurerm_virtual_machine_extension.this_extension
+    module.extension
   ]
 }
 
@@ -68,7 +68,7 @@ module "run_command_1" {
     azurerm_linux_virtual_machine.this,
     azurerm_role_assignment.this_virtual_machine,
     azurerm_role_assignment.system_managed_identity,
-    azurerm_virtual_machine_extension.this_extension
+    module.extension
   ]
 }
 
@@ -105,6 +105,6 @@ module "run_command_2" {
     azurerm_role_assignment.this_virtual_machine,
     azurerm_role_assignment.system_managed_identity,
     module.run_command_1,
-    azurerm_virtual_machine_extension.this_extension
+    module.extension
   ]
 }
