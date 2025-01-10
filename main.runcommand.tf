@@ -17,10 +17,10 @@ module "run_command" {
   run_as_password              = try(var.run_commands_secrets[each.key].run_as_password, null)
 
   timeouts = {
-    create = coalesce(each.value.timeouts.create, var.timeouts.azurerm_virtual_machine_run_command.create)
-    delete = coalesce(each.value.timeouts.delete, var.timeouts.azurerm_virtual_machine_run_command.delete)
-    read   = coalesce(each.value.timeouts.read, var.timeouts.azurerm_virtual_machine_run_command.read)
-    update = coalesce(each.value.timeouts.update, var.timeouts.azurerm_virtual_machine_run_command.update)
+    create = coalesce(try(each.value.timeouts.create, null), var.timeouts.azurerm_virtual_machine_run_command.create)
+    delete = coalesce(try(each.value.timeouts.delete, null), var.timeouts.azurerm_virtual_machine_run_command.delete)
+    read   = coalesce(try(each.value.timeouts.read, null), var.timeouts.azurerm_virtual_machine_run_command.read)
+    update = coalesce(try(each.value.timeouts.update, null), var.timeouts.azurerm_virtual_machine_run_command.update)
   }
 
   tags = each.value.tags
@@ -55,10 +55,10 @@ module "run_command_1" {
   run_as_password              = try(var.run_commands_secrets[each.key].run_as_password, null)
 
   timeouts = {
-    create = coalesce(each.value.timeouts.create, var.timeouts.azurerm_virtual_machine_run_command.create)
-    delete = coalesce(each.value.timeouts.delete, var.timeouts.azurerm_virtual_machine_run_command.delete)
-    read   = coalesce(each.value.timeouts.read, var.timeouts.azurerm_virtual_machine_run_command.read)
-    update = coalesce(each.value.timeouts.update, var.timeouts.azurerm_virtual_machine_run_command.update)
+    create = coalesce(try(each.value.timeouts.create, null), var.timeouts.azurerm_virtual_machine_run_command.create)
+    delete = coalesce(try(each.value.timeouts.delete, null), var.timeouts.azurerm_virtual_machine_run_command.delete)
+    read   = coalesce(try(each.value.timeouts.read, null), var.timeouts.azurerm_virtual_machine_run_command.read)
+    update = coalesce(try(each.value.timeouts.update, null), var.timeouts.azurerm_virtual_machine_run_command.update)
   }
 
   tags = each.value.tags
@@ -91,10 +91,10 @@ module "run_command_2" {
   run_as_password              = try(var.run_commands_secrets[each.key].run_as_password, null)
 
   timeouts = {
-    create = coalesce(each.value.timeouts.create, var.timeouts.azurerm_virtual_machine_run_command.create)
-    delete = coalesce(each.value.timeouts.delete, var.timeouts.azurerm_virtual_machine_run_command.delete)
-    read   = coalesce(each.value.timeouts.read, var.timeouts.azurerm_virtual_machine_run_command.read)
-    update = coalesce(each.value.timeouts.update, var.timeouts.azurerm_virtual_machine_run_command.update)
+    create = coalesce(try(each.value.timeouts.create, null), var.timeouts.azurerm_virtual_machine_run_command.create)
+    delete = coalesce(try(each.value.timeouts.delete, null), var.timeouts.azurerm_virtual_machine_run_command.delete)
+    read   = coalesce(try(each.value.timeouts.read, null), var.timeouts.azurerm_virtual_machine_run_command.read)
+    update = coalesce(try(each.value.timeouts.update, null), var.timeouts.azurerm_virtual_machine_run_command.update)
   }
 
   tags = each.value.tags

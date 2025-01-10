@@ -54,10 +54,10 @@ module "extension_1" {
   protected_settings_from_key_vault = var.extensions[each.key].protected_settings_from_key_vault
 
   timeouts = {
-    create = coalesce(each.value.timeouts.create, var.timeouts.azurerm_virtual_machine_extension.create)
-    delete = coalesce(each.value.timeouts.delete, var.timeouts.azurerm_virtual_machine_extension.delete)
-    read   = coalesce(each.value.timeouts.read, var.timeouts.azurerm_virtual_machine_extension.read)
-    update = coalesce(each.value.timeouts.update, var.timeouts.azurerm_virtual_machine_extension.update)
+    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts.azurerm_virtual_machine_extension.create)
+    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts.azurerm_virtual_machine_extension.delete)
+    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts.azurerm_virtual_machine_extension.read)
+    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts.azurerm_virtual_machine_extension.update)
   }
 
   tags = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
@@ -88,10 +88,10 @@ module "extension_2" {
   protected_settings_from_key_vault = var.extensions[each.key].protected_settings_from_key_vault
 
   timeouts = {
-    create = coalesce(each.value.timeouts.create, var.timeouts.azurerm_virtual_machine_extension.create)
-    delete = coalesce(each.value.timeouts.delete, var.timeouts.azurerm_virtual_machine_extension.delete)
-    read   = coalesce(each.value.timeouts.read, var.timeouts.azurerm_virtual_machine_extension.read)
-    update = coalesce(each.value.timeouts.update, var.timeouts.azurerm_virtual_machine_extension.update)
+    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts.azurerm_virtual_machine_extension.create)
+    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts.azurerm_virtual_machine_extension.delete)
+    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts.azurerm_virtual_machine_extension.read)
+    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts.azurerm_virtual_machine_extension.update)
   }
 
   tags = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
