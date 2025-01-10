@@ -125,6 +125,7 @@ variable "timeouts" {
     update = optional(string)
     read = optional(string)
   })
+  default = {}
   description = <<DESCRIPTION
 An object of timeouts to apply to the creation and destruction of resources.
 
