@@ -1,4 +1,4 @@
-resource "azurerm_virtual_machine_extension" "this_extension" {
+resource "azurerm_virtual_machine_extension" "this" {
   name                        = var.name
   publisher                   = var.publisher
   type                        = var.type
