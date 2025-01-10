@@ -6,7 +6,7 @@ module "run_command" {
   name                         = each.value.name
   location                     = each.value.location
   virtualmachine_resource_id   = local.virtualmachine_resource_id
-  script_source                = each.value.source
+  script_source                = each.value.script_source
   error_blob_managed_identity  = each.value.error_blob_managed_identity
   error_blob_uri               = each.value.error_blob_uri
   output_blob_managed_identity = each.value.output_blob_managed_identity
@@ -44,7 +44,7 @@ module "run_command_1" {
   name                         = each.value.name
   location                     = each.value.location
   virtualmachine_resource_id   = local.virtualmachine_resource_id
-  script_source                = each.value.source
+  script_source                = each.value.script_source
   error_blob_managed_identity  = each.value.error_blob_managed_identity
   error_blob_uri               = each.value.error_blob_uri
   output_blob_managed_identity = each.value.output_blob_managed_identity
@@ -80,7 +80,7 @@ module "run_command_2" {
   name                         = each.value.name
   location                     = each.value.location
   virtualmachine_resource_id   = local.virtualmachine_resource_id
-  script_source                = each.value.source
+  script_source                = each.value.script_source
   error_blob_managed_identity  = each.value.error_blob_managed_identity
   error_blob_uri               = each.value.error_blob_uri
   output_blob_managed_identity = each.value.output_blob_managed_identity
