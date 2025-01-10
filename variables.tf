@@ -631,16 +631,11 @@ variable "extensions" {
       source_vault_id = string
     }))
     timeouts = optional(object({
-      create = optional(string, "30m")
-      delete = optional(string, "30m")
-      update = optional(string, "30m")
-      read   = optional(string, "5m")
-      }), {
-      create = "30m"
-      delete = "30m"
-      update = "30m"
-      read   = "5m"
-      }
+      create = optional(string)
+      delete = optional(string)
+      update = optional(string)
+      read   = optional(string)
+      })
     )
   }))
   # tflint-ignore: terraform_sensitive_variable_no_default
@@ -1186,16 +1181,11 @@ variable "run_commands" {
     })), [])
 
     timeouts = optional(object({
-      create = optional(string, "30m")
-      delete = optional(string, "30m")
-      update = optional(string, "30m")
-      read   = optional(string, "5m")
-      }), {
-      create = "30m"
-      delete = "30m"
-      update = "30m"
-      read   = "5m"
-      }
+      create = optional(string)
+      delete = optional(string)
+      update = optional(string)
+      read   = optional(string)
+      })
     )
 
     tags = optional(map(string))
