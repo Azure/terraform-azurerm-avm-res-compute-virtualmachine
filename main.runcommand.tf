@@ -110,16 +110,16 @@ module "run_command_2" {
 }
 
 moved {
-  from = azurerm_virtual_machine_run_command.this
-  to   = module.run_command.azurerm_virtual_machine_run_command.this
+  from = azurerm_virtual_machine_run_command.this[*]
+  to   = module.run_command[*].azurerm_virtual_machine_run_command.this
 }
 
 moved {
-  from = azurerm_virtual_machine_run_command.this_1
-  to   = module.run_command_1.azurerm_virtual_machine_run_command.this
+  from = azurerm_virtual_machine_run_command.this_1[*]
+  to   = module.run_command_1[*].azurerm_virtual_machine_run_command.this
 }
 
 moved {
-  from = azurerm_virtual_machine_run_command.this_2
-  to   = module.run_command_2.azurerm_virtual_machine_run_command.this
+  from = azurerm_virtual_machine_run_command.this_2[*]
+  to   = module.run_command_2[*].azurerm_virtual_machine_run_command.this
 }
