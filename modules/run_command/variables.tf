@@ -43,7 +43,7 @@ variable "error_blob_managed_identity" {
     client_id = optional(string)
     object_id = optional(string)
   })
-  default     = {}
+  default     = null
   description = <<DESCRIPTION
 (Optional): An error_blob_managed_identity block as defined below. User-assigned managed Identity that has access to errorBlobUri storage blob.
 DESCRIPTION
@@ -63,7 +63,7 @@ variable "output_blob_managed_identity" {
     client_id = optional(string)
     object_id = optional(string)
   })
-  default     = {}
+  default     = null
   description = <<DESCRIPTION
 (Optional): An output_blob_managed_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.
 DESCRIPTION
