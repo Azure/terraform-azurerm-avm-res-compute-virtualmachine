@@ -11,7 +11,7 @@ module "run_command" {
   error_blob_uri               = each.value.error_blob_uri
   output_blob_managed_identity = each.value.output_blob_managed_identity
   output_blob_uri              = each.value.output_blob_uri
-  parameters                   = each.value.parameter
+  parameters                   = each.value.parameters
   protected_parameters         = try(var.run_commands_secrets[each.key].protected_parameters, null)
   run_as_user                  = try(var.run_commands_secrets[each.key].run_as_user, null)
   run_as_password              = try(var.run_commands_secrets[each.key].run_as_password, null)
@@ -49,7 +49,7 @@ module "run_command_1" {
   error_blob_uri               = each.value.error_blob_uri
   output_blob_managed_identity = each.value.output_blob_managed_identity
   output_blob_uri              = each.value.output_blob_uri
-  parameters                   = each.value.parameter
+  parameters                   = each.value.parameters
   protected_parameters         = try(var.run_commands_secrets[each.key].protected_parameters, null)
   run_as_user                  = try(var.run_commands_secrets[each.key].run_as_user, null)
   run_as_password              = try(var.run_commands_secrets[each.key].run_as_password, null)
@@ -85,7 +85,7 @@ module "run_command_2" {
   error_blob_uri               = each.value.error_blob_uri
   output_blob_managed_identity = each.value.output_blob_managed_identity
   output_blob_uri              = each.value.output_blob_uri
-  parameters                   = each.value.parameter
+  parameters                   = each.value.parameters
   protected_parameters         = try(var.run_commands_secrets[each.key].protected_parameters, null)
   run_as_user                  = try(var.run_commands_secrets[each.key].run_as_user, null)
   run_as_password              = try(var.run_commands_secrets[each.key].run_as_password, null)
