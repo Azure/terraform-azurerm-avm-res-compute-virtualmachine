@@ -24,6 +24,13 @@ resource "azurerm_virtual_machine_extension" "this_extension" {
     }
   }
 
+  timeouts {
+    create = var.extensions[each.key].timeouts.create
+    delete = var.extensions[each.key].timeouts.delete
+    read   = var.extensions[each.key].timeouts.read
+    update = var.extensions[each.key].timeouts.update
+  }
+
   depends_on = [
     azurerm_virtual_machine_data_disk_attachment.this_linux,
     azurerm_virtual_machine_data_disk_attachment.this_windows,
@@ -58,6 +65,13 @@ resource "azurerm_virtual_machine_extension" "this_extension_1" {
     }
   }
 
+  timeouts {
+    create = var.extensions[each.key].timeouts.create
+    delete = var.extensions[each.key].timeouts.delete
+    read   = var.extensions[each.key].timeouts.read
+    update = var.extensions[each.key].timeouts.update
+  }
+
   depends_on = [
     azurerm_virtual_machine_data_disk_attachment.this_linux,
     azurerm_virtual_machine_data_disk_attachment.this_windows
@@ -88,6 +102,13 @@ resource "azurerm_virtual_machine_extension" "this_extension_2" {
       secret_url      = var.extensions[each.key].protected_settings_from_key_vault.secret_url
       source_vault_id = var.extensions[each.key].protected_settings_from_key_vault.source_vault_id
     }
+  }
+
+  timeouts {
+    create = var.extensions[each.key].timeouts.create
+    delete = var.extensions[each.key].timeouts.delete
+    read   = var.extensions[each.key].timeouts.read
+    update = var.extensions[each.key].timeouts.update
   }
 
   depends_on = [
