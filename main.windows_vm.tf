@@ -193,7 +193,12 @@ resource "azurerm_management_lock" "this_windows_virtualmachine" {
     azurerm_linux_virtual_machine.this,
     azurerm_monitor_diagnostic_setting.this_nic_diags,
     azurerm_monitor_diagnostic_setting.this_vm_diags,
-    azurerm_virtual_machine_extension.this_extension
+    module.extension,
+    module.extension_1,
+    module.extension_2,
+    module.run_command,
+    module.run_command_1,
+    module.run_command_2
   ]
 }
 
