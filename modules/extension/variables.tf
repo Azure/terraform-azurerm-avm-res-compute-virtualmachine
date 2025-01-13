@@ -1,41 +1,41 @@
 variable "name" {
   type        = string
-  nullable    = false
   description = <<DESCRIPTION
 (Required) - Set a custom name on this value if you want the guest configuration extension to have a custom name.
 DESCRIPTION
-}
-
-variable "virtualmachine_resource_id" {
-  type        = string
   nullable    = false
-  description = <<DESCRIPTION
-(Required): Specifies the resource id of the Virtual Machine to apply the Run Command to.
-DESCRIPTION
 }
 
 variable "publisher" {
   type        = string
-  nullable    = false
   description = <<DESCRIPTION
 (Required) - Configure the publisher for the extension to be deployed. The Publisher and Type of Virtual Machine Extensions can be found using the Azure CLI, via: az vm extension image list --location westus -o table.
 DESCRIPTION
+  nullable    = false
 }
 
 variable "type" {
   type        = string
-  nullable    = false
   description = <<DESCRIPTION
 (Required) - Configure the type value for the extension to be deployed. 
 DESCRIPTION
+  nullable    = false
 }
 
 variable "type_handler_version" {
   type        = string
-  nullable    = false
   description = <<DESCRIPTION
 (Required) - The type handler version for the extension. A common value is 1.0.
 DESCRIPTION
+  nullable    = false
+}
+
+variable "virtualmachine_resource_id" {
+  type        = string
+  description = <<DESCRIPTION
+(Required): Specifies the resource id of the Virtual Machine to apply the Run Command to.
+DESCRIPTION
+  nullable    = false
 }
 
 variable "auto_upgrade_minor_version" {
@@ -62,20 +62,28 @@ variable "failure_suppression_enabled" {
 DESCRIPTION
 }
 
-variable "settings" {
-  type        = string
-  default     = null
-  description = <<DESCRIPTION
-(Optional) - The settings passed to the extension, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
-DESCRIPTION
-}
-
 variable "protected_settings" {
   type        = string
   default     = null
-  sensitive   = true
   description = <<DESCRIPTION
 (Optional) - The protected_settings passed to the extension, like settings, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the protected_settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
+DESCRIPTION
+  sensitive   = true
+}
+
+variable "protected_settings_from_key_vault" {
+  type = object({
+    secret_url      = string
+    source_vault_id = string
+  })
+  default = {
+    secret_url      = null
+    source_vault_id = null
+  }
+  description = <<DESCRIPTION
+(Optional) object for protected settings.  Cannot be used with `protected_settings`
+    - `secret_url` (Required) - The Secret URL of a Key Vault Certificate. This can be sourced from the `secret_id` field within the `azurerm_key_vault_certificate` Resource.
+    - `source_vault_id` (Required) - the Azure resource ID of the key vault holding the secret
 DESCRIPTION
 }
 
@@ -87,20 +95,18 @@ variable "provision_after_extensions" {
 DESCRIPTION
 }
 
-variable "protected_settings_from_key_vault" {
-  type = object({
-    secret_url      = string
-    source_vault_id = string
-  })
-  default     = {
-    secret_url = null
-    source_vault_id = null
-  }
+variable "settings" {
+  type        = string
+  default     = null
   description = <<DESCRIPTION
-(Optional) object for protected settings.  Cannot be used with `protected_settings`
-    - `secret_url` (Required) - The Secret URL of a Key Vault Certificate. This can be sourced from the `secret_id` field within the `azurerm_key_vault_certificate` Resource.
-    - `source_vault_id` (Required) - the Azure resource ID of the key vault holding the secret
+(Optional) - The settings passed to the extension, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
 DESCRIPTION
+}
+
+variable "tags" {
+  type        = map(string)
+  default     = null
+  description = "(Optional) Tags of the resource."
 }
 
 variable "timeouts" {
@@ -110,7 +116,7 @@ variable "timeouts" {
     update = optional(string)
     read   = optional(string)
   })
-  default = {}
+  default     = {}
   description = <<DESCRIPTION
 An object of timeouts to apply to the creation and destruction of resources.
 
@@ -121,12 +127,4 @@ An object of timeouts to apply to the creation and destruction of resources.
 
 Each time duration is parsed using this function: <https://pkg.go.dev/time#ParseDuration>.
 DESCRIPTION
-}
-
-variable "tags" {
-  type        = map(string)
-  default     = {}
-  description = <<DESCRIPTION
-(Optional): A mapping of tags which should be assigned to the Virtual Machine Extensions.
-DESCRIPTION  
 }

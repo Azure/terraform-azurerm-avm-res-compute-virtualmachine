@@ -1,25 +1,17 @@
-variable "name" {
-  type        = string
-  nullable    = false
-  description = <<DESCRIPTION
-(Required): Specifies the name of this Virtual Machine Run Command. Changing this forces a new Virtual Machine Run Command to be created.
-DESCRIPTION
-}
-
 variable "location" {
   type        = string
-  nullable    = false
   description = <<DESCRIPTION
 (Required): The Azure Region where the Virtual Machine Run Command should exist. Changing this forces a new Virtual Machine Run Command to be created.
 DESCRIPTION
+  nullable    = false
 }
 
-variable "virtualmachine_resource_id" {
+variable "name" {
   type        = string
-  nullable    = false
   description = <<DESCRIPTION
-(Required): Specifies the resource id of the Virtual Machine to apply the Run Command to.
+(Required): Specifies the name of this Virtual Machine Run Command. Changing this forces a new Virtual Machine Run Command to be created.
 DESCRIPTION
+  nullable    = false
 }
 
 variable "script_source" {
@@ -32,10 +24,18 @@ variable "script_source" {
       object_id = optional(string)
     }))
   })
-  nullable    = false
   description = <<DESCRIPTION
 (Required): A source block as defined below. The source of the run command script.
 DESCRIPTION
+  nullable    = false
+}
+
+variable "virtualmachine_resource_id" {
+  type        = string
+  description = <<DESCRIPTION
+(Required): Specifies the resource id of the Virtual Machine to apply the Run Command to.
+DESCRIPTION
+  nullable    = false
 }
 
 variable "error_blob_managed_identity" {
@@ -56,7 +56,6 @@ variable "error_blob_uri" {
 (Optional): Specifies the Azure storage blob where script error stream will be uploaded. It can be basic blob URI with SAS token.
 DESCRIPTION
 }
-
 
 variable "output_blob_managed_identity" {
   type = object({
@@ -94,28 +93,34 @@ variable "protected_parameters" {
     value = string
   }))
   default     = []
-  sensitive = true
   description = <<DESCRIPTION
 (Optional): A list of protected_parameter blocks as defined below. The protected parameters used by the script.
 DESCRIPTION
-}
-
-variable "run_as_user" {
-  type = string
-  default = null
-  sensitive = true
-  description = <<DESCRIPTION
-(Optional): Specifies the user account on the VM when executing the Virtual Machine Run Command.
-DESCRIPTION
+  sensitive   = true
 }
 
 variable "run_as_password" {
-  type = string
-  default = null
-  sensitive = true
+  type        = string
+  default     = null
   description = <<DESCRIPTION
 (Optional): Specifies the user account password on the VM when executing the Virtual Machine Run Command.
 DESCRIPTION
+  sensitive   = true
+}
+
+variable "run_as_user" {
+  type        = string
+  default     = null
+  description = <<DESCRIPTION
+(Optional): Specifies the user account on the VM when executing the Virtual Machine Run Command.
+DESCRIPTION
+  sensitive   = true
+}
+
+variable "tags" {
+  type        = map(string)
+  default     = null
+  description = "(Optional) Tags of the resource."
 }
 
 variable "timeouts" {
@@ -123,9 +128,9 @@ variable "timeouts" {
     create = optional(string)
     delete = optional(string)
     update = optional(string)
-    read = optional(string)
+    read   = optional(string)
   })
-  default = {}
+  default     = {}
   description = <<DESCRIPTION
 An object of timeouts to apply to the creation and destruction of resources.
 
@@ -136,12 +141,4 @@ An object of timeouts to apply to the creation and destruction of resources.
 
 Each time duration is parsed using this function: <https://pkg.go.dev/time#ParseDuration>.
 DESCRIPTION
-}
-
-variable "tags" {
-  type = map(string)
-  default = {}
-  description = <<DESCRIPTION
-(Optional): A mapping of tags which should be assigned to the Virtual Machine Run Command.
-DESCRIPTION  
 }

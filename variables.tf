@@ -1197,7 +1197,7 @@ The following arguments are supported:
 
  - `location` (Required): The Azure Region where the Virtual Machine Run Command should exist. Changing this forces a new Virtual Machine Run Command to be created.
  - `name` (Required): Specifies the name of this Virtual Machine Run Command. Changing this forces a new Virtual Machine Run Command to be created.
- - `source` (Required): A source block as defined below. The source of the run command script.
+ - `script_source` (Required): A source block as defined below. The source of the run command script.
  - `error_blob_managed_identity` (Optional): An error_blob_managed_identity block as defined below. User-assigned managed Identity that has access to errorBlobUri storage blob.
  - `error_blob_uri` (Optional): Specifies the Azure storage blob where script error stream will be uploaded.
  - `output_blob_managed_identity` (Optional): An output_blob_managed_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.

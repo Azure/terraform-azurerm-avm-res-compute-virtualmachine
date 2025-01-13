@@ -54,7 +54,6 @@ resource "azurerm_virtual_machine_run_command" "this" {
       value = protected_parameter.value.value
     }
   }
-
   timeouts {
     create = var.timeouts.create
     delete = var.timeouts.delete

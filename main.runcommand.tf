@@ -1,5 +1,5 @@
 module "run_command" {
-  source = "./modules/run_command"
+  source = "./modules/run-command"
 
   for_each = { for k, v in var.run_commands : k => v if v.deploy_sequence >= 3 }
 
@@ -37,7 +37,7 @@ module "run_command" {
 }
 
 module "run_command_1" {
-  source = "./modules/run_command"
+  source = "./modules/run-command"
 
   for_each = { for k, v in var.run_commands : k => v if v.deploy_sequence == 1 }
 
@@ -73,7 +73,7 @@ module "run_command_1" {
 }
 
 module "run_command_2" {
-  source = "./modules/run_command"
+  source = "./modules/run-command"
 
   for_each = { for k, v in var.run_commands : k => v if v.deploy_sequence == 2 }
 
