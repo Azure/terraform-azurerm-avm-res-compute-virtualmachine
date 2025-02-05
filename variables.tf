@@ -216,7 +216,7 @@ additional_unattend_contents = [
   }
 ]
 ```
-ADDITIONAL_UNATTEND_CONTENTS  
+ADDITIONAL_UNATTEND_CONTENTS
   nullable    = false
 }
 
@@ -693,7 +693,7 @@ extensions = {
             "script location"
         ]
       }
-    PROTECTED_SETTINGS        
+    PROTECTED_SETTINGS
   }
 }
 ```
@@ -917,7 +917,7 @@ os_disk = {
   write_accelerator_enabled = true
 }
 ```
-OS_DISK  
+OS_DISK
   nullable    = false
 }
 
@@ -1139,7 +1139,7 @@ role_assignments_system_managed_identity = {
   }
 }
 ```
-SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS 
+SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS
   nullable    = false
 }
 
