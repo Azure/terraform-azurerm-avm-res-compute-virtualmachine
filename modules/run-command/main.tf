@@ -61,3 +61,13 @@ resource "azurerm_virtual_machine_run_command" "this" {
     update = var.timeouts.update
   }
 }
+
+# remove the run command after completion
+resource "azapi_resource_action" "remove_run_command" {
+  type        = "Microsoft.Compute/virtualMachines/runCommands@2024-07-01"
+  resource_id = "${var.virtualmachine_resource_id}/runCommands/${var.name}"
+
+  method      = "DELETE"
+
+  depends_on = [ azurerm_virtual_machine_run_command.this ]
+}
