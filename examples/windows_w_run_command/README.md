@@ -224,8 +224,8 @@ resource "azurerm_storage_account" "this" {
 
 resource "azurerm_storage_container" "this" {
   name                  = "example-sc"
-  storage_account_name  = azurerm_storage_account.this.name
   container_access_type = "blob"
+  storage_account_name  = azurerm_storage_account.this.name
 }
 
 resource "azurerm_storage_blob" "example1" {
@@ -311,7 +311,7 @@ module "testvm" {
     test_example_simple = {
       location = azurerm_resource_group.this_rg.location
       name     = "example-command"
-      source = {
+      script_source = {
         script = "echo Hello World"
       }
 
@@ -323,7 +323,7 @@ module "testvm" {
       name            = "example-command-storage"
       error_blob_uri  = azurerm_storage_blob.example3.url
       output_blob_uri = azurerm_storage_blob.example2.url
-      source = {
+      script_source = {
         script_uri = azurerm_storage_blob.example1.url
       }
 
