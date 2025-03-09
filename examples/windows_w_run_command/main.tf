@@ -205,8 +205,8 @@ resource "azurerm_storage_account" "this" {
 
 resource "azurerm_storage_container" "this" {
   name                  = "example-sc"
-  storage_account_name  = azurerm_storage_account.this.name
   container_access_type = "blob"
+  storage_account_name  = azurerm_storage_account.this.name
 }
 
 resource "azurerm_storage_blob" "example1" {
