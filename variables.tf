@@ -1,5 +1,5 @@
 # The `run_commands` variable defines the configuration for Virtual Machine Run Commands in Azure.
-# 
+#
 # The following arguments are supported:
 
 ########## Required variables
@@ -94,30 +94,30 @@ A map of objects representing each network virtual machine network interface
       - `name`                                                        = (Required) - A name used for this IP Configuration.
       - `app_gateway_backend_pools`                                   = (Optional) - A map defining app gateway backend pool(s) this IP configuration should be associated to.
         - `<map key>` - Use a custom map key to define each app gateway backend pool association.  This is done to handle issues with certain details not being known until after apply.
-          - `app_gateway_backend_pool_resource_id`                    = (Required) - An application gateway backend pool Azure Resource ID can be entered to join this ip configuration to the backend pool of an Application Gateway.      
+          - `app_gateway_backend_pool_resource_id`                    = (Required) - An application gateway backend pool Azure Resource ID can be entered to join this ip configuration to the backend pool of an Application Gateway.
       - `create_public_ip_address`                                    = (Optional) - Select true here to have the module create the public IP address for this IP Configuration
       - `gateway_load_balancer_frontend_ip_configuration_resource_id` = (Optional) - The Frontend IP Configuration Azure Resource ID of a Gateway SKU Load Balancer.)
-      - `is_primary_ipconfiguration`                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified. 
+      - `is_primary_ipconfiguration`                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified.
       - `load_balancer_backend_pools`                                 = (Optional) - A map defining load balancer backend pool(s) this IP configuration should be associated to.
         - `<map key>` - Use a custom map key to define each load balancer backend pool association.  This is done to handle issues with certain details not being known until after apply.
           - `load_balancer_backend_pool_resource_id`                  = (Required) - A Load Balancer backend pool Azure Resource ID can be entered to join this ip configuration to a load balancer backend pool.
       - `load_balancer_nat_rules`                                     = (Optional) - A map defining load balancer NAT rule(s) that this IP Configuration should be associated to.
-        - `<map key>` - Use a custom map key to define each load balancer NAT Rule association.  This is done to handle issues with certain details not being known until after apply.  
+        - `<map key>` - Use a custom map key to define each load balancer NAT Rule association.  This is done to handle issues with certain details not being known until after apply.
           - `load_balancer_nat_rule_resource_id`                        = (Optional) - A Load Balancer Nat Rule Azure Resource ID can be entered to associate this ip configuration to a load balancer NAT rule.
       - `private_ip_address`                                          = (Optional) - The Static IP Address which should be used. Configured when private_ip_address_allocation is set to Static
-      - `private_ip_address_allocation`                               = (Optional) - The allocation method used for the Private IP Address. Possible values are Dynamic and Static. Dynamic means "An IP is automatically assigned during creation of this Network Interface" and is the default; Static means "User supplied IP address will be used" 
-      - `private_ip_address_version`                                  = (Optional) - The IP Version to use. Possible values are IPv4 or IPv6. Defaults to IPv4.  
+      - `private_ip_address_allocation`                               = (Optional) - The allocation method used for the Private IP Address. Possible values are Dynamic and Static. Dynamic means "An IP is automatically assigned during creation of this Network Interface" and is the default; Static means "User supplied IP address will be used"
+      - `private_ip_address_version`                                  = (Optional) - The IP Version to use. Possible values are IPv4 or IPv6. Defaults to IPv4.
       - `private_ip_subnet_resource_id`                               = (Optional) - The Azure Resource ID of the Subnet where this Network Interface should be located in.
-      - `public_ip_address_resource_id`                               = (Optional) - Reference to a Public IP Address resource ID to associate with this NIC  
-  - `accelerated_networking_enabled`                                  = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.  
+      - `public_ip_address_resource_id`                               = (Optional) - Reference to a Public IP Address resource ID to associate with this NIC
+  - `accelerated_networking_enabled`                                  = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.
   - `application_security_groups`                                     = (Optional) - A map defining the Application Security Group(s) that this network interface should be a part of.
-    - `<map key>` - Use a custom map key to define each Application Security Group association.  This is done to handle issues with certain details not being known until after apply.   
+    - `<map key>` - Use a custom map key to define each Application Security Group association.  This is done to handle issues with certain details not being known until after apply.
       - `application_security_group_resource_id`                     = (Required) - The Application Security Group (ASG) Azure Resource ID for this Network Interface to be associated to.
-  - `diagnostic_settings`                                             = (Optional) - A map of objects defining the network interface resource diagnostic settings 
+  - `diagnostic_settings`                                             = (Optional) - A map of objects defining the network interface resource diagnostic settings
     - `<map key>` - Use a custom map key to define each diagnostic setting configuration
       - `name`                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
       - `event_hub_authorization_rule_resource_id` = (Optional) - The Event Hub Namespace Authorization Rule Resource ID when sending logs or metrics to an Event Hub Namespace
-      - `event_hub_name`                           = (Optional) - The Event Hub name when sending logs or metrics to an Event Hub  
+      - `event_hub_name`                           = (Optional) - The Event Hub name when sending logs or metrics to an Event Hub
       - `log_analytics_destination_type`           = (Optional) - Valid values are null, AzureDiagnostics, and Dedicated.  Defaults to null
       - `log_categories_and_groups`                = (Optional) - List of strings used to define log categories and groups. Currently not valid for the VM resource
       - `marketplace_partner_resource_id`          = (Optional) - The marketplace partner solution Azure Resource ID when sending logs or metrics to a partner integration
@@ -134,15 +134,15 @@ A map of objects representing each network virtual machine network interface
     - `<map key>` - Use a custom map key to define each network security group association.  This is done to handle issues with certain details not being known until after apply.
       - `network_security_group_resource_id` = (Optional) - The Network Security Group (NSG) Azure Resource ID used to associate this Network Interface to the NSG.
   - `resource_group_name` (Optional) - Specify a resource group name if the network interface should be created in a separate resource group from the virtual machine
-  - `role_assignments` = An optional map of objects defining role assignments on the individual network configuration resource 
-    - `<map key>` - Use a custom map key to define each role assignment configuration    
+  - `role_assignments` = An optional map of objects defining role assignments on the individual network configuration resource
+    - `<map key>` - Use a custom map key to define each role assignment configuration
       - `assign_to_child_public_ip_addresses`        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.
       - `condition`                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
       - `condition_version`                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
       - `delegated_managed_identity_resource_id`     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.
-      - `description`                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.  
+      - `description`                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.
       - `principal_id`                               = (optional) - The ID of the Principal (User, Group or Service Principal) to assign the Role Definition to. Changing this forces a new resource to be created.
-      - `role_definition_id_or_name`                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name   
+      - `role_definition_id_or_name`                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name
       - `skip_service_principal_aad_check`           = (Optional) - If the principal_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal_id is a Service Principal identity. Defaults to true.
       - `principal_type`                             = (Optional) - The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
   - `tags`                           = (Optional) - A mapping of tags to assign to the resource.
@@ -163,7 +163,7 @@ network_interfaces = {
   }
 }
 
-#Simple NIC with private and public IP address 
+#Simple NIC with private and public IP address
 network_interfaces = {
   network_interface_1 = {
     name = "testnic1"
@@ -216,7 +216,7 @@ additional_unattend_contents = [
   }
 ]
 ```
-ADDITIONAL_UNATTEND_CONTENTS  
+ADDITIONAL_UNATTEND_CONTENTS
   nullable    = false
 }
 
@@ -387,7 +387,7 @@ variable "data_disk_managed_disks" {
     create_option                             = optional(string, "Empty")
     disk_access_resource_id                   = optional(string)
     disk_attachment_create_option             = optional(string)
-    disk_encryption_set_resource_id           = optional(string) #this is currently a preview feature in the provider 
+    disk_encryption_set_resource_id           = optional(string) #this is currently a preview feature in the provider
     disk_iops_read_only                       = optional(number, null)
     disk_iops_read_write                      = optional(number, null)
     disk_mbps_read_only                       = optional(number, null)
@@ -439,17 +439,17 @@ variable "data_disk_managed_disks" {
   }))
   default     = {}
   description = <<DATA_DISK_MANAGED_DISKS
-This variable is a map of objects used to define one or more data disks for creation and attachment to the virtual machine. 
+This variable is a map of objects used to define one or more data disks for creation and attachment to the virtual machine.
 
 - `<map key>` - Use a custom map key to define each data disk
   - `caching` (Required) - Specifies the caching requirements for this Data Disk. Possible values include None, ReadOnly and ReadWrite
   - `lun` (Required) - The Logical Unit Number of the Data Disk, which needs to be unique within the Virtual Machine. Changing this forces a new resource to be created.
   - `name` (Required) - Specifies the name of the Managed Disk. Changing this forces a new resource to be created.
-  - `storage_account_type` (Required) - The type of storage to use for the managed disk. Possible values are Standard_LRS, StandardSSD_ZRS, Premium_LRS, PremiumV2_LRS, Premium_ZRS, StandardSSD_LRS or UltraSSD_LRS    
+  - `storage_account_type` (Required) - The type of storage to use for the managed disk. Possible values are Standard_LRS, StandardSSD_ZRS, Premium_LRS, PremiumV2_LRS, Premium_ZRS, StandardSSD_LRS or UltraSSD_LRS
   - `create_option` (Optional) - The method to use when creating the managed disk. Changing this forces a new resource to be created. Possible values include: 1. Import - Import a VHD file in to the managed disk (VHD specified with source_uri). 2.ImportSecure - Securely import a VHD file in to the managed disk (VHD specified with source_uri). 3. Empty - Create an empty managed disk. 4. Copy - Copy an existing managed disk or snapshot (specified with source_resource_id). 5. FromImage - Copy a Platform Image (specified with image_reference_id) 6. Restore - Set by Azure Backup or Site Recovery on a restored disk (specified with source_resource_id). 7. Upload - Upload a VHD disk with the help of SAS URL (to be used with upload_size_bytes).
-  - `disk_access_resource_id` (Optional) - The ID of the disk access resource for using private endpoints on disks. disk_access_resource_id is only supported when network_access_policy is set to AllowPrivate.    
-  - `disk_attachment_create_option` (Optional) - The disk attachment create Option of the Data Disk, such as Empty or Attach. Defaults to Attach. Changing this forces a new resource to be created. 
-  - `disk_encryption_set_resource_id` (Optional) - The resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk.   
+  - `disk_access_resource_id` (Optional) - The ID of the disk access resource for using private endpoints on disks. disk_access_resource_id is only supported when network_access_policy is set to AllowPrivate.
+  - `disk_attachment_create_option` (Optional) - The disk attachment create Option of the Data Disk, such as Empty or Attach. Defaults to Attach. Changing this forces a new resource to be created.
+  - `disk_encryption_set_resource_id` (Optional) - The resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk.
   - `disk_iops_read_only` (Optional) - The number of IOPS allowed across all VMs mounting the shared disk as read-only; only settable for UltraSSD disks and PremiumV2 disks with shared disk enabled. One operation can transfer between 4k and 256k bytes.
   - `disk_iops_read_write` (Optional) - The number of IOPS allowed for this disk; only settable for UltraSSD disks and PremiumV2 disks. One operation can transfer between 4k and 256k bytes.
   - `disk_mbps_read_only` (Optional) - The bandwidth allowed across all VMs mounting the shared disk as read-only; only settable for UltraSSD disks and PremiumV2 disks with shared disk enabled. MBps means millions of bytes per second.
@@ -479,22 +479,22 @@ This variable is a map of objects used to define one or more data disks for crea
   - `tier` (Optional) - The disk performance tier to use. Possible values are documented at https://docs.microsoft.com/azure/virtual-machines/disks-change-performance. This feature is currently supported only for premium SSDs.Changing this value is disruptive if the disk is attached to a Virtual Machine. The VM will be shut down and de-allocated as required by Azure to action the change. Terraform will attempt to start the machine again after the update if it was in a running state when the apply was started.
   - `trusted_launch_enabled` (Optional) - Specifies if Trusted Launch is enabled for the Managed Disk. Changing this forces a new resource to be created. Trusted Launch can only be enabled when create_option is FromImage or Import
   - `upload_size_bytes` (Optional) - Specifies the size of the managed disk to create in bytes. Required when create_option is Upload. The value must be equal to the source disk to be copied in bytes. Source disk size could be calculated with ls -l or wc -c. More information can be found at Copy a managed disk. Changing this forces a new resource to be created.
-  - `write_accelerator_enabled` (Optional) - Specifies if Write Accelerator is enabled on the disk. This can only be enabled on Premium_LRS managed disks with no caching and M-Series VMs. Defaults to false.        
+  - `write_accelerator_enabled` (Optional) - Specifies if Write Accelerator is enabled on the disk. This can only be enabled on Premium_LRS managed disks with no caching and M-Series VMs. Defaults to false.
   - `encryption_settings` = (Optional) List of encryption objects with the following attributes:
     -  `disk_encryption_key_vault_secret_url` (Required) - The URL to the Key Vault Secret used as the Disk Encryption Key. This can be found as the id on the azurerm_key_vault_secret resource.
     -  `disk_encryption_key_vault_resource_id` (Required) - The ID of the source Key Vault. This can be found as the id on the azurerm_key_vault resource.
     -  `key_encryption_key_vault_secret_url` (Required) - The URL to the Key Vault Key used as the Key Encryption Key. This can be found as the id on the azurerm_key_vault_key resource.
     -  `key_encryption_key_vault_resource_id` (Required) - The ID of the source Key Vault. This can be found as the id on the azurerm_key_vault resource.
-  - `role_assignments` = (Optional) - Map of role assignments to assign to this disk 
-    - `<map key>` - Use a custom map key to define each role assignment configuration assigned to the system managed identity of this virtual machine  
-      - `role_definition_id_or_name`                 = (Required) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name 
+  - `role_assignments` = (Optional) - Map of role assignments to assign to this disk
+    - `<map key>` - Use a custom map key to define each role assignment configuration assigned to the system managed identity of this virtual machine
+      - `role_definition_id_or_name`                 = (Required) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name
       - `scope_resource_id`                          = (Required) - The scope at which the System Managed Identity Role Assignment applies to, such as /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333, /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup, or /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup/providers/Microsoft.Compute/virtualMachines/myVM, or /providers/Microsoft.Management/managementGroups/myMG. Changing this forces a new resource to be created.
       - `condition`                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
       - `condition_version`                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
       - `description`                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.
       - `skip_service_principal_aad_check`           = (Optional) - If the principal_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal_id is a Service Principal identity. Defaults to true.
       - `delegated_managed_identity_resource_id`     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.
-      - `principal_type`                             = (Optional) - The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.    
+      - `principal_type`                             = (Optional) - The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
 
 Example Inputs:
 
@@ -639,7 +639,7 @@ This map of objects is used to create additional `azurerm_virtual_machine_extens
 - `<map key>` - Provide a custom key value to define each extension object
   - `name` (Required) - Set a custom name on this value if you want the guest configuration extension to have a custom name
   - `publisher` (Required) - Configure the publisher for the extension to be deployed. The Publisher and Type of Virtual Machine Extensions can be found using the Azure CLI, via: az vm extension image list --location westus -o table
-  - `type` (Required) - Configure the type value for the extension to be deployed. 
+  - `type` (Required) - Configure the type value for the extension to be deployed.
   - `type_handler_version` (Required) - The type handler version for the extension. A common value is 1.0.
   - `auto_upgrade_minor_version` (Optional) - Set this to false to avoid automatic upgrades for minor versions on the extension.  Defaults to true
   - `automatic_upgrade_enabled` (Optional) - Set this to false to avoid automatic upgrades for major versions on the extension.  Defaults to true
@@ -693,7 +693,7 @@ extensions = {
             "script location"
         ]
       }
-    PROTECTED_SETTINGS        
+    PROTECTED_SETTINGS
   }
 }
 ```
@@ -801,7 +801,7 @@ Example Inputs:
 ```hcl
 lock = {
   name = "lock-{resourcename}" # optional
-  type = "CanNotDelete" 
+  type = "CanNotDelete"
 }
 ```
 LOCK
@@ -836,7 +836,7 @@ variable "managed_identities" {
   description = <<IDENTITY
 An object that sets the managed identity configuration for the virtual machine being deployed. Be aware that capabilities such as the Azure Monitor Agent and Role Assignments require that a managed identity has been configured.
 
-- `system_assigned`            = (Optional) Specifies whether the System Assigned Managed Identity should be enabled.  Defaults to false. 
+- `system_assigned`            = (Optional) Specifies whether the System Assigned Managed Identity should be enabled.  Defaults to false.
 - `user_assigned_resource_ids` = (Optional) Specifies a set of User Assigned Managed Identity IDs to be assigned to this Virtual Machine.
 
 Example Inputs:
@@ -897,7 +897,7 @@ Required configuration values for the OS disk on the virtual machine.
 - `write_accelerator_enabled`        = (Optional) - Should Write Accelerator be Enabled for this OS Disk? Defaults to `false`. This requires that the storage_account_type is set to `Premium_LRS` and that caching is set to `None`
 - `diff_disk_settings` - An optional object defining the diff disk settings
   - `option`    = (Required) - Specifies the Ephemeral Disk Settings for the OS Disk. At this time the only possible value is `Local`. Changing this forces a new resource to be created.
-  - `placement` = (Optional) - Specifies where to store the Ephemeral Disk. Possible values are CacheDisk and ResourceDisk. Defaults to CacheDisk. Changing this forces a new resource to be created.              
+  - `placement` = (Optional) - Specifies where to store the Ephemeral Disk. Possible values are CacheDisk and ResourceDisk. Defaults to CacheDisk. Changing this forces a new resource to be created.
 
 Example Inputs:
 
@@ -917,7 +917,7 @@ os_disk = {
   write_accelerator_enabled = true
 }
 ```
-OS_DISK  
+OS_DISK
   nullable    = false
 }
 
@@ -1032,8 +1032,8 @@ This object describes the public IP configuration when creating VM's with a publ
 - `lock_level`              = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
 - `sku`                     = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Standard to support zones by default. Changing this forces a new resource to be created. When sku_tier is set to Global, sku must be set to Standard.
 - `sku_tier`                = (Optional) - The SKU tier of the Public IP. Accepted values are Global and Regional. Defaults to Regional
-- `tags`                    = (Optional) - A mapping of tags to assign to the resource.    
-  
+- `tags`                    = (Optional) - A mapping of tags to assign to the resource.
+
   Example Inputs:
 
 ```hcl
@@ -1076,12 +1076,12 @@ A map of role definitions and scopes to be assigned as part of this resources im
 
 - `<map key>` - Use a custom map key to define each role assignment configuration for this virtual machine
   - `principal_id`                               = (optional) - The ID of the Principal (User, Group or Service Principal) to assign the Role Definition to. Changing this forces a new resource to be created.
-  - `role_definition_id_or_name`                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name 
+  - `role_definition_id_or_name`                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name
   - `condition`                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
   - `condition_version`                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
   - `description`                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.
   - `skip_service_principal_aad_check`           = (Optional) - If the principal_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal_id is a Service Principal identity. Defaults to false.
-  - `delegated_managed_identity_resource_id`     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.  
+  - `delegated_managed_identity_resource_id`     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.
   - `principal_type`                             = (Optional) - The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
 
 Example Inputs:
@@ -1093,7 +1093,7 @@ role_assignments = {
     #assign a built-in role to the virtual machine
     role_definition_id_or_name                 = "Storage Blob Data Contributor"
     principal_id                               = data.azuread_client_config.current.object_id
-    description                                = "Example for assigning a role to an existing principal for the virtual machine scope"        
+    description                                = "Example for assigning a role to an existing principal for the virtual machine scope"
   }
 }
 ```
@@ -1117,8 +1117,8 @@ variable "role_assignments_system_managed_identity" {
   description = <<SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS
 A map of role definitions and scopes to be assigned as part of this resources implementation.  Two forms are supported. Assignments against this virtual machine resource scope and assignments to external resource scopes using the system managed identity.
 
-- `<map key>` - Use a custom map key to define each role assignment configuration assigned to the system managed identity of this virtual machine  
-  - `role_definition_id_or_name`                 = (Required) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name 
+- `<map key>` - Use a custom map key to define each role assignment configuration assigned to the system managed identity of this virtual machine
+  - `role_definition_id_or_name`                 = (Required) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name
   - `scope_resource_id`                          = (Required) - The scope at which the System Managed Identity Role Assignment applies to, such as /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333, /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup, or /subscriptions/0b1f6471-1bf0-4dda-aec3-111122223333/resourceGroups/myGroup/providers/Microsoft.Compute/virtualMachines/myVM, or /providers/Microsoft.Management/managementGroups/myMG. Changing this forces a new resource to be created.
   - `condition`                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
   - `condition_version`                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
@@ -1139,7 +1139,7 @@ role_assignments_system_managed_identity = {
   }
 }
 ```
-SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS 
+SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS
   nullable    = false
 }
 
@@ -1225,7 +1225,7 @@ variable "run_commands_secrets" {
   }))
   default     = {}
   description = <<RUN_COMMANDS_SECRETS
-The `run_commands_secrets` variable defines the configuration for Virtual Machine Run Command Sensitive values. This requires that the `run_commands_secrets` map key match the `run_commands` map key. 
+The `run_commands_secrets` variable defines the configuration for Virtual Machine Run Command Sensitive values. This requires that the `run_commands_secrets` map key match the `run_commands` map key.
 The following arguments are supported:
 
  - `protected_parameters` (Optional): A list of protected_parameter blocks as defined below. The protected parameters used by the script.
@@ -1441,8 +1441,8 @@ variable "virtual_machine_scale_set_resource_id" {
 
 variable "vm_additional_capabilities" {
   type = object({
-    ultra_ssd_enabled  = optional(bool, false)
-    hiberation_enabled = optional(bool, null)
+    ultra_ssd_enabled   = optional(bool, false)
+    hibernation_enabled = optional(bool, null)
   })
   default     = null
   description = <<VM_ADDITIONAL_CAPABILITIES
@@ -1485,7 +1485,7 @@ Set of objects describing the winRM listener configuration for windows VM's usin
 - `protocol`        = (Required) Specifies Specifies the protocol of listener. Possible values are `Http` or `Https`
 - `certificate_url` = (Optional) The Secret URL of a Key Vault Certificate, which must be specified when `protocol` is set to `Https`. Changing this forces a new resource to be created.
 
-Example Inputs: 
+Example Inputs:
 
 ```hcl
 #https example
@@ -1495,10 +1495,10 @@ winrm_listeners = [
   certificate_url = data.azurerm_keyvault_secret.example.secret_id
   }
 ]
-#http example 
+#http example
 winrm_listeners = [
-  { 
-    protocol = "Http" 
+  {
+    protocol = "Http"
   }
 ]
 ```
