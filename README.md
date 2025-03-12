@@ -1653,7 +1653,7 @@ Default: `null`
 
 ### <a name="input_vm_agent_platform_updates_enabled"></a> [vm\_agent\_platform\_updates\_enabled](#input\_vm\_agent\_platform\_updates\_enabled)
 
-Description: (Optional) Specifies whether VMAgent Platform Updates is enabled. Defaults to `false`.
+Description: (Optional) Note: This field is read-only in the ARM API. Leaving this in as it is included in the AzureRM provider. Currently this field is non-functional until ARM API is updated to not be readonly. Specifies whether VMAgent Platform Updates is enabled. Defaults to `false`.
 
 Type: `bool`
 

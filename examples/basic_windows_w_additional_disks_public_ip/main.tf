@@ -78,7 +78,7 @@ module "vm_sku" {
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.0"
+  version = "0.2.1"
 
   name                = module.naming.nat_gateway.name_unique
   enable_telemetry    = true
@@ -94,7 +94,7 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.7.1"
+  version = "=0.8.1"
 
   resource_group_name = azurerm_resource_group.this_rg.name
   address_space       = ["10.0.0.0/16"]
