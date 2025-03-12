@@ -57,7 +57,7 @@ module "regions" {
 
 locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
-  deployment_region = "canadacentral" #temporarily pinning on single region 
+  deployment_region = "canadacentral" #temporarily pinning on single region
   tags = {
     scenario = "Default"
   }
@@ -232,12 +232,14 @@ resource "azurerm_public_ip" "app_gw_pip" {
   name                = local.app_gw_public_ip_name
   resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
+  zones               = ["1", "2", "3"]
 }
 
 resource "azurerm_application_gateway" "network" {
   location            = azurerm_resource_group.this_rg.location
   name                = "example-appgateway"
   resource_group_name = azurerm_resource_group.this_rg.name
+  zones               = ["1", "2", "3"]
 
   backend_address_pool {
     name = local.backend_address_pool_name
