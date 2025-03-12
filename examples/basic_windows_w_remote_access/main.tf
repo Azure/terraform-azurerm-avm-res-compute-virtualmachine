@@ -35,7 +35,7 @@ module "regions" {
 locals {
   admin_username = "azureuser"
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
-  deployment_region = "canadacentral" #temporarily pinning on single region 
+  deployment_region = "canadacentral" #temporarily pinning on single region
   inline_remote_exec = [
     "schtasks /Create /TN \"\\AVM\\RotateWinRMListenerThumbprint\" /SC MINUTE /MO 1 /TR \"\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -ExecutionPolicy Bypass -Command & { . 'C:\\AzureData\\w_sc_task_rotate_winrms_cert.ps1'; Update-WinRMCertificate -CommonName 'CN=${module.naming.virtual_machine.name_unique}' -WinRmsPort ${local.winrms_port} }\" /RU \"SYSTEM\" /RL HIGHEST /F"
   ]
@@ -255,6 +255,7 @@ resource "azurerm_public_ip" "this" {
   ip_version              = "IPv4"
   sku                     = "Standard"
   sku_tier                = "Regional"
+  zones                   = ["1", "2", "3"]
 }
 
 
@@ -402,7 +403,7 @@ module "testvm" {
         }
       )
       # Troubleshooting logs - https://learn.microsoft.com/en-us/azure/virtual-machines/extensions/key-vault-windows?tabs=version3#review-logs-and-configuration
-      # more 
+      # more
     }
   }
 
