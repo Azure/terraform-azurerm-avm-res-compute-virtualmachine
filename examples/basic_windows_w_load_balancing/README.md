@@ -57,7 +57,7 @@ module "regions" {
 
 locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
-  deployment_region = "canadacentral" #temporarily pinning on single region 
+  deployment_region = "canadacentral" #temporarily pinning on single region
   tags = {
     scenario = "Default"
   }
@@ -100,7 +100,7 @@ module "vm_sku" {
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.0"
+  version = "0.2.1"
 
   name                = module.naming.nat_gateway.name_unique
   enable_telemetry    = true
@@ -116,7 +116,7 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.7.1"
+  version = "=0.8.1"
 
   resource_group_name = azurerm_resource_group.this_rg.name
   address_space       = ["10.0.0.0/16"]
@@ -232,12 +232,14 @@ resource "azurerm_public_ip" "app_gw_pip" {
   name                = local.app_gw_public_ip_name
   resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
+  zones               = ["1", "2", "3"]
 }
 
 resource "azurerm_application_gateway" "network" {
   location            = azurerm_resource_group.this_rg.location
   name                = "example-appgateway"
   resource_group_name = azurerm_resource_group.this_rg.name
+  zones               = ["1", "2", "3"]
 
   backend_address_pool {
     name = local.backend_address_pool_name
@@ -498,7 +500,7 @@ Version: ~> 0.4
 
 Source: Azure/avm-res-network-natgateway/azurerm
 
-Version: 0.2.0
+Version: 0.2.1
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
@@ -528,7 +530,7 @@ Version: 0.3.0
 
 Source: Azure/avm-res-network-virtualnetwork/azurerm
 
-Version: =0.7.1
+Version: =0.8.1
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

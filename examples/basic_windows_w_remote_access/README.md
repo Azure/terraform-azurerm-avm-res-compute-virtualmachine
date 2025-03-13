@@ -59,7 +59,7 @@ module "regions" {
 locals {
   admin_username = "azureuser"
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
-  deployment_region = "canadacentral" #temporarily pinning on single region 
+  deployment_region = "canadacentral" #temporarily pinning on single region
   inline_remote_exec = [
     "schtasks /Create /TN \"\\AVM\\RotateWinRMListenerThumbprint\" /SC MINUTE /MO 1 /TR \"\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -ExecutionPolicy Bypass -Command & { . 'C:\\AzureData\\w_sc_task_rotate_winrms_cert.ps1'; Update-WinRMCertificate -CommonName 'CN=${module.naming.virtual_machine.name_unique}' -WinRmsPort ${local.winrms_port} }\" /RU \"SYSTEM\" /RL HIGHEST /F"
   ]
@@ -107,7 +107,7 @@ module "vm_sku" {
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.0"
+  version = "0.2.1"
 
   name                = module.naming.nat_gateway.name_unique
   enable_telemetry    = true
@@ -123,7 +123,7 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.7.1"
+  version = "=0.8.1"
 
   resource_group_name = azurerm_resource_group.this_rg.name
   address_space       = ["10.0.0.0/16"]
@@ -279,6 +279,7 @@ resource "azurerm_public_ip" "this" {
   ip_version              = "IPv4"
   sku                     = "Standard"
   sku_tier                = "Regional"
+  zones                   = ["1", "2", "3"]
 }
 
 
@@ -426,7 +427,7 @@ module "testvm" {
         }
       )
       # Troubleshooting logs - https://learn.microsoft.com/en-us/azure/virtual-machines/extensions/key-vault-windows?tabs=version3#review-logs-and-configuration
-      # more 
+      # more
     }
   }
 
@@ -614,7 +615,7 @@ Version: ~> 0.4
 
 Source: Azure/avm-res-network-natgateway/azurerm
 
-Version: 0.2.0
+Version: 0.2.1
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
@@ -638,7 +639,7 @@ Version: 0.3.0
 
 Source: Azure/avm-res-network-virtualnetwork/azurerm
 
-Version: =0.7.1
+Version: =0.8.1
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

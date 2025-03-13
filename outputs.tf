@@ -61,7 +61,7 @@ output "virtual_machine_azurerm" {
   description = <<VIRTUAL_MACHINE_AZURERM
     The default attributes exported by the azurerm provider.  These are defined as a map containing the following attributes
     id                   = The Azure resource ID of the deployed virtual machine
-    identity             = { #An identity map with the following attributes        
+    identity             = { #An identity map with the following attributes
         principal_id     = The Principal ID associated with the virtual machine's system assigned managed identity
         tenant_id        = The Tenant ID associated with the virtual machine's system assigned managed identity
     }
