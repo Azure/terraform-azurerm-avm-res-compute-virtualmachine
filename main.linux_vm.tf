@@ -38,9 +38,9 @@ resource "azurerm_linux_virtual_machine" "this" {
   tags                                                   = local.tags
   user_data                                              = var.user_data
   virtual_machine_scale_set_id                           = var.virtual_machine_scale_set_resource_id
-  #vm_agent_platform_updates_enabled                      = var.vm_agent_platform_updates_enabled #uncomment this in the event that the field is corrected in ARM to not be readonly
-  vtpm_enabled = var.vtpm_enabled
-  zone         = var.zone
+  vm_agent_platform_updates_enabled                      = var.vm_agent_platform_updates_enabled
+  vtpm_enabled                                           = var.vtpm_enabled
+  zone                                                   = var.zone
 
   os_disk {
     caching                          = var.os_disk.caching
@@ -154,6 +154,12 @@ resource "azurerm_linux_virtual_machine" "this" {
     azurerm_network_interface_application_gateway_backend_address_pool_association.this,
     azurerm_network_interface_nat_rule_association.this
   ]
+
+  lifecycle {
+    ignore_changes = [
+      vm_agent_platform_updates_enabled # This is a read-only property in the API, but AzureRM provider allows it to be set. Remove this if the property becomes writable in the API.
+    ]
+  }
 }
 
 moved {
