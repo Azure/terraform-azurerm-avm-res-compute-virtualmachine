@@ -1,7 +1,5 @@
 locals {
-  admin_password_input = var.account_credentials.admin_credentials != null ? (
-    var.account_credentials.admin_credentials.password != null ? var.account_credentials.admin_credentials.password : (
-  var.admin_password != null ? var.admin_password : null)) : null
+  admin_password_input = (var.account_credentials.admin_credentials.password != null ? var.account_credentials.admin_credentials.password : ( var.admin_password != null ? var.admin_password : null))
   #set the admin password to either a generated value or the entered value
   admin_password_linux = (lower(var.os_type) == "linux") ? (
     local.password_authentication_disabled == false ? (                                                          #if os is linux and password authentication is enabled
@@ -23,8 +21,9 @@ locals {
       }
     ]
   ) : []
-  admin_ssh_key_input = var.account_credentials.admin_credentials != null ? (length(var.account_credentials.admin_credentials.ssh_keys) > 0 ? var.account_credentials.admin_credentials.ssh_keys : ( #if ssh key set in multiple places, prefer the var.account_credentials value
-  length(local.deprecated_keys) > 0 ? local.deprecated_keys : [])) : []
+  #if ssh key set in multiple places, prefer the var.account_credentials value
+  admin_ssh_key_input = (length(var.account_credentials.admin_credentials.ssh_keys) > 0 ? var.account_credentials.admin_credentials.ssh_keys : (length(local.deprecated_keys) > 0 ? local.deprecated_keys : []))
+  #set the ssh key secret value to the generated key if password authentication is disabled and no ssh key is provided.  Otherwise, set it to "no_key" to indicate that no key was provided.
   admin_ssh_key_secret_value = ((local.password_authentication_disabled == true) && (lower(var.os_type) == "linux") && length(local.admin_ssh_key_input) == 0) ? tls_private_key.this[0].private_key_pem : "no_key"
   #concat the ssh key values list
   admin_ssh_keys = concat(var.admin_ssh_keys, local.admin_ssh_key) #set this to the local after deprecation
@@ -32,7 +31,7 @@ locals {
   # 1. account_credentials.username
   # 2. admin_username
   # 3. azureuser (default value if not provided))
-  admin_username = var.admin_username != "azureuser" ? var.admin_username : (var.account_credentials.admin_credentials != null ? (var.account_credentials.admin_credentials.username != "azureuser" ? var.account_credentials.admin_credentials.username : "azureuser") : "azureuser") #both default to azureuser without input so no need for special handling.  After deprecation, set admin_username to var.account_credentials.username
+  admin_username = var.account_credentials.admin_credentials.username != "azureuser" ? var.account_credentials.admin_credentials.username : (var.admin_username != "azureuser" ? var.admin_username : "azureuser") #both default to azureuser without input so no need for special handling.  After deprecation, set admin_username to var.account_credentials.username
   #set the name for the password secret in the key vault if the key vault secret configuration is not null and there is a password input.
   credential_secret_name_password = (
     local.credentials_key_vault_config != null ? (
