@@ -197,9 +197,10 @@ variable "zone" {
 variable "account_credentials" {
   type = object({
     admin_credentials = optional(object({
-      username = optional(string, "azureuser") # Generate if not provided. Continue to set to `azureuser` if not provided
-      password = optional(string, null)        # Generate password if not provided and enabled
-      ssh_keys = optional(list(string), [])    # Generate if not provided and disable_password_authentication = true
+      username                           = optional(string, "azureuser")
+      password                           = optional(string, null)
+      ssh_keys                           = optional(list(string), [])
+      generate_admin_password_or_ssh_key = optional(bool, true) # Use of flag is required to avoid known after apply issues
     }), {})
     key_vault_configuration = optional(object({
       resource_id = string
@@ -210,8 +211,8 @@ variable "account_credentials" {
         not_before_date                = optional(string, null)
         tags                           = optional(map(string), {})
       }), {})
-    }), null)                                               #only store if not null
-    password_authentication_disabled = optional(bool, true) #only valid for linux
+    }), null)
+    password_authentication_disabled = optional(bool, true)
     #future addditional user credentials map?
   })
   default     = {}
@@ -219,20 +220,21 @@ variable "account_credentials" {
 This is the primary object for defining admin credentials for the VM. It supports both windows and linux configurations with the following logic:
 - For Both Windows and Linux:
   - If a username is provided, it will be used as the admin username, otherwise azureadmin will be the default.
-  - If password or ssh public keys are not provided, a password or ssh private key will be generated and can be accessed via outputs.
+  - If password or ssh public keys are not provided and the `var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key` flag is true (default), a password or ssh private key will be generated and can be accessed via outputs.
   - If a key vault configuration is set, the provided or generated credential objects will be stored in the key vault using the provided details.
 - For Windows:
   - Password authentication is always enabled.
 - For Linux:
   - Password authentication is disabled by default. If you want to use password authentication, set password_authentication_disabled to false.
-  - If password authentication is disabled, ssh public keys are required. If not provided, a new private key will be generated and can be accessed via outputs.
-  - If password authentication is enabled, any provided ssh public keys will be ignored. This is a limitation of the azurerm_linux_virtual_machine resource which requires either password or ssh key authentication, not both.
+  - If password authentication is disabled, ssh public keys are required. If not provided, a new private key will be generated and can be accessed via outputs when the `var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key` flag is true (default).
+  - If password authentication is enabled, any provided ssh public keys will cause a validation error. This is a limitation of the azurerm_linux_virtual_machine resource which requires either password or ssh key authentication, not both.
 
 Schema:
 - admin_credentials
   - `username`: string (optional, default: azureuser) = (optional) The username for the admin account. If not provided, `azureuser` will be used for the default administrative account.
   - `password`: string (optional, default: null) = (optional) The password for the admin account. If not provided, a password will be generated. Only valid for Linux when password_authentication_disabled = false.
   - `ssh_keys`: list(string) (optional, default: []) = (optional) The SSH public keys for the admin account. If not provided, a new private key will be generated. Only valid when password_authentication_disabled = true and only valid for Linux virtual machines.
+  - `generate_admin_password_or_ssh_key`: bool (optional, default: true) = (optional) A flag to indicate whether to generate a password or SSH key for the admin account. If set to true, a password or SSH key will be auto-generated. If set to false, the provided password or SSH keys will be used.
 - `key_vault_configuration` = Object (optional, default: null) = (optional) The configuration for storing credentials in an Azure Key Vault. If not provided, credentials will not be stored in Key Vault as part of this module.
   - `resource_id`: string (required) = (required) The resource ID of the Key Vault where the credentials will be stored.
   - `secret_configuration` = Object (optional, default: null) = (optional) The secret configuration that is used when storing credentials in the Key Vault.
@@ -272,11 +274,11 @@ ACCOUNT_CREDENTIALS
       lower(var.os_type) == "linux" &&
       var.account_credentials.admin_credentials.password != null &&
     var.account_credentials.password_authentication_disabled == true)
-    error_message = "var.account_credentials.admin_credentials.password values will be ignored when var.admin_credentials.password_authentication_disabled == true. Please set password_authentication_disabled to false if you want to use password authentication for linux systems."
+    error_message = "var.account_credentials.admin_credentials.password values will be ignored when var.admin_credentials.password_authentication_disabled == true. Please set var.admin_credentials.password_authentication_disabled to false if you want to use password authentication for linux systems."
   }
   validation {
     condition = !(
-      var.account_credentials.admin_credentials.ssh_keys != [] &&
+      length(var.account_credentials.admin_credentials.ssh_keys) != 0 &&
       var.account_credentials.admin_credentials.password != null
     )
     error_message = "Only one of password or ssh_keys should be set due to limitations imposed by the use of azurerm_linux_virtual_machine resource. Please set either password or ssh_keys, not both."
@@ -288,6 +290,44 @@ ACCOUNT_CREDENTIALS
   validation {
     condition     = can(regex("^.{1,64}$", var.account_credentials.admin_credentials.username))
     error_message = "Admin username for linux must be between 1 and 64 characters in length. Admin name for windows must be between 1 and 20 characters in length."
+  }
+  validation {
+    condition = !(
+      var.account_credentials.password_authentication_disabled == false &&
+    lower(var.os_type) == "windows")
+    error_message = "Use of password_authentication_disabled == false is limited to Linux operating systems. Please set to true when using os_type of Windows."
+  }
+  validation {
+    condition = !(
+      var.account_credentials.admin_credentials.password == null &&
+      length(var.account_credentials.admin_credentials.ssh_keys) == 0 &&
+    var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == false)
+    error_message = "Either password or ssh_keys must be provided if generate_admin_password_or_ssh_key is false. Please set the generate_admin_password_or_ssh_key flag to true or provide a password or ssh_key input."
+  }
+  validation {
+    condition = !(
+      var.account_credentials.admin_credentials.password != null &&
+    var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
+    error_message = "The generate_admin_password_or_ssh_key is set to true, but a password value has also been set. If use of a custom password is desired, then set the generate_admin_password_or_ssh_key to false. Otherwise, please remove the custom password value."
+  }
+  validation {
+    condition = !(
+      length(var.account_credentials.admin_credentials.ssh_keys) > 0 &&
+    var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
+    error_message = "The generate_admin_password_or_ssh_key is set to true, but a ssh_keys value has also been set. If use of custom ssh_keys is desired, then set the generate_admin_password_or_ssh_key to false. Otherwise, please remove the custom ssh_keys values."
+  }
+  validation {
+    condition = !(
+      length(var.account_credentials.admin_credentials.ssh_keys) > 0 &&
+    var.account_credentials.password_authentication_disabled == false)
+    error_message = "The password_authentication_disabled flag is set to false, but a ssh_keys value has also been set. If use of custom ssh_keys is desired, then set the password_authentication_disabled to true. Otherwise, please remove the custom ssh_keys values."
+  }
+  validation {
+    condition = !(
+      var.account_credentials.key_vault_configuration != null &&
+      length(var.account_credentials.admin_credentials.ssh_keys) > 0
+    )
+    error_message = "When adding ssh public keys using the ssh_keys input, the key vault configuration has no effect. The ssh public keys will be added to the VM and not stored in the key vault. Please remove the key vault configuration if you want to use ssh public keys."
   }
 }
 

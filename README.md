@@ -267,20 +267,21 @@ The following input variables are optional (have default values):
 Description: This is the primary object for defining admin credentials for the VM. It supports both windows and linux configurations with the following logic:
 - For Both Windows and Linux:
   - If a username is provided, it will be used as the admin username, otherwise azureadmin will be the default.
-  - If password or ssh public keys are not provided, a password or ssh private key will be generated and can be accessed via outputs.
+  - If password or ssh public keys are not provided and the `var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key` flag is true (default), a password or ssh private key will be generated and can be accessed via outputs.
   - If a key vault configuration is set, the provided or generated credential objects will be stored in the key vault using the provided details.
 - For Windows:
   - Password authentication is always enabled.
 - For Linux:
   - Password authentication is disabled by default. If you want to use password authentication, set password\_authentication\_disabled to false.
-  - If password authentication is disabled, ssh public keys are required. If not provided, a new private key will be generated and can be accessed via outputs.
-  - If password authentication is enabled, any provided ssh public keys will be ignored. This is a limitation of the azurerm\_linux\_virtual\_machine resource which requires either password or ssh key authentication, not both.
+  - If password authentication is disabled, ssh public keys are required. If not provided, a new private key will be generated and can be accessed via outputs when the `var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key` flag is true (default).
+  - If password authentication is enabled, any provided ssh public keys will cause a validation error. This is a limitation of the azurerm\_linux\_virtual\_machine resource which requires either password or ssh key authentication, not both.
 
 Schema:
 - admin\_credentials
   - `username`: string (optional, default: azureuser) = (optional) The username for the admin account. If not provided, `azureuser` will be used for the default administrative account.
   - `password`: string (optional, default: null) = (optional) The password for the admin account. If not provided, a password will be generated. Only valid for Linux when password\_authentication\_disabled = false.
   - `ssh_keys`: list(string) (optional, default: []) = (optional) The SSH public keys for the admin account. If not provided, a new private key will be generated. Only valid when password\_authentication\_disabled = true and only valid for Linux virtual machines.
+  - `generate_admin_password_or_ssh_key`: bool (optional, default: true) = (optional) A flag to indicate whether to generate a password or SSH key for the admin account. If set to true, a password or SSH key will be auto-generated. If set to false, the provided password or SSH keys will be used.
 - `key_vault_configuration` = Object (optional, default: null) = (optional) The configuration for storing credentials in an Azure Key Vault. If not provided, credentials will not be stored in Key Vault as part of this module.
   - `resource_id`: string (required) = (required) The resource ID of the Key Vault where the credentials will be stored.
   - `secret_configuration` = Object (optional, default: null) = (optional) The secret configuration that is used when storing credentials in the Key Vault.
@@ -318,9 +319,10 @@ Type:
 ```hcl
 object({
     admin_credentials = optional(object({
-      username = optional(string, "azureuser") # Generate if not provided. Continue to set to `azureuser` if not provided
-      password = optional(string, null)        # Generate password if not provided and enabled
-      ssh_keys = optional(list(string), [])    # Generate if not provided and disable_password_authentication = true
+      username                           = optional(string, "azureuser")
+      password                           = optional(string, null)
+      ssh_keys                           = optional(list(string), [])
+      generate_admin_password_or_ssh_key = optional(bool, true) # Use of flag is required to avoid known after apply issues
     }), {})
     key_vault_configuration = optional(object({
       resource_id = string
@@ -331,8 +333,8 @@ object({
         not_before_date                = optional(string, null)
         tags                           = optional(map(string), {})
       }), {})
-    }), null)                                               #only store if not null
-    password_authentication_disabled = optional(bool, true) #only valid for linux
+    }), null)
+    password_authentication_disabled = optional(bool, true)
     #future addditional user credentials map?
   })
 ```

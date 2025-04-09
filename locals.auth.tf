@@ -1,5 +1,5 @@
 locals {
-  admin_password_input = (var.account_credentials.admin_credentials.password != null ? var.account_credentials.admin_credentials.password : ( var.admin_password != null ? var.admin_password : null))
+  admin_password_input = (var.account_credentials.admin_credentials.password != null ? var.account_credentials.admin_credentials.password : (var.admin_password != null ? var.admin_password : null))
   #set the admin password to either a generated value or the entered value
   admin_password_linux = (lower(var.os_type) == "linux") ? (
     local.password_authentication_disabled == false ? (                                                          #if os is linux and password authentication is enabled
@@ -68,25 +68,23 @@ locals {
   generate_admin_ssh_key_count = (
     (lower(var.os_type) == "linux") &&
     (
-      (var.generate_admin_password_or_ssh_key == true && local.password_authentication_disabled == true) ||
-      (length(local.admin_ssh_key_input) == 0 && local.password_authentication_disabled == true)
-    ) ? 1 : 0
+      (var.generate_admin_password_or_ssh_key == true) ||
+      (var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
+    ) && (local.password_authentication_disabled == true) ? 1 : 0
   )
   generate_random_password_count = (
-    (lower(var.os_type) == "windows") &&
     (
-      (var.generate_admin_password_or_ssh_key == true) ||
-      (local.admin_password_input == null)
+      (lower(var.os_type) == "windows") &&
+      (
+        (var.generate_admin_password_or_ssh_key == true) ||
+        (var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
+      )
       ) ? 1 : (
       (lower(var.os_type) == "linux") &&
       (
-        (var.generate_admin_password_or_ssh_key == true) ||
-        (
-          (local.admin_password_input == false) &&
-          (local.password_authentication_disabled == false)
-        )
-      ) ? 1 : 0
-    )
+        (var.generate_admin_password_or_ssh_key == true || var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true) && (local.password_authentication_disabled == false)
+      )
+    ) ? 1 : 0
   )
   generated_secret_expiration_date_utc = local.generated_secret_expiration_date_utc_new == null ? local.generated_secret_expiration_date_utc_depr : local.generated_secret_expiration_date_utc_new
   #calculate the expiration date for the key vault secret.  If the key vault config is set, then use that value.  Otherwise, use the default value of 45 days.
