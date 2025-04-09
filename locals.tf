@@ -1,22 +1,4 @@
 locals {
-  admin_password_linux = (lower(var.os_type) == "linux") ? (
-    var.disable_password_authentication == false ? (                                                         #if os is linux and password authentication is enabled
-      var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : var.admin_password #use generated password, password variable
-    ) : null
-  ) : null
-  #set the admin password to either a generated value or the entered value
-  admin_password_windows = (lower(var.os_type) == "windows") ? (
-    var.generate_admin_password_or_ssh_key ? random_password.admin_password[0].result : var.admin_password #use generated password, password variable
-  ) : null
-  #format the admin ssh key so it can be concat'ed to the other keys.
-  admin_ssh_key = (((var.generate_admin_password_or_ssh_key == true) && (lower(var.os_type) == "linux")) ?
-    [{
-      public_key = tls_private_key.this[0].public_key_openssh
-      username   = var.admin_username
-    }] :
-  [])
-  #concat the ssh key values list 
-  admin_ssh_keys = concat(var.admin_ssh_keys, local.admin_ssh_key)
   #flatten the role assignments for the disks
   disks_role_assignments = { for ra in flatten([
     for dk, dv in var.data_disk_managed_disks : [
@@ -27,7 +9,6 @@ locals {
       }
     ]
   ]) : "${ra.disk_key}-${ra.ra_key}" => ra }
-  generated_secret_expiration_date_utc = var.generated_secrets_key_vault_secret_config != null ? formatdate("YYYY-MM-DD'T'hh:mm:ssZ", (timeadd(timestamp(), "${var.generated_secrets_key_vault_secret_config.expiration_date_length_in_days * 24}h"))) : null
   linux_virtual_machine_output_map = (lower(var.os_type) == "linux") ? {
     id                   = azurerm_linux_virtual_machine.this[0].id
     identity             = azurerm_linux_virtual_machine.this[0].identity

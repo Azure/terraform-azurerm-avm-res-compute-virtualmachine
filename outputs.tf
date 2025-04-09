@@ -1,3 +1,9 @@
+output "admin_generated_ssh_private_key" {
+  description = "Returns the private key for the generated ssh key. This is only available if the generation option is selected and no additional keys are provided."
+  sensitive   = true
+  value       = local.admin_ssh_key_secret_value
+}
+
 output "admin_password" {
   description = "Returns the admin password if installation is configured to use the password.  Otherwise returns null"
   sensitive   = true
@@ -5,14 +11,14 @@ output "admin_password" {
 }
 
 output "admin_ssh_keys" {
-  description = "Returns a list containing all of the provided or generated ssh keys. This is a single key if the generation option is selected and no additional keys are provided."
+  description = "Returns a list containing all of the provided or generated public ssh keys. This is a single key if the generation option is selected and no additional keys are provided."
   sensitive   = true
   value       = local.admin_ssh_keys
 }
 
 output "admin_username" {
   description = "The admin username used when creating this virtual machine."
-  value       = var.admin_username
+  value       = local.admin_username
 }
 
 output "data_disks" {

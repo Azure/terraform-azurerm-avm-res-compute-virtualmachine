@@ -3,7 +3,7 @@ resource "azurerm_windows_virtual_machine" "this" {
 
   #required properties
   admin_password        = local.admin_password_windows
-  admin_username        = var.admin_username
+  admin_username        = local.admin_username
   location              = var.location
   name                  = var.name
   network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
@@ -40,9 +40,9 @@ resource "azurerm_windows_virtual_machine" "this" {
   timezone                                               = var.timezone
   user_data                                              = var.user_data
   virtual_machine_scale_set_id                           = var.virtual_machine_scale_set_resource_id
-  vm_agent_platform_updates_enabled                      = var.vm_agent_platform_updates_enabled #uncomment this in the event that the field is corrected in ARM to not be readonly
-  vtpm_enabled                                           = var.vtpm_enabled
-  zone                                                   = var.zone
+  #vm_agent_platform_updates_enabled                      = var.vm_agent_platform_updates_enabled #uncomment this in the event that the field is corrected in ARM to not be readonly
+  vtpm_enabled = var.vtpm_enabled
+  zone         = var.zone
 
   os_disk {
     caching                          = var.os_disk.caching
@@ -170,8 +170,7 @@ resource "azurerm_windows_virtual_machine" "this" {
 
   lifecycle {
     ignore_changes = [
-      winrm_listener,                   # Once the certificate got rotated, it will trigger a destroy/recreate of the VM.
-      vm_agent_platform_updates_enabled # This is a read-only property in the API, but AzureRM provider allows it to be set. Remove this if the property becomes writable in the API.
+      winrm_listener # Once the certificate got rotated, it will trigger a destroy/recreate of the VM.
     ]
   }
 }
