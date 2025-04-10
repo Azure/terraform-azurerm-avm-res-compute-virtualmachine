@@ -10,7 +10,7 @@ This is the virtual machine resource module for the Azure Verified Modules libra
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
@@ -18,7 +18,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
 - <a name="requirement_tls"></a> [tls](#requirement\_tls) (~> 4.0)
 

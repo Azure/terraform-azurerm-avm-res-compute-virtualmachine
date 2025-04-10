@@ -19,7 +19,7 @@ It includes the following resources in addition to the VM resource:
 
 ```hcl
 terraform {
-  required_version = "~> 1.6"
+  required_version = ">= 1.9, < 2.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -27,7 +27,7 @@ terraform {
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.6"
+      version = "~> 3.7"
     }
   }
 }
@@ -51,7 +51,7 @@ module "naming" {
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.3.0"
+  version = "0.8.2"
 
   availability_zones_filter = true
 }
@@ -188,7 +188,7 @@ resource "random_password" "admin_password" {
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "=0.9.1"
+  version                     = "=0.10.0"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   name                        = module.naming.key_vault.name_unique
   resource_group_name         = azurerm_resource_group.this_rg.name
@@ -230,7 +230,7 @@ module "avm_res_keyvault_vault" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.17.0
+  #version = "0.19.0"
 
   enable_telemetry           = var.enable_telemetry
   encryption_at_host_enabled = true
@@ -284,11 +284,11 @@ module "testvm" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
 ## Resources
 
@@ -332,7 +332,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: =0.9.1
+Version: =0.10.0
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
@@ -350,7 +350,7 @@ Version: 0.2.1
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: 0.3.0
+Version: 0.8.2
 
 ### <a name="module_testvm"></a> [testvm](#module\_testvm)
 

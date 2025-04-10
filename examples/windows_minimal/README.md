@@ -5,7 +5,7 @@ This example demonstrates the smallest possible input for the module with only d
 
 ```hcl
 terraform {
-  required_version = "~> 1.6"
+  required_version = ">= 1.9, < 2.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -13,7 +13,7 @@ terraform {
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.6"
+      version = "~> 3.7"
     }
   }
 }
@@ -37,7 +37,7 @@ module "naming" {
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.3.0"
+  version = "0.8.2"
 
   availability_zones_filter = true
 }
@@ -157,7 +157,7 @@ resource "azurerm_bastion_host" "bastion" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.17.0
+  #version = "0.19.0"
 
   enable_telemetry    = var.enable_telemetry
   location            = azurerm_resource_group.this_rg.location
@@ -185,11 +185,11 @@ module "testvm" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
 ## Resources
 
@@ -242,7 +242,7 @@ Version: 0.2.1
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: 0.3.0
+Version: 0.8.2
 
 ### <a name="module_testvm"></a> [testvm](#module\_testvm)
 
