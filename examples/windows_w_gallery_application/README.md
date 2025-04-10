@@ -56,7 +56,7 @@ module "naming" {
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.8.2"
+  version = "0.5.0"
 
   availability_zones_filter = true
 }
@@ -488,7 +488,7 @@ Version: 0.2.1
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: 0.8.2
+Version: 0.5.0
 
 ### <a name="module_testvm"></a> [testvm](#module\_testvm)
 
