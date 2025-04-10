@@ -250,6 +250,16 @@ resource "azurerm_disk_encryption_set" "this" {
   }
 }
 
+resource "random_password" "admin_password" {
+  length           = 22
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
+  min_upper        = 2
+  override_special = "!#$%&()*+,-./:;<=>?@[]^_{|}~"
+  special          = true
+}
+
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
@@ -264,8 +274,15 @@ module "testvm" {
   encryption_at_host_enabled = true
   zone                       = random_integer.zone_index.result
 
-  generated_secrets_key_vault_secret_config = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  account_credentials = {
+    admin_credentials = {
+      username                           = "testuser"
+      password                           = random_password.admin_password.result
+      generate_admin_password_or_ssh_key = false
+    }
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+    }
   }
 
   os_disk = {
@@ -333,6 +350,7 @@ The following resources are used by this module:
 - [azurerm_user_assigned_identity.test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
+- [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->

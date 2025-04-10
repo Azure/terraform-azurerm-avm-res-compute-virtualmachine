@@ -272,19 +272,19 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
 
-  enable_telemetry                   = var.enable_telemetry
-  encryption_at_host_enabled         = true
-  location                           = azurerm_resource_group.this_rg.location
-  name                               = module.naming.virtual_machine.name_unique
-  resource_group_name                = azurerm_resource_group.this_rg.name
-  os_type                            = "Linux"
-  sku_size                           = module.vm_sku.sku
-  zone                               = random_integer.zone_index.result
+  enable_telemetry           = var.enable_telemetry
+  encryption_at_host_enabled = true
+  location                   = azurerm_resource_group.this_rg.location
+  name                       = module.naming.virtual_machine.name_unique
+  resource_group_name        = azurerm_resource_group.this_rg.name
+  os_type                    = "Linux"
+  sku_size                   = module.vm_sku.sku
+  zone                       = random_integer.zone_index.result
 
   account_credentials = {
     admin_credentials = {
-      username = "azureuser"
-      ssh_keys = [tls_private_key.this.public_key_openssh, tls_private_key.this_2.public_key_openssh]
+      username                           = "azureuser"
+      ssh_keys                           = [tls_private_key.this.public_key_openssh, tls_private_key.this_2.public_key_openssh]
       generate_admin_password_or_ssh_key = false
     }
   }

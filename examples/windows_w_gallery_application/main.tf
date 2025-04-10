@@ -307,7 +307,7 @@ module "testvm" {
   patch_mode                                             = "AutomaticByPlatform"
   bypass_platform_safety_checks_on_user_schedule_enabled = true
 
-  account_credentials                                    = {
+  account_credentials = {
     key_vault_configuration = {
       resource_id = module.avm_res_keyvault_vault.resource_id
     }

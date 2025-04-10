@@ -277,8 +277,8 @@ module "testvm2" {
 
   account_credentials = {
     admin_credentials = {
-      username = "testuser"
-      password = random_password.admin_password.result
+      username                           = "testuser"
+      password                           = random_password.admin_password.result
       generate_admin_password_or_ssh_key = false
     }
     password_authentication_disabled = false

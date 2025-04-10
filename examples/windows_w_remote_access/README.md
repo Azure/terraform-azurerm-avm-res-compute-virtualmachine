@@ -60,8 +60,7 @@ module "regions" {
   availability_zones_filter = true
 }
 locals {
-  admin_username = "azureuser"
-  #deployment_region = module.regions.regions[random_integer.region_index.result].name
+  admin_username    = "azureuser"
   deployment_region = "canadacentral" #temporarily pinning on single region
   inline_remote_exec = [
     "schtasks /Create /TN \"\\AVM\\RotateWinRMListenerThumbprint\" /SC MINUTE /MO 1 /TR \"\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -ExecutionPolicy Bypass -Command & { . 'C:\\AzureData\\w_sc_task_rotate_winrms_cert.ps1'; Update-WinRMCertificate -CommonName 'CN=${module.naming.virtual_machine.name_unique}' -WinRmsPort ${local.winrms_port} }\" /RU \"SYSTEM\" /RL HIGHEST /F"
@@ -341,21 +340,20 @@ resource "azurerm_key_vault_certificate" "self_signed_winrm" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.17.0
+  #version = "0.17.0"
 
-  #admin_credential_key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
-  admin_username                     = local.admin_username
-  enable_telemetry                   = var.enable_telemetry
-  generate_admin_password_or_ssh_key = true
-  location                           = azurerm_resource_group.this_rg.location
-  name                               = module.naming.virtual_machine.name_unique
-  resource_group_name                = azurerm_resource_group.this_rg.name
-  os_type                            = local.os_type
-  sku_size                           = module.vm_sku.sku
-  zone                               = random_integer.zone_index.result
+  enable_telemetry    = var.enable_telemetry
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.virtual_machine.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  os_type             = local.os_type
+  sku_size            = module.vm_sku.sku
+  zone                = random_integer.zone_index.result
 
-  generated_secrets_key_vault_secret_config = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  account_credentials = {
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+    }
   }
 
   # custom_data got injected in the vm at c:\AzureData\CustomData.bin

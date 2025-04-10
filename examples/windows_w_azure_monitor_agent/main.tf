@@ -218,8 +218,8 @@ module "testvm" {
     key_vault_configuration = {
       resource_id = module.avm_res_keyvault_vault.resource_id
       secret_configuration = {
-          name = "example-custom-secret-name"
-          expiration_date_length_in_days = 30
+        name                           = "example-custom-secret-name"
+        expiration_date_length_in_days = 30
       }
     }
   }

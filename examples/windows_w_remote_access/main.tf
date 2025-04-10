@@ -36,7 +36,7 @@ module "regions" {
   availability_zones_filter = true
 }
 locals {
-  admin_username = "azureuser"
+  admin_username    = "azureuser"
   deployment_region = "canadacentral" #temporarily pinning on single region
   inline_remote_exec = [
     "schtasks /Create /TN \"\\AVM\\RotateWinRMListenerThumbprint\" /SC MINUTE /MO 1 /TR \"\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -ExecutionPolicy Bypass -Command & { . 'C:\\AzureData\\w_sc_task_rotate_winrms_cert.ps1'; Update-WinRMCertificate -CommonName 'CN=${module.naming.virtual_machine.name_unique}' -WinRmsPort ${local.winrms_port} }\" /RU \"SYSTEM\" /RL HIGHEST /F"

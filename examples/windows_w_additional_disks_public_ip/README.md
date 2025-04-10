@@ -208,9 +208,12 @@ module "testvm" {
   sku_size            = module.vm_sku.sku
   zone                = random_integer.zone_index.result
 
-  generated_secrets_key_vault_secret_config = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  account_credentials = {
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+    }
   }
+
 
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
