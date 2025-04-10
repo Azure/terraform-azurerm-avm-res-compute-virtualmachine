@@ -9,10 +9,6 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
-    tls = {
-      source  = "hashicorp/tls"
-      version = "~> 4.0"
-    }
   }
 }
 
@@ -130,37 +126,32 @@ module "vnet" {
   }
 }
 
-resource "azurerm_resource_group" "this_rg_secondary" {
-  location = local.deployment_region
-  name     = "${module.naming.resource_group.name_unique}-alt"
-  tags     = local.tags
-}
-
-/* #uncomment these resources to enable bastion
+/*
+# Uncomment this section if you would like to include a bastion resource with this example.
 resource "azurerm_public_ip" "bastionpip" {
-  allocation_method   = "Static"
-  location            = azurerm_resource_group.this_rg.location
   name                = module.naming.public_ip.name_unique
+  location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
+  allocation_method   = "Static"
   sku                 = "Standard"
 }
 
 resource "azurerm_bastion_host" "bastion" {
-  location            = azurerm_resource_group.this_rg.location
   name                = module.naming.bastion_host.name_unique
+  location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
 
   ip_configuration {
     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
-    public_ip_address_id = azurerm_public_ip.bastionpip.id
     subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
+    public_ip_address_id = azurerm_public_ip.bastionpip.id
   }
 }
 */
 
 data "azurerm_client_config" "current" {}
 
-resource "azurerm_user_assigned_identity" "example_identity" {
+resource "azurerm_user_assigned_identity" "test" {
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.user_assigned_identity.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
@@ -191,7 +182,7 @@ module "avm_res_keyvault_vault" {
     }
     user_managed_identity_keys = { #give the user assigned managed identity for the disk encryption set access to keys
       role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = azurerm_user_assigned_identity.example_identity.principal_id
+      principal_id               = azurerm_user_assigned_identity.test.principal_id
       principal_type             = "ServicePrincipal"
     }
   }
@@ -224,36 +215,6 @@ module "avm_res_keyvault_vault" {
   }
 }
 
-resource "tls_private_key" "this" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
-resource "azurerm_key_vault_secret" "admin_ssh_key" {
-  key_vault_id = module.avm_res_keyvault_vault.resource_id
-  name         = "azureuser-ssh-private-key"
-  value        = tls_private_key.this.private_key_pem
-
-  depends_on = [
-    module.avm_res_keyvault_vault
-  ]
-}
-
-resource "tls_private_key" "this_2" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
-resource "azurerm_key_vault_secret" "admin_ssh_key_2" {
-  key_vault_id = module.avm_res_keyvault_vault.resource_id
-  name         = "azureuser-ssh-private-key-2"
-  value        = tls_private_key.this_2.private_key_pem
-
-  depends_on = [
-    module.avm_res_keyvault_vault
-  ]
-}
-
 resource "azurerm_disk_encryption_set" "this" {
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.disk_encryption_set.name_unique
@@ -263,8 +224,18 @@ resource "azurerm_disk_encryption_set" "this" {
 
   identity {
     type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.example_identity.id]
+    identity_ids = [azurerm_user_assigned_identity.test.id]
   }
+}
+
+resource "random_password" "admin_password" {
+  length           = 22
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
+  min_upper        = 2
+  override_special = "!#$%&()*+,-./:;<=>?@[]^_{|}~"
+  special          = true
 }
 
 module "testvm" {
@@ -272,75 +243,23 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
 
-  admin_username                     = "azureuser"
-  enable_telemetry                   = var.enable_telemetry
-  encryption_at_host_enabled         = true
-  generate_admin_password_or_ssh_key = false
-  location                           = azurerm_resource_group.this_rg.location
-  name                               = module.naming.virtual_machine.name_unique
-  resource_group_name                = azurerm_resource_group.this_rg.name
-  os_type                            = "Linux"
-  sku_size                           = module.vm_sku.sku
-  zone                               = random_integer.zone_index.result
+  enable_telemetry           = var.enable_telemetry
+  location                   = azurerm_resource_group.this_rg.location
+  resource_group_name        = azurerm_resource_group.this_rg.name
+  os_type                    = "Windows"
+  name                       = module.naming.virtual_machine.name_unique
+  sku_size                   = module.vm_sku.sku
+  encryption_at_host_enabled = true
+  zone                       = random_integer.zone_index.result
 
-  admin_ssh_keys = [
-    {
-      public_key = tls_private_key.this.public_key_openssh
-      username   = "azureuser" #the username must match the admin_username currently.
-    },
-    {
-      public_key = tls_private_key.this_2.public_key_openssh
-      username   = "azureuser" #the username must match the admin_username currently.
+  account_credentials = {
+    admin_credentials = {
+      username = "testuser"
+      password = random_password.admin_password.result
+      generate_admin_password_or_ssh_key = false
     }
-  ]
-
-  data_disk_managed_disks = {
-    disk1 = {
-      name                   = "${module.naming.managed_disk.name_unique}-lun0"
-      storage_account_type   = "Premium_LRS"
-      lun                    = 0
-      caching                = "ReadWrite"
-      disk_size_gb           = 32
-      disk_encryption_set_id = azurerm_disk_encryption_set.this.id
-      resource_group_name    = azurerm_resource_group.this_rg_secondary.name
-      role_assignments = {
-        role_assignment_2 = {
-          principal_id               = data.azurerm_client_config.current.client_id
-          role_definition_id_or_name = "Contributor"
-          description                = "Assign the Contributor role to the deployment user on this managed disk resource scope."
-          principal_type             = "ServicePrincipal"
-        }
-      }
-    }
-  }
-
-  managed_identities = {
-    system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
-  }
-
-  network_interfaces = {
-    network_interface_1 = {
-      name                           = "${module.naming.network_interface.name_unique}-1"
-      accelerated_networking_enabled = true
-      ip_forwarding_enabled          = true
-      ip_configurations = {
-        ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-nic1-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-        }
-      }
-      resource_group_name = azurerm_resource_group.this_rg_secondary.name
-    }
-    network_interface_2 = {
-      name                  = "${module.naming.network_interface.name_unique}-2"
-      ip_forwarding_enabled = true
-      ip_configurations = {
-        ip_configuration_avs_facing = {
-          name                          = "${module.naming.network_interface.name_unique}-nic2-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_2"].resource_id
-        }
-      }
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
     }
   }
 
@@ -350,34 +269,40 @@ module "testvm" {
     disk_encryption_set_id = azurerm_disk_encryption_set.this.id
   }
 
-  role_assignments_system_managed_identity = {
-    role_assignment_1 = {
-      scope_resource_id          = module.avm_res_keyvault_vault.resource_id
-      role_definition_id_or_name = "Key Vault Secrets Officer"
-      description                = "Assign the Key Vault Secrets Officer role to the virtual machine's system managed identity"
-      principal_type             = "ServicePrincipal"
-    }
-  }
-
-  role_assignments = {
-    role_assignment_2 = {
-      principal_id               = data.azurerm_client_config.current.client_id
-      role_definition_id_or_name = "Virtual Machine Contributor"
-      description                = "Assign the Virtual Machine Contributor role to the deployment user on this virtual machine resource scope."
-      principal_type             = "ServicePrincipal"
-    }
-  }
-
   source_image_reference = {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-focal"
-    sku       = "20_04-lts-gen2"
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2022-datacenter-g2"
     version   = "latest"
   }
 
-  tags = local.tags
+  network_interfaces = {
+    network_interface_1 = {
+      name = module.naming.network_interface.name_unique
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+        }
+      }
+    }
+  }
 
-  depends_on = [
-    module.avm_res_keyvault_vault
-  ]
+  data_disk_managed_disks = {
+    disk1 = {
+      name                   = "${module.naming.managed_disk.name_unique}-lun0"
+      storage_account_type   = "Premium_LRS"
+      lun                    = 0
+      caching                = "ReadWrite"
+      disk_size_gb           = 32
+      disk_encryption_set_id = azurerm_disk_encryption_set.this.id
+    }
+  }
+
+  tags = {
+    scenario = "windows_w_encryption_at_host"
+  }
+
+  depends_on = [module.avm_res_keyvault_vault]
+
 }

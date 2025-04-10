@@ -73,6 +73,7 @@ module "vm_sku" {
     encryption_at_host_supported   = true
     accelerated_networking_enabled = true
     premium_io_supported           = true
+    location_zone                  = random_integer.zone_index.result
   }
 
   depends_on = [random_integer.zone_index]
@@ -149,45 +150,22 @@ resource "azurerm_bastion_host" "bastion" {
 
 data "azurerm_client_config" "current" {}
 
-resource "azurerm_user_assigned_identity" "example_identity" {
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  tags                = local.tags
-}
-
-resource "random_password" "admin_password" {
-  length           = 22
-  min_lower        = 2
-  min_numeric      = 2
-  min_special      = 2
-  min_upper        = 2
-  override_special = "!#$%&()*+,-./:;<=>?@[]^_{|}~"
-  special          = true
-}
-
 module "avm_res_keyvault_vault" {
-  source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "=0.9.1"
-  tenant_id                   = data.azurerm_client_config.current.tenant_id
-  name                        = module.naming.key_vault.name_unique
-  resource_group_name         = azurerm_resource_group.this_rg.name
-  location                    = azurerm_resource_group.this_rg.location
-  enabled_for_disk_encryption = true
+  source              = "Azure/avm-res-keyvault-vault/azurerm"
+  version             = "=0.9.1"
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  name                = module.naming.key_vault.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  location            = azurerm_resource_group.this_rg.location
   network_acls = {
     default_action = "Allow"
-    bypass         = "AzureServices"
   }
 
   role_assignments = {
-    deployment_user_secrets = { #give the deployment user access to secrets
+    deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
     }
-  }
-
-  wait_for_rbac_before_key_operations = {
-    create = "60s"
   }
 
   wait_for_rbac_before_secret_operations = {
@@ -195,16 +173,6 @@ module "avm_res_keyvault_vault" {
   }
 
   tags = local.tags
-
-  secrets = {
-    admin_password = {
-      name = "admin-password"
-    }
-  }
-
-  secrets_value = {
-    admin_password = random_password.admin_password.result
-  }
 }
 
 module "testvm" {
@@ -212,18 +180,26 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
 
-  admin_username                     = "azureuser"
-  admin_password                     = random_password.admin_password.result
-  disable_password_authentication    = false
-  enable_telemetry                   = var.enable_telemetry
-  encryption_at_host_enabled         = true
-  generate_admin_password_or_ssh_key = false
-  location                           = azurerm_resource_group.this_rg.location
-  name                               = module.naming.virtual_machine.name_unique
-  resource_group_name                = azurerm_resource_group.this_rg.name
-  os_type                            = "Linux"
-  sku_size                           = module.vm_sku.sku
-  zone                               = random_integer.zone_index.result
+  enable_telemetry    = var.enable_telemetry
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  os_type             = "Linux"
+  name                = module.naming.virtual_machine.name_unique
+  sku_size            = module.vm_sku.sku
+  zone                = random_integer.zone_index.result
+
+  account_credentials = {
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+    }
+  }
+
+  source_image_reference = {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
+    version   = "latest"
+  }
 
   network_interfaces = {
     network_interface_1 = {
@@ -237,18 +213,9 @@ module "testvm" {
     }
   }
 
-  os_disk = {
-    caching              = "ReadWrite"
-    storage_account_type = "Premium_LRS"
-  }
-
-  source_image_reference = {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-focal"
-    sku       = "20_04-lts-gen2"
-    version   = "latest"
-  }
-
   tags = local.tags
 
+  depends_on = [
+    module.avm_res_keyvault_vault
+  ]
 }

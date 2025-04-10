@@ -73,7 +73,6 @@ module "vm_sku" {
     encryption_at_host_supported   = true
     accelerated_networking_enabled = true
     premium_io_supported           = true
-    location_zone                  = random_integer.zone_index.result
   }
 
   depends_on = [random_integer.zone_index]
@@ -157,22 +156,38 @@ resource "azurerm_user_assigned_identity" "example_identity" {
   tags                = local.tags
 }
 
+resource "random_password" "admin_password" {
+  length           = 22
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
+  min_upper        = 2
+  override_special = "!#$%&()*+,-./:;<=>?@[]^_{|}~"
+  special          = true
+}
+
 module "avm_res_keyvault_vault" {
-  source              = "Azure/avm-res-keyvault-vault/azurerm"
-  version             = "=0.9.1"
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  name                = module.naming.key_vault.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  location            = azurerm_resource_group.this_rg.location
+  source                      = "Azure/avm-res-keyvault-vault/azurerm"
+  version                     = "=0.9.1"
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  name                        = module.naming.key_vault.name_unique
+  resource_group_name         = azurerm_resource_group.this_rg.name
+  location                    = azurerm_resource_group.this_rg.location
+  enabled_for_disk_encryption = true
   network_acls = {
     default_action = "Allow"
+    bypass         = "AzureServices"
   }
 
   role_assignments = {
-    deployment_user_secrets = {
+    deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
     }
+  }
+
+  wait_for_rbac_before_key_operations = {
+    create = "60s"
   }
 
   wait_for_rbac_before_secret_operations = {
@@ -180,6 +195,16 @@ module "avm_res_keyvault_vault" {
   }
 
   tags = local.tags
+
+  secrets = {
+    admin_password = {
+      name = "admin-password"
+    }
+  }
+
+  secrets_value = {
+    admin_password = random_password.admin_password.result
+  }
 }
 
 module "testvm" {
@@ -187,33 +212,22 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
 
-  enable_telemetry    = var.enable_telemetry
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  os_type             = "Windows"
-  name                = module.naming.virtual_machine.name_unique
-  sku_size            = module.vm_sku.sku
-  zone                = random_integer.zone_index.result
+  enable_telemetry                   = var.enable_telemetry
+  encryption_at_host_enabled         = true
+  location                           = azurerm_resource_group.this_rg.location
+  name                               = module.naming.virtual_machine.name_unique
+  resource_group_name                = azurerm_resource_group.this_rg.name
+  os_type                            = "Linux"
+  sku_size                           = module.vm_sku.sku
+  zone                               = random_integer.zone_index.result
 
-  generated_secrets_key_vault_secret_config = {
-    key_vault_resource_id          = module.avm_res_keyvault_vault.resource_id
-    expiration_date_length_in_days = 30
-    name                           = "example-password-secret-name"
-    tags = {
-      test_tag = "test_tag_value"
+  account_credentials = {
+    admin_credentials = {
+      username = "testuser"
+      password = random_password.admin_password.result
+      generate_admin_password_or_ssh_key = false
     }
-  }
-
-  source_image_reference = {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2022-datacenter-g2"
-    version   = "latest"
-  }
-
-  managed_identities = {
-    system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
+    password_authentication_disabled = false
   }
 
   network_interfaces = {
@@ -228,31 +242,18 @@ module "testvm" {
     }
   }
 
-  role_assignments_system_managed_identity = {
-    role_assignment_1 = {
-      scope_resource_id          = module.avm_res_keyvault_vault.resource_id
-      role_definition_id_or_name = "Key Vault Secrets Officer"
-      description                = "Assign the Key Vault Secrets Officer role to the virtual machine's system managed identity"
-      principal_type             = "ServicePrincipal"
-    }
+  os_disk = {
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
   }
 
-  role_assignments = {
-    role_assignment_2 = {
-      principal_id               = data.azurerm_client_config.current.client_id
-      role_definition_id_or_name = "Virtual Machine Contributor"
-      description                = "Assign the Virtual Machine Contributor role to the deployment user on this virtual machine resource scope."
-      principal_type             = "ServicePrincipal"
-    }
+  source_image_reference = {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
+    version   = "latest"
   }
 
-  tags = {
-    scenario = "windows_w_rbac_and_managed_identity"
-  }
+  tags = local.tags
 
-  winrm_listeners = [{ protocol = "Http" }]
-
-  depends_on = [
-    module.avm_res_keyvault_vault
-  ]
 }

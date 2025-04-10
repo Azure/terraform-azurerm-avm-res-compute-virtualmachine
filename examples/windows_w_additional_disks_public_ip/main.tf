@@ -126,6 +126,7 @@ module "vnet" {
   }
 }
 
+
 /* Uncomment this section if you would like to include a bastion resource with this example.
 resource "azurerm_public_ip" "bastionpip" {
   name                = module.naming.public_ip.name_unique
@@ -183,19 +184,22 @@ module "testvm" {
   enable_telemetry    = var.enable_telemetry
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
-  os_type             = "Linux"
+  os_type             = "Windows"
   name                = module.naming.virtual_machine.name_unique
   sku_size            = module.vm_sku.sku
   zone                = random_integer.zone_index.result
 
-  generated_secrets_key_vault_secret_config = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  account_credentials = {
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+    }
   }
 
+
   source_image_reference = {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-focal"
-    sku       = "20_04-lts-gen2"
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2022-datacenter-g2"
     version   = "latest"
   }
 
@@ -206,12 +210,40 @@ module "testvm" {
         ip_configuration_1 = {
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
           private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+          #create_public_ip_address      = true
+          #public_ip_address_name        = module.naming.public_ip.name_unique
         }
       }
     }
   }
 
-  tags = local.tags
+  data_disk_managed_disks = {
+    disk1 = {
+      name                 = "${module.naming.managed_disk.name_unique}-lun0"
+      storage_account_type = "Premium_LRS"
+      lun                  = 0
+      caching              = "ReadWrite"
+      disk_size_gb         = 32
+    }
+  }
+
+  shutdown_schedules = {
+    test_schedule = {
+      daily_recurrence_time = "1700"
+      enabled               = true
+      timezone              = "Pacific Standard Time"
+      notification_settings = {
+        enabled         = true
+        email           = "example@example.com;example2@example.com"
+        time_in_minutes = "15"
+        webhook_url     = "https://example-webhook-url.example.com"
+      }
+    }
+  }
+
+  tags = {
+    scenario = "windows_w_data_disk_and_public_ip"
+  }
 
   depends_on = [
     module.avm_res_keyvault_vault

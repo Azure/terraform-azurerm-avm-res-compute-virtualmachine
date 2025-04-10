@@ -126,47 +126,69 @@ module "vnet" {
   }
 }
 
-
-/* Uncomment this section if you would like to include a bastion resource with this example.
+/* #uncomment these resources to enable bastion
 resource "azurerm_public_ip" "bastionpip" {
-  name                = module.naming.public_ip.name_unique
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
   allocation_method   = "Static"
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.public_ip.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
 }
 
 resource "azurerm_bastion_host" "bastion" {
-  name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.bastion_host.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
 
   ip_configuration {
     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
-    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
     public_ip_address_id = azurerm_public_ip.bastionpip.id
+    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
 */
 
 data "azurerm_client_config" "current" {}
 
-module "avm_res_keyvault_vault" {
-  source              = "Azure/avm-res-keyvault-vault/azurerm"
-  version             = "=0.9.1"
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  name                = module.naming.key_vault.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
+resource "azurerm_user_assigned_identity" "example_identity" {
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.user_assigned_identity.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  tags                = local.tags
+}
+
+resource "random_password" "admin_password" {
+  length           = 22
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
+  min_upper        = 2
+  override_special = "!#$%&()*+,-./:;<=>?@[]^_{|}~"
+  special          = true
+}
+
+module "avm_res_keyvault_vault" {
+  source                      = "Azure/avm-res-keyvault-vault/azurerm"
+  version                     = "=0.9.1"
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  name                        = module.naming.key_vault.name_unique
+  resource_group_name         = azurerm_resource_group.this_rg.name
+  location                    = azurerm_resource_group.this_rg.location
+  enabled_for_disk_encryption = true
   network_acls = {
     default_action = "Allow"
+    bypass         = "AzureServices"
   }
 
   role_assignments = {
-    deployment_user_secrets = {
+    deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
     }
+  }
+
+  wait_for_rbac_before_key_operations = {
+    create = "60s"
   }
 
   wait_for_rbac_before_secret_operations = {
@@ -174,6 +196,7 @@ module "avm_res_keyvault_vault" {
   }
 
   tags = local.tags
+
 }
 
 module "testvm" {
@@ -181,23 +204,23 @@ module "testvm" {
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.17.0
 
-  enable_telemetry    = var.enable_telemetry
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  os_type             = "Windows"
-  name                = module.naming.virtual_machine.name_unique
-  sku_size            = module.vm_sku.sku
-  zone                = random_integer.zone_index.result
+  enable_telemetry                   = var.enable_telemetry
+  encryption_at_host_enabled         = true
+  location                           = azurerm_resource_group.this_rg.location
+  name                               = module.naming.virtual_machine.name_unique
+  resource_group_name                = azurerm_resource_group.this_rg.name
+  os_type                            = "Linux"
+  sku_size                           = module.vm_sku.sku
+  zone                               = random_integer.zone_index.result
 
-  generated_secrets_key_vault_secret_config = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
-  }
-
-  source_image_reference = {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2022-datacenter-g2"
-    version   = "latest"
+  account_credentials = {
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+      secret_configuration = {
+        name = "azureuser-password-example"
+      }
+    }
+    password_authentication_disabled = false
   }
 
   network_interfaces = {
@@ -207,42 +230,25 @@ module "testvm" {
         ip_configuration_1 = {
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
           private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-          #create_public_ip_address      = true
-          #public_ip_address_name        = module.naming.public_ip.name_unique
         }
       }
     }
   }
 
-  data_disk_managed_disks = {
-    disk1 = {
-      name                 = "${module.naming.managed_disk.name_unique}-lun0"
-      storage_account_type = "Premium_LRS"
-      lun                  = 0
-      caching              = "ReadWrite"
-      disk_size_gb         = 32
-    }
+  os_disk = {
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
   }
 
-  shutdown_schedules = {
-    test_schedule = {
-      daily_recurrence_time = "1700"
-      enabled               = true
-      timezone              = "Pacific Standard Time"
-      notification_settings = {
-        enabled         = true
-        email           = "example@example.com;example2@example.com"
-        time_in_minutes = "15"
-        webhook_url     = "https://example-webhook-url.example.com"
-      }
-    }
+  source_image_reference = {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
+    version   = "latest"
   }
 
-  tags = {
-    scenario = "windows_w_data_disk_and_public_ip"
-  }
+  tags = local.tags
 
-  depends_on = [
-    module.avm_res_keyvault_vault
-  ]
+  depends_on = [module.avm_res_keyvault_vault]
+
 }
