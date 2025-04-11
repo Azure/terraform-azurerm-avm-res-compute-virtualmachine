@@ -85,9 +85,3 @@ For simplicity this module provides the option to use an auto-generated admin us
 - `tags` - (Optional) - Specific tags to assign to this secret resource
 DESCRIPTION
 }
-
-variable "vm_agent_platform_updates_enabled" {
-  type        = bool
-  default     = false
-  description = "DEPRECATED:  This input has been deprecated in the underlying azurerm resources and is no longer functional. This input will be removed with the release of version v1.0.0. (Optional) Note: This field is read-only in the ARM API. Leaving this in as it is included in the AzureRM provider. Currently this field is non-functional until ARM API is updated to not be readonly. Specifies whether VMAgent Platform Updates is enabled. Defaults to `false`."
-}

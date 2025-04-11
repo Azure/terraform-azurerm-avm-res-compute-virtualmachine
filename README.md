@@ -1708,14 +1708,6 @@ object({
 
 Default: `null`
 
-### <a name="input_vm_agent_platform_updates_enabled"></a> [vm\_agent\_platform\_updates\_enabled](#input\_vm\_agent\_platform\_updates\_enabled)
-
-Description: DEPRECATED:  This input has been deprecated in the underlying azurerm resources and is no longer functional. This input will be removed with the release of version v1.0.0. (Optional) Note: This field is read-only in the ARM API. Leaving this in as it is included in the AzureRM provider. Currently this field is non-functional until ARM API is updated to not be readonly. Specifies whether VMAgent Platform Updates is enabled. Defaults to `false`.
-
-Type: `bool`
-
-Default: `false`
-
 ### <a name="input_vtpm_enabled"></a> [vtpm\_enabled](#input\_vtpm\_enabled)
 
 Description: (Optional) Specifies whether vTPM should be enabled on the virtual machine. Changing this forces a new resource to be created.
