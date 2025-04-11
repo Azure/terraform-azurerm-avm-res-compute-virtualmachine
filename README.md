@@ -53,12 +53,6 @@ The following resources are used by this module:
 - [azurerm_role_assignment.this_virtual_machine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_windows](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
-- [azurerm_virtual_machine_extension.this_extension](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
-- [azurerm_virtual_machine_extension.this_extension_1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
-- [azurerm_virtual_machine_extension.this_extension_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
-- [azurerm_virtual_machine_extension.this_extension_3](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
-- [azurerm_virtual_machine_extension.this_extension_4](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
-- [azurerm_virtual_machine_run_command.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_run_command) (resource)
 - [azurerm_windows_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/windows_virtual_machine) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
@@ -1895,6 +1889,18 @@ Source: ./modules/extension
 Version:
 
 ### <a name="module_extension_2"></a> [extension\_2](#module\_extension\_2)
+
+Source: ./modules/extension
+
+Version:
+
+### <a name="module_extension_3"></a> [extension\_3](#module\_extension\_3)
+
+Source: ./modules/extension
+
+Version:
+
+### <a name="module_extension_4"></a> [extension\_4](#module\_extension\_4)
 
 Source: ./modules/extension
 
