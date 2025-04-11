@@ -1044,6 +1044,7 @@ variable "public_ip_configuration_details" {
     sku                     = optional(string, "Standard")
     sku_tier                = optional(string, "Regional")
     tags                    = optional(map(string), null)
+    zones                   = optional(set(string), ["1", "2", "3"])
   })
   default = {
     allocation_method       = "Static"
@@ -1067,6 +1068,7 @@ This object describes the public IP configuration when creating VM's with a publ
 - `sku`                     = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Standard to support zones by default. Changing this forces a new resource to be created. When sku_tier is set to Global, sku must be set to Standard.
 - `sku_tier`                = (Optional) - The SKU tier of the Public IP. Accepted values are Global and Regional. Defaults to Regional
 - `tags`                    = (Optional) - A mapping of tags to assign to the resource.
+- `zones`                   = (Optional) - A set of availability zones to assign the public IP to. Configured to use all zones by default. Not all regions support 3 zones. Change this if fewer than 3 zones are available in the target region. Changing this forces a new resource to be created. 
 
   Example Inputs:
 

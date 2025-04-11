@@ -15,7 +15,7 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
   sku                     = var.public_ip_configuration_details.sku
   sku_tier                = var.public_ip_configuration_details.sku_tier
   tags                    = var.public_ip_configuration_details.tags != null && var.public_ip_configuration_details != {} ? var.public_ip_configuration_details.tags : local.tags
-  zones                   = var.zone != null ? [var.zone] : [] #var.public_ip_configuration_details.zones
+  zones                   = var.public_ip_configuration_details.zones #var.zone != null ? [var.zone] : [] #
 }
 
 
@@ -49,7 +49,7 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
   }
 }
 
-#configure locks on each public IP that has been created if lock values are set.  
+#configure locks on each public IP that has been created if lock values are set.
 resource "azurerm_management_lock" "this_public_ip" {
   for_each = { for key, values in local.nics_ip_configs : key => values if((values.ipconfig.create_public_ip_address == true) && (var.public_ip_configuration_details.lock_level != null)) }
 
@@ -139,7 +139,7 @@ resource "azurerm_network_interface_security_group_association" "this" {
   network_security_group_id = each.value.network_security_groups.network_security_group_resource_id
 }
 
-### ASG Associations 
+### ASG Associations
 resource "azurerm_network_interface_application_security_group_association" "this" {
   for_each = local.nics_asgs
 

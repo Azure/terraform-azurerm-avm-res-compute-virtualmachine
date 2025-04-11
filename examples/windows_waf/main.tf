@@ -389,7 +389,9 @@ module "testvm" {
   }
 
   depends_on = [
-    module.avm_res_keyvault_vault
+    module.avm_res_keyvault_vault,
+    azurerm_backup_policy_vm.test_policy,
+    azurerm_recovery_services_vault.test_vault
   ]
 }
 

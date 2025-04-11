@@ -404,8 +404,11 @@ module "testvm" {
 
   tags = local.tags
 
-  depends_on = [module.avm_res_keyvault_vault]
-
+  depends_on = [
+    module.avm_res_keyvault_vault,
+    azurerm_backup_policy_vm.test_policy,
+    azurerm_recovery_services_vault.test_vault
+  ]
 }
 ```
 

@@ -210,8 +210,8 @@ module "testvm" {
         ip_configuration_1 = {
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
           private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-          #create_public_ip_address      = true
-          #public_ip_address_name        = module.naming.public_ip.name_unique
+          create_public_ip_address      = true
+          public_ip_address_name        = module.naming.public_ip.name_unique
         }
       }
     }
