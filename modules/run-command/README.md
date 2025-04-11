@@ -128,19 +128,19 @@ The following input variables are required:
 
 ### <a name="input_location"></a> [location](#input\_location)
 
-Description: (Required): The Azure Region where the Virtual Machine Run Command should exist. Changing this forces a new Virtual Machine Run Command to be created.
+Description: `location` - (Required): The Azure Region where the Virtual Machine Run Command should exist. Changing this forces a new Virtual Machine Run Command to be created.
 
 Type: `string`
 
 ### <a name="input_name"></a> [name](#input\_name)
 
-Description: (Required): Specifies the name of this Virtual Machine Run Command. Changing this forces a new Virtual Machine Run Command to be created.
+Description: `name` - (Required): Specifies the name of this Virtual Machine Run Command. Changing this forces a new Virtual Machine Run Command to be created.
 
 Type: `string`
 
 ### <a name="input_script_source"></a> [script\_source](#input\_script\_source)
 
-Description: (Required): A source block as defined below. The source of the run command script.
+Description: `script_source` - (Required): A source block as defined below. The source of the run command script.
 
 Type:
 
@@ -158,7 +158,7 @@ object({
 
 ### <a name="input_virtualmachine_resource_id"></a> [virtualmachine\_resource\_id](#input\_virtualmachine\_resource\_id)
 
-Description: (Required): Specifies the resource id of the Virtual Machine to apply the Run Command to.
+Description: `virtualmachine_resource_id` - (Required): Specifies the resource id of the Virtual Machine to apply the Run Command to.
 
 Type: `string`
 
@@ -168,7 +168,7 @@ The following input variables are optional (have default values):
 
 ### <a name="input_error_blob_managed_identity"></a> [error\_blob\_managed\_identity](#input\_error\_blob\_managed\_identity)
 
-Description: (Optional): An error\_blob\_managed\_identity block as defined below. User-assigned managed Identity that has access to errorBlobUri storage blob.
+Description: `error_blob_managed_identity` - (Optional): An error\_blob\_managed\_identity block as defined below. User-assigned managed Identity that has access to errorBlobUri storage blob.
 
 Type:
 
@@ -183,7 +183,7 @@ Default: `null`
 
 ### <a name="input_error_blob_uri"></a> [error\_blob\_uri](#input\_error\_blob\_uri)
 
-Description: (Optional): Specifies the Azure storage blob where script error stream will be uploaded. It can be basic blob URI with SAS token.
+Description: `error_blob_uri` - (Optional): Specifies the Azure storage blob where script error stream will be uploaded. It can be basic blob URI with SAS token.
 
 Type: `string`
 
@@ -191,7 +191,7 @@ Default: `null`
 
 ### <a name="input_output_blob_managed_identity"></a> [output\_blob\_managed\_identity](#input\_output\_blob\_managed\_identity)
 
-Description: (Optional): An output\_blob\_managed\_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.
+Description: `output_blob_managed_identity` - (Optional): An output\_blob\_managed\_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.
 
 Type:
 
@@ -206,7 +206,7 @@ Default: `null`
 
 ### <a name="input_output_blob_uri"></a> [output\_blob\_uri](#input\_output\_blob\_uri)
 
-Description: (Optional): Specifies the Azure storage blob where script output stream will be uploaded. It can be basic blob URI with SAS token.
+Description: `output_blob_uri` - (Optional): Specifies the Azure storage blob where script output stream will be uploaded. It can be basic blob URI with SAS token.
 
 Type: `string`
 
@@ -214,7 +214,7 @@ Default: `null`
 
 ### <a name="input_parameters"></a> [parameters](#input\_parameters)
 
-Description: (Optional): A list of parameter blocks as defined below. The parameters used by the script.
+Description: `parameters` - (Optional): A list of parameter blocks as defined below. The parameters used by the script.
 
 Type:
 
@@ -229,7 +229,7 @@ Default: `[]`
 
 ### <a name="input_protected_parameters"></a> [protected\_parameters](#input\_protected\_parameters)
 
-Description: (Optional): A list of protected\_parameter blocks as defined below. The protected parameters used by the script.
+Description: `protected_parameters` - (Optional): A list of protected\_parameter blocks as defined below. The protected parameters used by the script.
 
 Type:
 
@@ -244,7 +244,7 @@ Default: `[]`
 
 ### <a name="input_run_as_password"></a> [run\_as\_password](#input\_run\_as\_password)
 
-Description: (Optional): Specifies the user account password on the VM when executing the Virtual Machine Run Command.
+Description: `run_as_password` - (Optional): Specifies the user account password on the VM when executing the Virtual Machine Run Command.
 
 Type: `string`
 
@@ -252,7 +252,7 @@ Default: `null`
 
 ### <a name="input_run_as_user"></a> [run\_as\_user](#input\_run\_as\_user)
 
-Description: (Optional): Specifies the user account on the VM when executing the Virtual Machine Run Command.
+Description: `run_as_user` - (Optional): Specifies the user account on the VM when executing the Virtual Machine Run Command.
 
 Type: `string`
 
@@ -260,7 +260,7 @@ Default: `null`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
-Description: (Optional) Tags of the resource.
+Description: `tags` - (Optional) Tags of the resource.
 
 Type: `map(string)`
 
@@ -296,7 +296,7 @@ The following outputs are exported:
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
-Description: n/a
+Description: The resource id of the virtual machine run command
 
 ## Modules
 

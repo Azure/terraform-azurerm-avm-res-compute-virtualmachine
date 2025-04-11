@@ -287,6 +287,8 @@ resource "azurerm_backup_policy_vm" "test_policy" {
   retention_daily {
     count = 10
   }
+
+  depends_on = [azurerm_recovery_services_vault.test_vault]
 }
 
 resource "azurerm_maintenance_configuration" "test_maintenance_config" {

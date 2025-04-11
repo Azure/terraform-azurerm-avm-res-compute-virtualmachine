@@ -1,7 +1,7 @@
 variable "location" {
   type        = string
   description = <<DESCRIPTION
-(Required): The Azure Region where the Virtual Machine Run Command should exist. Changing this forces a new Virtual Machine Run Command to be created.
+`location` - (Required): The Azure Region where the Virtual Machine Run Command should exist. Changing this forces a new Virtual Machine Run Command to be created.
 DESCRIPTION
   nullable    = false
 }
@@ -9,7 +9,7 @@ DESCRIPTION
 variable "name" {
   type        = string
   description = <<DESCRIPTION
-(Required): Specifies the name of this Virtual Machine Run Command. Changing this forces a new Virtual Machine Run Command to be created.
+`name` - (Required): Specifies the name of this Virtual Machine Run Command. Changing this forces a new Virtual Machine Run Command to be created.
 DESCRIPTION
   nullable    = false
 }
@@ -25,7 +25,7 @@ variable "script_source" {
     }))
   })
   description = <<DESCRIPTION
-(Required): A source block as defined below. The source of the run command script.
+`script_source` - (Required): A source block as defined below. The source of the run command script.
 DESCRIPTION
   nullable    = false
 }
@@ -33,7 +33,7 @@ DESCRIPTION
 variable "virtualmachine_resource_id" {
   type        = string
   description = <<DESCRIPTION
-(Required): Specifies the resource id of the Virtual Machine to apply the Run Command to.
+`virtualmachine_resource_id` - (Required): Specifies the resource id of the Virtual Machine to apply the Run Command to.
 DESCRIPTION
   nullable    = false
 }
@@ -45,7 +45,7 @@ variable "error_blob_managed_identity" {
   })
   default     = null
   description = <<DESCRIPTION
-(Optional): An error_blob_managed_identity block as defined below. User-assigned managed Identity that has access to errorBlobUri storage blob.
+`error_blob_managed_identity` - (Optional): An error_blob_managed_identity block as defined below. User-assigned managed Identity that has access to errorBlobUri storage blob.
 DESCRIPTION
 }
 
@@ -53,7 +53,7 @@ variable "error_blob_uri" {
   type        = string
   default     = null
   description = <<DESCRIPTION
-(Optional): Specifies the Azure storage blob where script error stream will be uploaded. It can be basic blob URI with SAS token.
+`error_blob_uri` - (Optional): Specifies the Azure storage blob where script error stream will be uploaded. It can be basic blob URI with SAS token.
 DESCRIPTION
 }
 
@@ -64,7 +64,7 @@ variable "output_blob_managed_identity" {
   })
   default     = null
   description = <<DESCRIPTION
-(Optional): An output_blob_managed_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.
+`output_blob_managed_identity` - (Optional): An output_blob_managed_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.
 DESCRIPTION
 }
 
@@ -72,7 +72,7 @@ variable "output_blob_uri" {
   type        = string
   default     = null
   description = <<DESCRIPTION
-(Optional): Specifies the Azure storage blob where script output stream will be uploaded. It can be basic blob URI with SAS token.
+`output_blob_uri` - (Optional): Specifies the Azure storage blob where script output stream will be uploaded. It can be basic blob URI with SAS token.
 DESCRIPTION
 }
 
@@ -83,7 +83,7 @@ variable "parameters" {
   }))
   default     = []
   description = <<DESCRIPTION
-(Optional): A list of parameter blocks as defined below. The parameters used by the script.
+`parameters` - (Optional): A list of parameter blocks as defined below. The parameters used by the script.
 DESCRIPTION
 }
 
@@ -94,7 +94,7 @@ variable "protected_parameters" {
   }))
   default     = []
   description = <<DESCRIPTION
-(Optional): A list of protected_parameter blocks as defined below. The protected parameters used by the script.
+`protected_parameters` - (Optional): A list of protected_parameter blocks as defined below. The protected parameters used by the script.
 DESCRIPTION
   sensitive   = true
 }
@@ -103,7 +103,7 @@ variable "run_as_password" {
   type        = string
   default     = null
   description = <<DESCRIPTION
-(Optional): Specifies the user account password on the VM when executing the Virtual Machine Run Command.
+`run_as_password` - (Optional): Specifies the user account password on the VM when executing the Virtual Machine Run Command.
 DESCRIPTION
   sensitive   = true
 }
@@ -112,7 +112,7 @@ variable "run_as_user" {
   type        = string
   default     = null
   description = <<DESCRIPTION
-(Optional): Specifies the user account on the VM when executing the Virtual Machine Run Command.
+`run_as_user` - (Optional): Specifies the user account on the VM when executing the Virtual Machine Run Command.
 DESCRIPTION
   sensitive   = true
 }
@@ -120,7 +120,7 @@ DESCRIPTION
 variable "tags" {
   type        = map(string)
   default     = null
-  description = "(Optional) Tags of the resource."
+  description = "`tags` - (Optional) Tags of the resource."
 }
 
 variable "timeouts" {
@@ -134,7 +134,7 @@ variable "timeouts" {
   description = <<DESCRIPTION
 An object of timeouts to apply to the creation and destruction of resources.
 
-- `create` - (Optional) The timeout for creating the resource. 
+- `create` - (Optional) The timeout for creating the resource.
 - `delete` - (Optional) The timeout for deleting the resource.
 - `update` - (Optional) The timeout for updating the resource.
 - `read` - (Optional) The timeout for reading the resource.
