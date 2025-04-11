@@ -682,7 +682,7 @@ variable "extensions" {
     type_handler_version        = string
     auto_upgrade_minor_version  = optional(bool)
     automatic_upgrade_enabled   = optional(bool)
-    deploy_sequence             = optional(number, 3)
+    deploy_sequence             = optional(number, 5)
     failure_suppression_enabled = optional(bool, false)
     settings                    = optional(string)
     protected_settings          = optional(string)
