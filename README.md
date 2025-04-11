@@ -53,10 +53,6 @@ The following resources are used by this module:
 - [azurerm_role_assignment.this_virtual_machine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_windows](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
-- [azurerm_virtual_machine_extension.this_extension](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
-- [azurerm_virtual_machine_extension.this_extension_1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
-- [azurerm_virtual_machine_extension.this_extension_2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
-- [azurerm_virtual_machine_run_command.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_run_command) (resource)
 - [azurerm_windows_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/windows_virtual_machine) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
@@ -742,6 +738,7 @@ Description: This map of objects is used to create additional `azurerm_virtual_m
     - `secret_url` (Required) - The Secret URL of a Key Vault Certificate. This can be sourced from the `secret_id` field within the `azurerm_key_vault_certificate` Resource.
     - `source_vault_id` (Required) - the Azure resource ID of the key vault holding the secret
   - `tags` (Optional) - A mapping of tags to assign to the extension resource.
+  - `timeouts` (Optional): Timeouts for the extension resource.
 
 Example Inputs:
 
@@ -808,6 +805,13 @@ map(object({
       secret_url      = string
       source_vault_id = string
     }))
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+      update = optional(string)
+      read   = optional(string)
+      })
+    )
   }))
 ```
 
@@ -1305,13 +1309,14 @@ The following arguments are supported:
 
  - `location` (Required): The Azure Region where the Virtual Machine Run Command should exist. Changing this forces a new Virtual Machine Run Command to be created.
  - `name` (Required): Specifies the name of this Virtual Machine Run Command. Changing this forces a new Virtual Machine Run Command to be created.
- - `source` (Required): A source block as defined below. The source of the run command script.
+ - `script_source` (Required): A source block as defined below. The source of the run command script.
  - `error_blob_managed_identity` (Optional): An error\_blob\_managed\_identity block as defined below. User-assigned managed Identity that has access to errorBlobUri storage blob.
  - `error_blob_uri` (Optional): Specifies the Azure storage blob where script error stream will be uploaded.
  - `output_blob_managed_identity` (Optional): An output\_blob\_managed\_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.
  - `output_blob_uri` (Optional): Specifies the Azure storage blob where script output stream will be uploaded. It can be basic blob URI with SAS token.
  - `parameter` (Optional): A list of parameter blocks as defined below. The parameters used by the script.
  - `protected_parameter` (Optional): A list of protected\_parameter blocks as defined below. The protected parameters used by the script.
+ - `timeouts` (Optional): Timeouts for each run command.
  - `tags` (Optional): A mapping of tags which should be assigned to the Virtual Machine Run Command.
 
  An error\_blob\_managed\_identity block supports the following arguments:
@@ -1340,9 +1345,10 @@ Type:
 
 ```hcl
 map(object({
-    location = string
-    name     = string
-    source = object({
+    location        = string
+    name            = string
+    deploy_sequence = optional(number, 3)
+    script_source = object({
       command_id = optional(string)
       script     = optional(string)
       script_uri = optional(string)
@@ -1365,6 +1371,14 @@ map(object({
       name  = string
       value = string
     })), [])
+
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+      update = optional(string)
+      read   = optional(string)
+      })
+    )
 
     tags = optional(map(string))
   }))
@@ -1601,6 +1615,43 @@ object({
 
 Default: `null`
 
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: A map of timeouts to apply to the creation and destruction of resources.  
+If using retry, the maximum elapsed retry time is governed by this value.
+
+The object has attributes for each resource type, with the following optional attributes:
+
+- `create` - (Optional) The timeout for creating the resource.
+- `delete` - (Optional) The timeout for deleting the resource.
+- `update` - (Optional) The timeout for updating the resource.
+- `read` - (Optional) The timeout for reading the resource.
+
+Each time duration is parsed using this function: <https://pkg.go.dev/time#ParseDuration>.
+
+Type:
+
+```hcl
+object({
+    azurerm_virtual_machine_extension = optional(object({
+      create = optional(string, "30m")
+      delete = optional(string, "30m")
+      update = optional(string, "30m")
+      read   = optional(string, "5m")
+      }), {}
+    )
+    azurerm_virtual_machine_run_command = optional(object({
+      create = optional(string, "30m")
+      delete = optional(string, "30m")
+      update = optional(string, "30m")
+      read   = optional(string, "5m")
+      }), {}
+    )
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_timezone"></a> [timezone](#input\_timezone)
 
 Description: (Optional) Specifies the Time Zone which should be used by the Windows Virtual Machine, [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/). Changing this forces a new resource to be created.
@@ -1767,7 +1818,43 @@ Description:     The default attributes exported by the azurerm provider.  These
 
 ## Modules
 
-No modules.
+The following Modules are called:
+
+### <a name="module_extension"></a> [extension](#module\_extension)
+
+Source: ./modules/extension
+
+Version:
+
+### <a name="module_extension_1"></a> [extension\_1](#module\_extension\_1)
+
+Source: ./modules/extension
+
+Version:
+
+### <a name="module_extension_2"></a> [extension\_2](#module\_extension\_2)
+
+Source: ./modules/extension
+
+Version:
+
+### <a name="module_run_command"></a> [run\_command](#module\_run\_command)
+
+Source: ./modules/run-command
+
+Version:
+
+### <a name="module_run_command_1"></a> [run\_command\_1](#module\_run\_command\_1)
+
+Source: ./modules/run-command
+
+Version:
+
+### <a name="module_run_command_2"></a> [run\_command\_2](#module\_run\_command\_2)
+
+Source: ./modules/run-command
+
+Version:
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
