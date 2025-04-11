@@ -2,11 +2,12 @@ resource "azurerm_windows_virtual_machine" "this" {
   count = (lower(var.os_type) == "windows") ? 1 : 0
 
   #required properties
-  admin_password        = local.admin_password_windows
-  admin_username        = local.admin_username
-  location              = var.location
-  name                  = var.name
-  network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
+  admin_password = local.admin_password_windows
+  admin_username = local.admin_username
+  location       = var.location
+  name           = var.name
+  #network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
+  network_interface_ids = [for interface in local.ordered_network_interface_keys : azurerm_network_interface.virtualmachine_network_interfaces[interface].id]
   resource_group_name   = var.resource_group_name
   size                  = var.sku_size
   #optional properties

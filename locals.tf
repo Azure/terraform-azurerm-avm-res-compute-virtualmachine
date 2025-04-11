@@ -112,6 +112,11 @@ locals {
       }
     ]
   ]) : "${ra.nic_key}-${ra.ra_key}" => ra }
+  #azurerm vm resources implement network interfaces based on the order of input. Ordering the inputs so that the nic tagged as primary will be implemented first.
+  ordered_network_interface_keys = concat(
+    [for nic, value in var.network_interfaces : nic if value.is_primary],
+    [for nic, value in var.network_interfaces : nic if !value.is_primary]
+  )
   #concat the input variable with the simple list going forward - this is a placeholder so that we can continue to reference the local source image reference value when it includes the simpleOS option.
   source_image_reference = var.source_image_reference
   #get the first system managed identity id if it is provisioned and depending on whether the vm type is linux or windows

@@ -336,6 +336,7 @@ module "testvm" {
           private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_2"].resource_id
         }
       }
+      is_primary = true
     }
   }
 

@@ -225,6 +225,7 @@ map(object({
     inherit_tags            = optional(bool, true)
     internal_dns_name_label = optional(string)
     ip_forwarding_enabled   = optional(bool, false)
+    is_primary              = optional(bool, false)
     lock_level              = optional(string)
     lock_name               = optional(string)
     network_security_groups = optional(map(object({
