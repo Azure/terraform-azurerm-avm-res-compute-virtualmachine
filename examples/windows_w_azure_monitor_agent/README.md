@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
-# Windows with WAF defaults
+# Simple Windows VM with the Azure Monitor Agent and Diagnostic Settings configured
 
-This example will be used to demonstrate a windows host configured with common WAF defaults. It may be updated as WAF VM specific items are added or removed. It contains the following configuration:
+This example demonstrates the creation of a simple Windows Server 2022 VM with the following features:
 
     - a single private IPv4 address
     - a single default OS 128gb OS disk
@@ -9,9 +9,6 @@ This example will be used to demonstrate a windows host configured with common W
     - an optional bastion resource that can be deployed by uncommenting the bastion elements in the example
     - an extension resource that installs the Azure monitor Agent
     - an extension resource to demonstrate Azure Disk Encryption
-    - an extension resource to demonstrate Guest Configuration extension
-    - a sample maintenance schedule
-    - a sample backup policy configured to do a simple backup
 
 It includes the following resources in addition to the VM resource:
 
@@ -20,18 +17,11 @@ It includes the following resources in addition to the VM resource:
     - a log analytics workspace for the logs and metrics
     - a data collection rule configuring the vm logs and metrics to be sent to the log analytics workspace
     - An optional subnet, public ip, and bastion which can be enabled by uncommenting the bastion resources when running the example.
-    - A simple maintenance schedule for demonstrating the maintenance schedule interface.
-    - A recovery services vault for storing backups
-    - A backup policy for use demonstrating backups
 
 ```hcl
 terraform {
   required_version = ">= 1.9, < 2.0"
   required_providers {
-    azuread = {
-      source  = "hashicorp/azuread"
-      version = "~> 2.15"
-    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116, < 5.0"
@@ -71,7 +61,7 @@ locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
   deployment_region = "canadacentral" #temporarily pinning on single region
   tags = {
-    scenario = "WAF example"
+    scenario = "Default"
   }
 }
 
@@ -189,10 +179,6 @@ resource "azurerm_user_assigned_identity" "example_identity" {
   tags                = local.tags
 }
 
-data "azuread_service_principal" "backup_service_app" {
-  display_name = "Backup Management Service"
-}
-
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
@@ -211,14 +197,6 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Administrator"
       principal_id               = data.azurerm_client_config.current.object_id
-    }
-    backup_vault_identity = {
-      role_definition_id_or_name = "Key Vault Secrets Officer"
-      principal_id               = azurerm_recovery_services_vault.test_vault.identity[0].principal_id
-    }
-    backup_mgmt_service = {
-      role_definition_id_or_name = "Key Vault Administrator"
-      principal_id               = data.azuread_service_principal.backup_service_app.object_id
     }
   }
 
@@ -243,79 +221,27 @@ data "azurerm_key_vault" "this" {
   resource_group_name = azurerm_resource_group.this_rg.name
 }
 
-resource "azurerm_recovery_services_vault" "test_vault" {
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.recovery_services_vault.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  sku                 = "Standard"
-  soft_delete_enabled = false
-  storage_mode_type   = "LocallyRedundant"
-
-  identity {
-    type = "SystemAssigned"
-  }
-}
-
-resource "azurerm_backup_policy_vm" "test_policy" {
-  name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
-  recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
-  resource_group_name = azurerm_resource_group.this_rg.name
-
-  backup {
-    frequency = "Daily"
-    time      = "23:00"
-  }
-  retention_daily {
-    count = 10
-  }
-}
-
-resource "azurerm_maintenance_configuration" "test_maintenance_config" {
-  location                 = azurerm_resource_group.this_rg.location
-  name                     = "${module.naming.virtual_machine.name_unique}-test-maint-config"
-  resource_group_name      = azurerm_resource_group.this_rg.name
-  scope                    = "InGuestPatch"
-  in_guest_user_patch_mode = "User"
-
-  install_patches {
-    reboot = "Always"
-
-    windows {
-      classifications_to_include = ["Critical", "Security", "UpdateRollup"]
-    }
-  }
-  window {
-    start_date_time = formatdate("YYYY-MM-DD hh:mm", timeadd(timestamp(), "30m"))
-    time_zone       = "Pacific Standard Time"
-    duration        = "04:00"
-    recur_every     = "Month Second Friday"
-  }
-
-  lifecycle {
-    ignore_changes = [window[0].start_date_time]
-  }
-}
-
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
   #version = "0.19.0"
 
-  enable_telemetry                                       = var.enable_telemetry
-  location                                               = azurerm_resource_group.this_rg.location
-  resource_group_name                                    = azurerm_resource_group.this_rg.name
-  os_type                                                = "Windows"
-  name                                                   = module.naming.virtual_machine.name_unique
-  sku_size                                               = module.vm_sku.sku
-  zone                                                   = random_integer.zone_index.result
-  encryption_at_host_enabled                             = false
-  patch_mode                                             = "AutomaticByPlatform"
-  patch_assessment_mode                                  = "AutomaticByPlatform"
-  bypass_platform_safety_checks_on_user_schedule_enabled = true
+  enable_telemetry           = var.enable_telemetry
+  location                   = azurerm_resource_group.this_rg.location
+  resource_group_name        = azurerm_resource_group.this_rg.name
+  os_type                    = "Windows"
+  name                       = module.naming.virtual_machine.name_unique
+  sku_size                   = module.vm_sku.sku
+  zone                       = random_integer.zone_index.result
+  encryption_at_host_enabled = false
 
   account_credentials = {
     key_vault_configuration = {
       resource_id = module.avm_res_keyvault_vault.resource_id
+      secret_configuration = {
+        name                           = "example-custom-secret-name"
+        expiration_date_length_in_days = 30
+      }
     }
   }
 
@@ -324,19 +250,6 @@ module "testvm" {
     offer     = "WindowsServer"
     sku       = "2022-datacenter-g2"
     version   = "latest"
-  }
-
-  azure_backup_configurations = {
-    backup_config = {
-      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
-      recovery_vault_name        = azurerm_recovery_services_vault.test_vault.name
-      resource_group_name        = azurerm_recovery_services_vault.test_vault.resource_group_name
-      backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
-    }
-  }
-
-  maintenance_configuration_resource_ids = {
-    base_window = azurerm_maintenance_configuration.test_maintenance_config.id
   }
 
   managed_identities = {
@@ -380,7 +293,6 @@ module "testvm" {
       type_handler_version       = "1.2"
       auto_upgrade_minor_version = true
       automatic_upgrade_enabled  = true
-      deploy_sequence            = 1
       settings                   = null
     }
     azure_disk_encryption = {
@@ -389,7 +301,6 @@ module "testvm" {
       type                       = "AzureDiskEncryption"
       type_handler_version       = "2.2"
       auto_upgrade_minor_version = true
-      deploy_sequence            = 2
       settings                   = <<SETTINGS
           {
               "EncryptionOperation": "EnableEncryption",
@@ -400,15 +311,6 @@ module "testvm" {
           }
       SETTINGS
     }
-    guest_configuration = {
-      name                       = "AzurePolicyforWindows"
-      publisher                  = "Microsoft.GuestConfiguration"
-      type                       = "ConfigurationforWindows"
-      type_handler_version       = "1.0"
-      auto_upgrade_minor_version = true
-      deploy_sequence            = 3
-      settings                   = null
-    }
   }
 
   tags = {
@@ -416,9 +318,7 @@ module "testvm" {
   }
 
   depends_on = [
-    module.avm_res_keyvault_vault,
-    azurerm_backup_policy_vm.test_policy,
-    azurerm_recovery_services_vault.test_vault
+    module.avm_res_keyvault_vault
   ]
 }
 
@@ -568,8 +468,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azuread"></a> [azuread](#requirement\_azuread) (~> 2.15)
-
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
@@ -578,17 +476,13 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_backup_policy_vm.test_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_policy_vm) (resource)
 - [azurerm_log_analytics_workspace.this_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
-- [azurerm_maintenance_configuration.test_maintenance_config](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/maintenance_configuration) (resource)
 - [azurerm_monitor_data_collection_rule.test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_data_collection_rule) (resource)
 - [azurerm_monitor_data_collection_rule_association.this_rule_association](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_data_collection_rule_association) (resource)
-- [azurerm_recovery_services_vault.test_vault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_user_assigned_identity.example_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
-- [azuread_service_principal.backup_service_app](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/data-sources/service_principal) (data source)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 - [azurerm_key_vault.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/key_vault) (data source)
 
