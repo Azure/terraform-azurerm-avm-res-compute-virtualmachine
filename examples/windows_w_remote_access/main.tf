@@ -200,7 +200,7 @@ module "avm_res_keyvault_vault" {
 
   enabled_for_deployment = true # Required to deploy the certificates to the VM
   location               = azurerm_resource_group.this_rg.location
-  name                   = module.naming.key_vault.name_unique
+  name                   = "${module.naming.key_vault.name_unique}-win-rac"
   resource_group_name    = azurerm_resource_group.this_rg.name
   tenant_id              = data.azurerm_client_config.current.tenant_id
   network_acls = {
