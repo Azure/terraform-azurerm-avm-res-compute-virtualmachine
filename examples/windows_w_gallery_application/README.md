@@ -44,7 +44,8 @@ provider "azurerm" {
       prevent_deletion_if_contains_resources = false
     }
     key_vault {
-      purge_soft_delete_on_destroy = true
+      purge_soft_delete_on_destroy    = true
+      recover_soft_deleted_key_vaults = false
     }
   }
 }
@@ -179,7 +180,7 @@ module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
   version                     = "=0.10.0"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
-  name                        = module.naming.key_vault.name_unique
+  name                        = "${module.naming.key_vault.name_unique}-gallery"
   resource_group_name         = azurerm_resource_group.this_rg.name
   location                    = azurerm_resource_group.this_rg.location
   enabled_for_disk_encryption = true
