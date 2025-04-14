@@ -47,6 +47,9 @@ provider "azurerm" {
       purge_soft_delete_on_destroy    = true
       recover_soft_deleted_key_vaults = false
     }
+    recovery_service {
+      purge_protected_items_from_vault_on_destroy = true
+    }
   }
 }
 
