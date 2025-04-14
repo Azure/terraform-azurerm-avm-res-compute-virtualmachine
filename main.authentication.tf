@@ -29,11 +29,11 @@ resource "azurerm_key_vault_secret" "admin_password" {
 
   key_vault_id    = local.credentials_key_vault_config.resource_id
   name            = local.credential_secret_name_password
-  value           = coalesce(local.admin_password_windows, local.admin_password_linux, "notset")
   content_type    = local.credentials_key_vault_config.secret_configuration.content_type
   expiration_date = local.generated_secret_expiration_date_utc
   not_before_date = local.credentials_key_vault_config.secret_configuration.not_before_date
   tags            = local.credentials_key_vault_config.secret_configuration.tags != {} ? local.credentials_key_vault_config.secret_configuration.tags : var.tags
+  value           = coalesce(local.admin_password_windows, local.admin_password_linux, "notset")
 
   lifecycle {
     ignore_changes = [expiration_date]
@@ -55,11 +55,11 @@ resource "azurerm_key_vault_secret" "admin_ssh_key" {
 
   key_vault_id    = local.credentials_key_vault_config.resource_id
   name            = local.credential_secret_name_ssh_key
-  value           = local.admin_ssh_key_secret_value
   content_type    = local.credentials_key_vault_config.secret_configuration.content_type
   expiration_date = local.generated_secret_expiration_date_utc
   not_before_date = local.credentials_key_vault_config.secret_configuration.not_before_date
   tags            = local.credentials_key_vault_config.secret_configuration.tags != {} ? local.credentials_key_vault_config.secret_configuration.tags : var.tags
+  value           = local.admin_ssh_key_secret_value
 
   lifecycle {
     ignore_changes = [expiration_date]
