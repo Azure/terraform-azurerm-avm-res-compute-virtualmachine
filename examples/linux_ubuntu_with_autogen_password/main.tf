@@ -40,7 +40,7 @@ locals {
   #deployment_region = module.regions.regions[random_integer.region_index.result].name
   deployment_region = "canadacentral" #temporarily pinning on single region
   tags = {
-    scenario = "Run Command"
+    scenario = "Default"
   }
 }
 
@@ -126,8 +126,7 @@ module "vnet" {
   }
 }
 
-/*
-#uncomment this block to enable bastion host
+/* #uncomment these resources to enable bastion
 resource "azurerm_public_ip" "bastionpip" {
   allocation_method   = "Static"
   location            = azurerm_resource_group.this_rg.location
@@ -151,11 +150,28 @@ resource "azurerm_bastion_host" "bastion" {
 
 data "azurerm_client_config" "current" {}
 
+resource "azurerm_user_assigned_identity" "example_identity" {
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.user_assigned_identity.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  tags                = local.tags
+}
+
+resource "random_password" "admin_password" {
+  length           = 22
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
+  min_upper        = 2
+  override_special = "!#$%&()*+,-./:;<=>?@[]^_{|}~"
+  special          = true
+}
+
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
   version                     = "=0.10.0"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
-  name                        = "${module.naming.key_vault.name_unique}-win-rcm"
+  name                        = "${module.naming.key_vault.name_unique}-linux-agp"
   resource_group_name         = azurerm_resource_group.this_rg.name
   location                    = azurerm_resource_group.this_rg.location
   enabled_for_disk_encryption = true
@@ -181,80 +197,6 @@ module "avm_res_keyvault_vault" {
 
   tags = local.tags
 
-  secrets = {
-    admin_password = {
-      name = "admin-password"
-    }
-  }
-
-  secrets_value = {
-    admin_password = random_password.admin_password.result
-  }
-}
-
-resource "random_string" "name_suffix" {
-  length  = 4
-  special = false
-  upper   = false
-}
-
-resource "azurerm_storage_account" "this" {
-  account_replication_type = "ZRS"
-  account_tier             = "Standard"
-  location                 = azurerm_resource_group.this_rg.location
-  name                     = "avmstorage${random_string.name_suffix.result}"
-  resource_group_name      = azurerm_resource_group.this_rg.name
-}
-
-resource "azurerm_storage_container" "this" {
-  name                  = "example-sc"
-  container_access_type = "blob"
-  storage_account_id    = azurerm_storage_account.this.id
-}
-
-resource "azurerm_storage_blob" "example1" {
-  name                   = "script1"
-  storage_account_name   = azurerm_storage_account.this.name
-  storage_container_name = azurerm_storage_container.this.name
-  type                   = "Block"
-  source_content         = "echo hello world"
-}
-
-resource "azurerm_storage_blob" "example2" {
-  name                   = "output"
-  storage_account_name   = azurerm_storage_account.this.name
-  storage_container_name = azurerm_storage_container.this.name
-  type                   = "Append"
-}
-
-resource "azurerm_storage_blob" "example3" {
-  name                   = "error"
-  storage_account_name   = azurerm_storage_account.this.name
-  storage_container_name = azurerm_storage_container.this.name
-  type                   = "Append"
-}
-
-resource "azurerm_role_assignment" "this" {
-  principal_id         = azurerm_user_assigned_identity.example_identity.principal_id
-  scope                = azurerm_storage_account.this.id
-  role_definition_name = "Storage Blob Data Contributor"
-}
-
-resource "azurerm_user_assigned_identity" "example_identity" {
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  tags                = local.tags
-}
-
-resource "random_password" "admin_password" {
-  length           = 22
-  min_lower        = 2
-  min_numeric      = 2
-  min_special      = 2
-  min_upper        = 2
-  override_special = "!#$%&()*+,-./:;<=>?@[]^_{|}~"
-  special          = true
 }
 
 module "testvm" {
@@ -263,75 +205,22 @@ module "testvm" {
   #version = "0.19.0"
 
   enable_telemetry           = var.enable_telemetry
-  location                   = azurerm_resource_group.this_rg.location
-  resource_group_name        = azurerm_resource_group.this_rg.name
-  os_type                    = "Windows"
-  name                       = module.naming.virtual_machine.name_unique
-  sku_size                   = module.vm_sku.sku
   encryption_at_host_enabled = true
+  location                   = azurerm_resource_group.this_rg.location
+  name                       = module.naming.virtual_machine.name_unique
+  resource_group_name        = azurerm_resource_group.this_rg.name
+  os_type                    = "Linux"
+  sku_size                   = module.vm_sku.sku
   zone                       = random_integer.zone_index.result
 
   account_credentials = {
-    admin_credentials = {
-      password                           = random_password.admin_password.result
-      generate_admin_password_or_ssh_key = false
-    }
-  }
-
-  managed_identities = {
-    system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
-  }
-
-  os_disk = {
-    caching              = "ReadWrite"
-    storage_account_type = "Premium_LRS"
-  }
-
-  source_image_reference = {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2022-datacenter-g2"
-    version   = "latest"
-  }
-
-  run_commands = {
-    test_example_simple = {
-      location = azurerm_resource_group.this_rg.location
-      name     = "example-command"
-      script_source = {
-        script = "echo Hello World"
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+      secret_configuration = {
+        name = "azureuser-password-example"
       }
-
-      tags = local.tags
     }
-
-    test_example_from_storage = {
-      location        = azurerm_resource_group.this_rg.location
-      name            = "example-command-storage"
-      error_blob_uri  = azurerm_storage_blob.example3.url
-      output_blob_uri = azurerm_storage_blob.example2.url
-      script_source = {
-        script_uri = azurerm_storage_blob.example1.url
-      }
-
-      error_blob_managed_identity = {
-        client_id = azurerm_user_assigned_identity.example_identity.client_id
-      }
-
-      output_blob_managed_identity = {
-        client_id = azurerm_user_assigned_identity.example_identity.client_id
-      }
-
-      tags = local.tags
-    }
-  }
-
-  run_commands_secrets = {
-    test_example_from_storage = {
-      run_as_password = random_password.admin_password.result
-      run_as_user     = "azureuser"
-    }
+    password_authentication_disabled = false
   }
 
   network_interfaces = {
@@ -346,8 +235,20 @@ module "testvm" {
     }
   }
 
+  os_disk = {
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+  }
+
+  source_image_reference = {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
+    version   = "latest"
+  }
+
   tags = local.tags
 
-  depends_on = [module.avm_res_keyvault_vault, azurerm_user_assigned_identity.example_identity, azurerm_role_assignment.this]
+  depends_on = [module.avm_res_keyvault_vault]
 
 }

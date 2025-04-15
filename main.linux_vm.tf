@@ -2,14 +2,15 @@ resource "azurerm_linux_virtual_machine" "this" {
   count = (lower(var.os_type) == "linux") ? 1 : 0
 
   #required properties
-  admin_username        = var.admin_username
-  location              = var.location
-  name                  = var.name
-  network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
+  admin_username = local.admin_username
+  location       = var.location
+  name           = var.name
+  #network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
+  network_interface_ids = [for interface in local.ordered_network_interface_keys : azurerm_network_interface.virtualmachine_network_interfaces[interface].id]
   resource_group_name   = var.resource_group_name
   size                  = var.sku_size
   #optional properties
-  admin_password                                         = (var.disable_password_authentication ? null : local.admin_password_linux)
+  admin_password                                         = (local.password_authentication_disabled ? null : local.admin_password_linux)
   allow_extension_operations                             = var.allow_extension_operations
   availability_set_id                                    = var.availability_set_resource_id
   bypass_platform_safety_checks_on_user_schedule_enabled = var.bypass_platform_safety_checks_on_user_schedule_enabled
@@ -18,7 +19,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   custom_data                                            = var.custom_data
   dedicated_host_group_id                                = var.dedicated_host_group_resource_id
   dedicated_host_id                                      = var.dedicated_host_resource_id
-  disable_password_authentication                        = var.disable_password_authentication
+  disable_password_authentication                        = local.password_authentication_disabled
   disk_controller_type                                   = var.disk_controller_type
   edge_zone                                              = var.edge_zone
   encryption_at_host_enabled                             = var.encryption_at_host_enabled
@@ -38,9 +39,9 @@ resource "azurerm_linux_virtual_machine" "this" {
   tags                                                   = local.tags
   user_data                                              = var.user_data
   virtual_machine_scale_set_id                           = var.virtual_machine_scale_set_resource_id
-  vm_agent_platform_updates_enabled                      = var.vm_agent_platform_updates_enabled
-  vtpm_enabled                                           = var.vtpm_enabled
-  zone                                                   = var.zone
+  #vm_agent_platform_updates_enabled                      = var.vm_agent_platform_updates_enabled
+  vtpm_enabled = var.vtpm_enabled
+  zone         = var.zone
 
   os_disk {
     caching                          = var.os_disk.caching
@@ -148,18 +149,13 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 
   depends_on = [ #set explicit depends on for each association to address delete order issues.
+    azurerm_network_interface.virtualmachine_network_interfaces,
     azurerm_network_interface_security_group_association.this,
     azurerm_network_interface_application_security_group_association.this,
     azurerm_network_interface_backend_address_pool_association.this,
     azurerm_network_interface_application_gateway_backend_address_pool_association.this,
     azurerm_network_interface_nat_rule_association.this
   ]
-
-  lifecycle {
-    ignore_changes = [
-      vm_agent_platform_updates_enabled # This is a read-only property in the API, but AzureRM provider allows it to be set. Remove this if the property becomes writable in the API.
-    ]
-  }
 }
 
 moved {
@@ -186,6 +182,11 @@ resource "azurerm_management_lock" "this_linux_virtualmachine" {
     azurerm_linux_virtual_machine.this,
     azurerm_monitor_diagnostic_setting.this_nic_diags,
     azurerm_monitor_diagnostic_setting.this_vm_diags,
-    azurerm_virtual_machine_extension.this_extension
+    module.extension,
+    module.extension_1,
+    module.extension_2,
+    module.run_command,
+    module.run_command_1,
+    module.run_command_2
   ]
 }

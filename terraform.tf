@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.6"
+  required_version = ">= 1.9, < 2.0"
   required_providers {
     azapi = {
       source  = "Azure/azapi"
@@ -15,7 +15,7 @@ terraform {
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.6"
+      version = "~> 3.7"
     }
     tls = {
       source  = "hashicorp/tls"

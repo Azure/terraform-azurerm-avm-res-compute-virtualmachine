@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.6"
+  required_version = ">= 1.9, < 2.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -7,7 +7,7 @@ terraform {
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.6"
+      version = "~> 3.7"
     }
   }
 }
@@ -17,6 +17,14 @@ provider "azurerm" {
   features {
     resource_group {
       prevent_deletion_if_contains_resources = false
+    }
+    key_vault {
+      purge_soft_delete_on_destroy    = true
+      recover_soft_deleted_key_vaults = false
+    }
+    recovery_service {
+      vm_backup_stop_protection_and_retain_data_on_destroy = false
+      purge_protected_items_from_vault_on_destroy          = true
     }
   }
 }
@@ -28,7 +36,7 @@ module "naming" {
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.3.0"
+  version = "0.5.0"
 
   availability_zones_filter = true
 }
@@ -149,9 +157,9 @@ data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
   source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "=0.9.1"
+  version                     = "=0.10.0"
   tenant_id                   = data.azurerm_client_config.current.tenant_id
-  name                        = module.naming.key_vault.name_unique
+  name                        = "${module.naming.key_vault.name_unique}-gallery"
   resource_group_name         = azurerm_resource_group.this_rg.name
   location                    = azurerm_resource_group.this_rg.location
   enabled_for_disk_encryption = true
@@ -185,7 +193,7 @@ resource "azurerm_storage_account" "app_account" {
 resource "azurerm_storage_container" "app_container" {
   name                  = module.naming.storage_container.name_unique
   container_access_type = "blob"
-  storage_account_name  = azurerm_storage_account.app_account.name
+  storage_account_id    = azurerm_storage_account.app_account.id
 }
 
 resource "azurerm_storage_blob" "app" {
@@ -234,7 +242,7 @@ resource "azurerm_gallery_application_version" "test_app_version" {
 
 resource "azurerm_resource_group" "rsv_rg" {
   location = local.deployment_region
-  name     = "RSV-rg"
+  name     = "${module.naming.resource_group.name_unique}-RSV-rg"
   tags     = local.tags
 }
 
@@ -259,6 +267,8 @@ resource "azurerm_backup_policy_vm" "test_policy" {
   retention_daily {
     count = 10
   }
+
+  depends_on = [azurerm_recovery_services_vault.test_vault]
 }
 
 resource "azurerm_maintenance_configuration" "test_maintenance_config" {
@@ -290,7 +300,7 @@ resource "azurerm_maintenance_configuration" "test_maintenance_config" {
 module "testvm" {
   source = "../../"
   #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.17.0
+  #version = "0.19.0"
 
   enable_telemetry                                       = var.enable_telemetry
   location                                               = azurerm_resource_group.this_rg.location
@@ -304,8 +314,10 @@ module "testvm" {
   patch_mode                                             = "AutomaticByPlatform"
   bypass_platform_safety_checks_on_user_schedule_enabled = true
 
-  generated_secrets_key_vault_secret_config = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
+  account_credentials = {
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+    }
   }
 
   os_disk = {
@@ -358,6 +370,8 @@ module "testvm" {
     }
   }
 
+  /* #This is commented to avoid test failures due to soft-delete backup deletion failures.
+   #Leaving this here for reference for those wanting to see an example of how to use the backup interface.
   azure_backup_configurations = {
     backup_config = {
       recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
@@ -367,6 +381,7 @@ module "testvm" {
       exclude_disk_luns          = [0]
     }
   }
+*/
 
   maintenance_configuration_resource_ids = {
     config_1 = azurerm_maintenance_configuration.test_maintenance_config.id
@@ -374,6 +389,9 @@ module "testvm" {
 
   tags = local.tags
 
-  depends_on = [module.avm_res_keyvault_vault]
-
+  depends_on = [
+    module.avm_res_keyvault_vault,
+    azurerm_backup_policy_vm.test_policy,
+    azurerm_recovery_services_vault.test_vault
+  ]
 }

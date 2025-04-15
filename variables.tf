@@ -65,6 +65,7 @@ variable "network_interfaces" {
     inherit_tags            = optional(bool, true)
     internal_dns_name_label = optional(string)
     ip_forwarding_enabled   = optional(bool, false)
+    is_primary              = optional(bool, false)
     lock_level              = optional(string)
     lock_name               = optional(string)
     network_security_groups = optional(map(object({
@@ -194,6 +195,143 @@ variable "zone" {
 }
 
 ########## optional variables
+variable "account_credentials" {
+  type = object({
+    admin_credentials = optional(object({
+      username                           = optional(string, "azureuser")
+      password                           = optional(string, null)
+      ssh_keys                           = optional(list(string), [])
+      generate_admin_password_or_ssh_key = optional(bool, true) # Use of flag is required to avoid known after apply issues
+    }), {})
+    key_vault_configuration = optional(object({
+      resource_id = string
+      secret_configuration = optional(object({
+        name                           = optional(string, null)
+        expiration_date_length_in_days = optional(number, 45)
+        content_type                   = optional(string, "text/plain")
+        not_before_date                = optional(string, null)
+        tags                           = optional(map(string), {})
+      }), {})
+    }), null)
+    password_authentication_disabled = optional(bool, true)
+    #future addditional user credentials map?
+  })
+  default     = {}
+  description = <<ACCOUNT_CREDENTIALS
+This is the primary object for defining admin credentials for the VM. It supports both windows and linux configurations with the following logic:
+- For Both Windows and Linux:
+  - If a username is provided, it will be used as the admin username, otherwise azureadmin will be the default.
+  - If password or ssh public keys are not provided and the `var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key` flag is true (default), a password or ssh private key will be generated and can be accessed via outputs.
+  - If a key vault configuration is set, the provided or generated credential objects will be stored in the key vault using the provided details.
+- For Windows:
+  - Password authentication is always enabled.
+- For Linux:
+  - Password authentication is disabled by default. If you want to use password authentication, set password_authentication_disabled to false.
+  - If password authentication is disabled, ssh public keys are required. If not provided, a new private key will be generated and can be accessed via outputs when the `var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key` flag is true (default).
+  - If password authentication is enabled, any provided ssh public keys will cause a validation error. This is a limitation of the azurerm_linux_virtual_machine resource which requires either password or ssh key authentication, not both.
+
+Schema:
+- admin_credentials
+  - `username`: string (optional, default: azureuser) = (optional) The username for the admin account. If not provided, `azureuser` will be used for the default administrative account.
+  - `password`: string (optional, default: null) = (optional) The password for the admin account. If not provided, a password will be generated. Only valid for Linux when password_authentication_disabled = false.
+  - `ssh_keys`: list(string) (optional, default: []) = (optional) The SSH public keys for the admin account. If not provided, a new private key will be generated. Only valid when password_authentication_disabled = true and only valid for Linux virtual machines.
+  - `generate_admin_password_or_ssh_key`: bool (optional, default: true) = (optional) A flag to indicate whether to generate a password or SSH key for the admin account. If set to true, a password or SSH key will be auto-generated. If set to false, the provided password or SSH keys will be used.
+- `key_vault_configuration` = Object (optional, default: null) = (optional) The configuration for storing credentials in an Azure Key Vault. If not provided, credentials will not be stored in Key Vault as part of this module.
+  - `resource_id`: string (required) = (required) The resource ID of the Key Vault where the credentials will be stored.
+  - `secret_configuration` = Object (optional, default: null) = (optional) The secret configuration that is used when storing credentials in the Key Vault.
+    - `name`: string (optional, default: null) = (optional) The name of the secret in the Key Vault. If not provided, a name will be generated using the pattern <vm name>-<admin username>-<password | ssh-private-key>.
+    - `expiration_date_length_in_days`: number (optional, default: 45) = (optional) The number of days until the secret expires. If not provided, the default is 45 days.
+    - `content_type`: string (optional, default: text/plain) = (optional) The content type of the secret. If not provided, the default is `text/plain`.
+    - `not_before_date`: string (optional, default: null) = (optional) The date before which the secret is not valid. If not provided, the default is null.
+    - `tags`: map(string) (optional, default: {}) = (optional) The tags to apply to the secret in the Key Vault. If not provided, the default is an empty map.
+- `password_authentication_disabled`: bool (optional, default: true) = (optional) A flag to indicate whether password authentication is disabled. This is only valid for Linux virtual machines. If set to true, password authentication will be disabled and SSH key authentication will be used. If set to false, password authentication will be enabled and SSH key authentication will be ignored.
+
+Input Examples:
+#no configuration = default username, generated password, password available via output
+
+# Linux, password auth allowed, generated password stored in vault using a custom secret name
+account_credentials = {
+  key_vault_configuration = {
+    resource_id = module.avm_res_keyvault_vault.resource_id
+    secret_configuration = {
+      name         = "vault-pub-key-test"
+    }
+  }
+  password_authentication_disabled = false
+}
+
+# Windows custom username and password, no vaulting
+account_credentials = {
+  admin_credentials = {
+    username = "testuser"
+    password = "testValue123!"
+  }
+}
+ACCOUNT_CREDENTIALS
+  nullable    = false
+
+  validation {
+    condition = !(
+      lower(var.os_type) == "linux" &&
+      var.account_credentials.admin_credentials.password != null &&
+    var.account_credentials.password_authentication_disabled == true)
+    error_message = "var.account_credentials.admin_credentials.password values will be ignored when var.admin_credentials.password_authentication_disabled == true. Please set var.admin_credentials.password_authentication_disabled to false if you want to use password authentication for linux systems."
+  }
+  validation {
+    condition = !(
+      length(var.account_credentials.admin_credentials.ssh_keys) != 0 &&
+      var.account_credentials.admin_credentials.password != null
+    )
+    error_message = "Only one of password or ssh_keys should be set due to limitations imposed by the use of azurerm_linux_virtual_machine resource. Please set either password or ssh_keys, not both."
+  }
+  validation {
+    condition     = !can(regex("^(administrator|admin|user|user1|test|user2|test2|user3|admin1|1|123|a|actuser|adm|admin2|aspnet|backup|console|david|guest|john|owner|root|server|sql|support|support_388945a0|sys|test2|test3|user4|user5)$", lower(var.account_credentials.admin_credentials.username)))
+    error_message = "Admin username may not contain any of the following reserved values. ( administrator, admin, user, user1, test, user2, test1, user3, admin1, 1, 123, a, actuser, adm, admin2, aspnet, backup, console, david, guest, john, owner, root, server, sql, support, support_388945a0, sys, test2, test3, user4, user5 )"
+  }
+  validation {
+    condition     = can(regex("^.{1,64}$", var.account_credentials.admin_credentials.username))
+    error_message = "Admin username for linux must be between 1 and 64 characters in length. Admin name for windows must be between 1 and 20 characters in length."
+  }
+  validation {
+    condition = !(
+      var.account_credentials.password_authentication_disabled == false &&
+    lower(var.os_type) == "windows")
+    error_message = "Use of password_authentication_disabled == false is limited to Linux operating systems. Please set to true when using os_type of Windows."
+  }
+  validation {
+    condition = !(
+      var.account_credentials.admin_credentials.password == null &&
+      length(var.account_credentials.admin_credentials.ssh_keys) == 0 &&
+    var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == false)
+    error_message = "Either password or ssh_keys must be provided if generate_admin_password_or_ssh_key is false. Please set the generate_admin_password_or_ssh_key flag to true or provide a password or ssh_key input."
+  }
+  validation {
+    condition = !(
+      var.account_credentials.admin_credentials.password != null &&
+    var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
+    error_message = "The generate_admin_password_or_ssh_key is set to true, but a password value has also been set. If use of a custom password is desired, then set the generate_admin_password_or_ssh_key to false. Otherwise, please remove the custom password value."
+  }
+  validation {
+    condition = !(
+      length(var.account_credentials.admin_credentials.ssh_keys) > 0 &&
+    var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
+    error_message = "The generate_admin_password_or_ssh_key is set to true, but a ssh_keys value has also been set. If use of custom ssh_keys is desired, then set the generate_admin_password_or_ssh_key to false. Otherwise, please remove the custom ssh_keys values."
+  }
+  validation {
+    condition = !(
+      length(var.account_credentials.admin_credentials.ssh_keys) > 0 &&
+    var.account_credentials.password_authentication_disabled == false)
+    error_message = "The password_authentication_disabled flag is set to false, but a ssh_keys value has also been set. If use of custom ssh_keys is desired, then set the password_authentication_disabled to true. Otherwise, please remove the custom ssh_keys values."
+  }
+  validation {
+    condition = !(
+      var.account_credentials.key_vault_configuration != null &&
+      length(var.account_credentials.admin_credentials.ssh_keys) > 0
+    )
+    error_message = "When adding ssh public keys using the ssh_keys input, the key vault configuration has no effect. The ssh public keys will be added to the VM and not stored in the key vault. Please remove the key vault configuration if you want to use ssh public keys."
+  }
+}
+
 variable "additional_unattend_contents" {
   type = list(object({
     content = string
@@ -218,76 +356,6 @@ additional_unattend_contents = [
 ```
 ADDITIONAL_UNATTEND_CONTENTS
   nullable    = false
-}
-
-variable "admin_credential_key_vault_resource_id" {
-  type        = string
-  default     = null
-  description = "DEPRECATION NOTICE: This input will be removed in favor of the key_vault_resource_id attribute in the `generated_secrets_key_vault_secret_config` input.The Azure resource ID for the key vault that stores admin credential information"
-}
-
-variable "admin_generated_ssh_key_vault_secret_name" {
-  type        = string
-  default     = null
-  description = "DEPRECATION NOTICE: This input will be removed in favor of the name attribute in the `generated_secrets_key_vault_secret_config` input. Use this to provide a custom name for the key vault secret when using the generate an admin ssh key option."
-}
-
-variable "admin_password" {
-  type        = string
-  default     = null
-  description = "Password to use for the default admin account created for the virtual machine. Passing this as a key vault secret value is recommended."
-  sensitive   = true
-}
-
-variable "admin_password_key_vault_secret_name" {
-  type        = string
-  default     = null
-  description = "DEPRECATION NOTICE: This input will be removed in favor of the name attribute in the `generated_secrets_key_vault_secret_config` input. The name of the key vault secret which should be used for the auto-generated admin password. This is only used to store auto-generated passwords. Use the `admin_password` variable and a key vault secret value reference if storing the password value in an external key vault secret."
-}
-
-variable "admin_ssh_keys" {
-  type = list(object({
-    public_key = string
-    username   = string
-  }))
-  default     = []
-  description = <<ADMIN_SSH_KEYS
-A list of objects defining one or more ssh public keys
-
-- `public_key` (Required) - The Public Key which should be used for authentication, which needs to be at least 2048-bit and in `ssh-rsa` format. Changing this forces a new resource to be created.
-- `username` (Required) - The Username for which this Public SSH Key should be configured. Changing this forces a new resource to be created. The Azure VM Agent only allows creating SSH Keys at the path `/home/{admin_username}/.ssh/authorized_keys`. As such this public key will be written to the authorized keys file. If no username is provided this module will use var.admin_username.
-
-Example Input:
-
-```hcl
-admin_ssh_keys = [
-  {
-    public_key = "<base64 string for the key>"
-    username   = "exampleuser"
-  },
-  {
-    public_key = "<base64 string for the next user key>"
-    username   = "examleuser2"
-  }
-]
-```
-  ADMIN_SSH_KEYS
-}
-
-variable "admin_username" {
-  type        = string
-  default     = "azureuser"
-  description = "Name to use for the default admin account created for the virtual machine"
-  nullable    = false
-
-  validation {
-    condition     = !can(regex("^(administrator|admin|user|user1|test|user2|test2|user3|admin1|1|123|a|actuser|adm|admin2|aspnet|backup|console|david|guest|john|owner|root|server|sql|support|support_388945a0|sys|test2|test3|user4|user5)$", lower(var.admin_username)))
-    error_message = "Admin username may not contain any of the following reserved values. ( administrator, admin, user, user1, test, user2, test1, user3, admin1, 1, 123, a, actuser, adm, admin2, aspnet, backup, console, david, guest, john, owner, root, server, sql, support, support_388945a0, sys, test2, test3, user4, user5 )"
-  }
-  validation {
-    condition     = can(regex("^.{1,64}$", var.admin_username))
-    error_message = "Admin username for linux must be between 1 and 64 characters in length. Admin name for windows must be between 1 and 20 characters in length."
-  }
 }
 
 variable "allow_extension_operations" {
@@ -566,12 +634,6 @@ DIAGNOSTIC_SETTINGS
   nullable    = false
 }
 
-variable "disable_password_authentication" {
-  type        = bool
-  default     = true
-  description = "If true this value will disallow password authentication on linux vm's. This will require at least one public key to be configured. If using the option to auto generate passwords and keys, setting this value to `false` will cause a password to be generated an stored instead of an SSH key."
-}
-
 variable "disk_controller_type" {
   type        = string
   default     = null
@@ -620,7 +682,7 @@ variable "extensions" {
     type_handler_version        = string
     auto_upgrade_minor_version  = optional(bool)
     automatic_upgrade_enabled   = optional(bool)
-    deploy_sequence             = optional(number, 3)
+    deploy_sequence             = optional(number, 5)
     failure_suppression_enabled = optional(bool, false)
     settings                    = optional(string)
     protected_settings          = optional(string)
@@ -630,6 +692,13 @@ variable "extensions" {
       secret_url      = string
       source_vault_id = string
     }))
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+      update = optional(string)
+      read   = optional(string)
+      })
+    )
   }))
   # tflint-ignore: terraform_sensitive_variable_no_default
   default     = {}
@@ -652,6 +721,7 @@ This map of objects is used to create additional `azurerm_virtual_machine_extens
     - `secret_url` (Required) - The Secret URL of a Key Vault Certificate. This can be sourced from the `secret_id` field within the `azurerm_key_vault_certificate` Resource.
     - `source_vault_id` (Required) - the Azure resource ID of the key vault holding the secret
   - `tags` (Optional) - A mapping of tags to assign to the extension resource.
+  - `timeouts` (Optional): Timeouts for the extension resource.
 
 Example Inputs:
 
@@ -744,33 +814,6 @@ gallery_applications = {
 ```
 GALLERY_APPLICATIONS
   nullable    = false
-}
-
-variable "generate_admin_password_or_ssh_key" {
-  type        = bool
-  default     = true
-  description = "Set this value to true if the deployment should create a strong password for the admin user. If `os_type` is Linux, this will generate and store an SSH key as the default. However, setting `disable_password_authentication` to `false` will generate and store a password value instead of an ssh key."
-}
-
-variable "generated_secrets_key_vault_secret_config" {
-  type = object({
-    key_vault_resource_id          = string
-    name                           = optional(string, null)
-    expiration_date_length_in_days = optional(number, 45)
-    content_type                   = optional(string, "text/plain")
-    not_before_date                = optional(string, null)
-    tags                           = optional(map(string), {})
-  })
-  default     = null
-  description = <<DESCRIPTION
-For simplicity this module provides the option to use an auto-generated admin user password or SSH key.  That password or key is then stored in a key vault provided in the `admin_credential_key_vault_resource_id` input. This variable allows the user to override the configuration for the key vault secret which stores the generated password or ssh key. The object details are:
-
-- `name` - (Optional) - The name to use for the key vault secret that stores the auto-generated ssh key or password
-- `expiration_date_length_in_days` - (Optional) - This value sets the number of days from the installation date to set the key vault expiration value. It defaults to `45` days.  This value will not be overridden in subsequent runs. If you need to maintain this virtual machine resource for a long period, generate and/or use your own password or ssh key.
-- `content_type` - (Optional) - This value sets the secret content type.  Defaults to `text/plain`
-- `not_before_date` - (Optional) - The UTC datetime (Y-m-d'T'H:M:S'Z) date before which this key is not valid.  Defaults to null.
-- `tags` - (Optional) - Specific tags to assign to this secret resource
-DESCRIPTION
 }
 
 variable "hotpatching_enabled" {
@@ -1010,6 +1053,7 @@ variable "public_ip_configuration_details" {
     sku                     = optional(string, "Standard")
     sku_tier                = optional(string, "Regional")
     tags                    = optional(map(string), null)
+    zones                   = optional(set(string), ["1", "2", "3"])
   })
   default = {
     allocation_method       = "Static"
@@ -1033,6 +1077,7 @@ This object describes the public IP configuration when creating VM's with a publ
 - `sku`                     = (Optional) - The SKU of the Public IP. Accepted values are Basic and Standard. Defaults to Standard to support zones by default. Changing this forces a new resource to be created. When sku_tier is set to Global, sku must be set to Standard.
 - `sku_tier`                = (Optional) - The SKU tier of the Public IP. Accepted values are Global and Regional. Defaults to Regional
 - `tags`                    = (Optional) - A mapping of tags to assign to the resource.
+- `zones`                   = (Optional) - A set of availability zones to assign the public IP to. Configured to use all zones by default. Not all regions support 3 zones. Change this if fewer than 3 zones are available in the target region. Changing this forces a new resource to be created.
 
   Example Inputs:
 
@@ -1145,9 +1190,10 @@ SYSTEM_MANAGED_IDENTITY_ROLE_ASSIGNMENTS
 
 variable "run_commands" {
   type = map(object({
-    location = string
-    name     = string
-    source = object({
+    location        = string
+    name            = string
+    deploy_sequence = optional(number, 3)
+    script_source = object({
       command_id = optional(string)
       script     = optional(string)
       script_uri = optional(string)
@@ -1171,6 +1217,14 @@ variable "run_commands" {
       value = string
     })), [])
 
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+      update = optional(string)
+      read   = optional(string)
+      })
+    )
+
     tags = optional(map(string))
   }))
   default     = {}
@@ -1180,13 +1234,14 @@ The following arguments are supported:
 
  - `location` (Required): The Azure Region where the Virtual Machine Run Command should exist. Changing this forces a new Virtual Machine Run Command to be created.
  - `name` (Required): Specifies the name of this Virtual Machine Run Command. Changing this forces a new Virtual Machine Run Command to be created.
- - `source` (Required): A source block as defined below. The source of the run command script.
+ - `script_source` (Required): A source block as defined below. The source of the run command script.
  - `error_blob_managed_identity` (Optional): An error_blob_managed_identity block as defined below. User-assigned managed Identity that has access to errorBlobUri storage blob.
  - `error_blob_uri` (Optional): Specifies the Azure storage blob where script error stream will be uploaded.
  - `output_blob_managed_identity` (Optional): An output_blob_managed_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.
  - `output_blob_uri` (Optional): Specifies the Azure storage blob where script output stream will be uploaded. It can be basic blob URI with SAS token.
  - `parameter` (Optional): A list of parameter blocks as defined below. The parameters used by the script.
  - `protected_parameter` (Optional): A list of protected_parameter blocks as defined below. The protected parameters used by the script.
+ - `timeouts` (Optional): Timeouts for each run command.
  - `tags` (Optional): A mapping of tags which should be assigned to the Virtual Machine Run Command.
 
  An error_blob_managed_identity block supports the following arguments:
@@ -1416,6 +1471,39 @@ termination_notification = {
 TERMINATION_NOTIFICATION
 }
 
+variable "timeouts" {
+  type = object({
+    azurerm_virtual_machine_extension = optional(object({
+      create = optional(string, "30m")
+      delete = optional(string, "30m")
+      update = optional(string, "30m")
+      read   = optional(string, "5m")
+      }), {}
+    )
+    azurerm_virtual_machine_run_command = optional(object({
+      create = optional(string, "30m")
+      delete = optional(string, "30m")
+      update = optional(string, "30m")
+      read   = optional(string, "5m")
+      }), {}
+    )
+  })
+  default     = {}
+  description = <<DESCRIPTION
+A map of timeouts to apply to the creation and destruction of resources.
+If using retry, the maximum elapsed retry time is governed by this value.
+
+The object has attributes for each resource type, with the following optional attributes:
+
+- `create` - (Optional) The timeout for creating the resource. 
+- `delete` - (Optional) The timeout for deleting the resource.
+- `update` - (Optional) The timeout for updating the resource.
+- `read` - (Optional) The timeout for reading the resource.
+
+Each time duration is parsed using this function: <https://pkg.go.dev/time#ParseDuration>.
+DESCRIPTION
+}
+
 variable "timezone" {
   type        = string
   default     = null
@@ -1459,12 +1547,6 @@ vm_additional_capabilities = {
 }
 ```
 VM_ADDITIONAL_CAPABILITIES
-}
-
-variable "vm_agent_platform_updates_enabled" {
-  type        = bool
-  default     = false
-  description = "(Optional) Note: This field is read-only in the ARM API. Leaving this in as it is included in the AzureRM provider. Currently this field is non-functional until ARM API is updated to not be readonly. Specifies whether VMAgent Platform Updates is enabled. Defaults to `false`."
 }
 
 variable "vtpm_enabled" {
