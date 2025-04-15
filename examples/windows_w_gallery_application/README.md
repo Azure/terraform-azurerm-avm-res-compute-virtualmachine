@@ -48,8 +48,7 @@ provider "azurerm" {
       recover_soft_deleted_key_vaults = false
     }
     recovery_service {
-      vm_backup_stop_protection_and_retain_data_on_destroy = false
-      purge_protected_items_from_vault_on_destroy          = true
+      purge_protected_items_from_vault_on_destroy = true
     }
   }
 }
@@ -395,6 +394,8 @@ module "testvm" {
     }
   }
 
+  /* #This is commented to avoid test failures due to soft-delete backup deletion failures.
+   #Leaving this here for reference for those wanting to see an example of how to use the backup interface.
   azure_backup_configurations = {
     backup_config = {
       recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
@@ -404,6 +405,7 @@ module "testvm" {
       exclude_disk_luns          = [0]
     }
   }
+*/
 
   maintenance_configuration_resource_ids = {
     config_1 = azurerm_maintenance_configuration.test_maintenance_config.id
