@@ -68,7 +68,7 @@ locals {
   generate_admin_ssh_key_count = (
     (lower(var.os_type) == "linux") &&
     (
-      (var.generate_admin_password_or_ssh_key == true) ||
+      (var.generate_admin_password_or_ssh_key == true) &&
       (var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
     ) && (local.password_authentication_disabled == true) ? 1 : 0
   )
@@ -76,13 +76,13 @@ locals {
     (
       (lower(var.os_type) == "windows") &&
       (
-        (var.generate_admin_password_or_ssh_key == true) ||
+        (var.generate_admin_password_or_ssh_key == true) &&
         (var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
       )
       ) ? 1 : (
       (lower(var.os_type) == "linux") &&
       (
-        (var.generate_admin_password_or_ssh_key == true || var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true) && (local.password_authentication_disabled == false)
+        (var.generate_admin_password_or_ssh_key == true && var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true) && (local.password_authentication_disabled == false)
       )
     ) ? 1 : 0
   )
