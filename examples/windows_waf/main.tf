@@ -75,7 +75,6 @@ module "vm_sku" {
 
   location      = azurerm_resource_group.this_rg.location
   cache_results = true
-
   vm_filters = {
     min_vcpus                      = 2
     max_vcpus                      = 2
@@ -92,11 +91,10 @@ module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
   version = "0.2.1"
 
-  name                = module.naming.nat_gateway.name_unique
-  enable_telemetry    = true
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.nat_gateway.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
-
+  enable_telemetry    = true
   public_ips = {
     public_ip_1 = {
       name = "nat_gw_pip1"
@@ -108,11 +106,10 @@ module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
   version = "=0.8.1"
 
-  resource_group_name = azurerm_resource_group.this_rg.name
   address_space       = ["10.0.0.0/16"]
-  name                = module.naming.virtual_network.name_unique
   location            = azurerm_resource_group.this_rg.location
-
+  resource_group_name = azurerm_resource_group.this_rg.name
+  name                = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-1"
@@ -173,18 +170,18 @@ data "azuread_service_principal" "backup_service_app" {
 
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
-  source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "=0.10.0"
-  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  source  = "Azure/avm-res-keyvault-vault/azurerm"
+  version = "=0.10.0"
+
+  location                    = azurerm_resource_group.this_rg.location
   name                        = "${module.naming.key_vault.name_unique}-waf"
   resource_group_name         = azurerm_resource_group.this_rg.name
-  location                    = azurerm_resource_group.this_rg.location
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
   enabled_for_disk_encryption = true
   network_acls = {
     default_action = "Allow"
     bypass         = "AzureServices"
   }
-
   role_assignments = {
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Administrator"
@@ -199,12 +196,10 @@ module "avm_res_keyvault_vault" {
       principal_id               = data.azuread_service_principal.backup_service_app.object_id
     }
   }
-
+  tags = local.tags
   wait_for_rbac_before_secret_operations = {
     create = "60s"
   }
-
-  tags = local.tags
 }
 
 resource "azurerm_log_analytics_workspace" "this_workspace" {
@@ -278,55 +273,9 @@ resource "azurerm_maintenance_configuration" "test_maintenance_config" {
 
 module "testvm" {
   source = "../../"
-  #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.19.0"
 
-  enable_telemetry                                       = var.enable_telemetry
-  location                                               = azurerm_resource_group.this_rg.location
-  resource_group_name                                    = azurerm_resource_group.this_rg.name
-  os_type                                                = "Windows"
-  name                                                   = module.naming.virtual_machine.name_unique
-  sku_size                                               = module.vm_sku.sku
-  zone                                                   = random_integer.zone_index.result
-  encryption_at_host_enabled                             = false
-  patch_mode                                             = "AutomaticByPlatform"
-  patch_assessment_mode                                  = "AutomaticByPlatform"
-  bypass_platform_safety_checks_on_user_schedule_enabled = true
-
-  account_credentials = {
-    key_vault_configuration = {
-      resource_id = module.avm_res_keyvault_vault.resource_id
-    }
-  }
-
-  source_image_reference = {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2022-datacenter-g2"
-    version   = "latest"
-  }
-
-  /* #This is commented to avoid test failures due to soft-delete backup deletion failures.
-   #Leaving this here for reference for those wanting to see an example of how to use the backup interface.
-  azure_backup_configurations = {
-    backup_config = {
-      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
-      recovery_vault_name        = azurerm_recovery_services_vault.test_vault.name
-      resource_group_name        = azurerm_recovery_services_vault.test_vault.resource_group_name
-      backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
-    }
-  }
-*/
-
-  maintenance_configuration_resource_ids = {
-    base_window = azurerm_maintenance_configuration.test_maintenance_config.id
-  }
-
-  managed_identities = {
-    system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
-  }
-
+  location = azurerm_resource_group.this_rg.location
+  name     = module.naming.virtual_machine.name_unique
   network_interfaces = {
     network_interface_1 = {
       name = module.naming.network_interface.name_unique
@@ -346,7 +295,14 @@ module "testvm" {
       }
     }
   }
-
+  resource_group_name = azurerm_resource_group.this_rg.name
+  zone                = random_integer.zone_index.result
+  account_credentials = {
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+    }
+  }
+  bypass_platform_safety_checks_on_user_schedule_enabled = true
   diagnostic_settings = {
     vm_diags = {
       name                  = module.naming.monitor_diagnostic_setting.name_unique
@@ -354,7 +310,8 @@ module "testvm" {
       metric_categories     = ["AllMetrics"]
     }
   }
-
+  enable_telemetry           = var.enable_telemetry
+  encryption_at_host_enabled = false
   extensions = {
     azure_monitor_agent = {
       name                       = "AzureMonitorWindowsAgent"
@@ -393,7 +350,23 @@ module "testvm" {
       settings                   = null
     }
   }
-
+  maintenance_configuration_resource_ids = {
+    base_window = azurerm_maintenance_configuration.test_maintenance_config.id
+  }
+  managed_identities = {
+    system_assigned            = true
+    user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
+  }
+  os_type               = "Windows"
+  patch_assessment_mode = "AutomaticByPlatform"
+  patch_mode            = "AutomaticByPlatform"
+  sku_size              = module.vm_sku.sku
+  source_image_reference = {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2022-datacenter-g2"
+    version   = "latest"
+  }
   tags = {
     scenario = "windows_w_azure_monitor_agent"
   }

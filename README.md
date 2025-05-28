@@ -1388,8 +1388,9 @@ The following arguments are supported:
  - `object_id` (Optional): The object ID of the managed identity.
 
  A parameter block supports the following arguments:
- - `name` (Required): The run parameter name.
- - `value` (Required): The run parameter value.
+ - `map_key` (Required): A unique key for the parameter within the `run_commands` map.
+  - `name` (Required): The run parameter name. This should be unique for each parameter.
+  - `value` (Required): The run parameter value.
 
  A script\_uri\_managed\_identity block supports the following arguments:
  - `client_id` (Optional): The client ID of the managed identity.
@@ -1427,10 +1428,10 @@ map(object({
       object_id = optional(string)
     }))
     output_blob_uri = optional(string)
-    parameters = optional(list(object({
+    parameters = optional(map(object({
       name  = string
       value = string
-    })), [])
+    })), {})
 
     timeouts = optional(object({
       create = optional(string)
@@ -1451,22 +1452,22 @@ Default: `{}`
 Description: The `run_commands_secrets` variable defines the configuration for Virtual Machine Run Command Sensitive values. This requires that the `run_commands_secrets` map key match the `run_commands` map key.  
 The following arguments are supported:
 
- - `protected_parameters` (Optional): A list of protected\_parameter blocks as defined below. The protected parameters used by the script.
- - `run_as_password` (Optional): Specifies the user account password on the VM when executing the Virtual Machine Run Command.
- - `run_as_user` (Optional): Specifies the user account on the VM when executing the Virtual Machine Run Command.
+ - `protected_parameters` (Optional): A map of protected\_parameter blocks as defined below. The protected parameters used by the script.
+  - `map_key` (Required): A unique key for the parameter within the `run_commands` map.
+    - `name` (Required): The run parameter name. This should be unique for each protected parameter.
+    - `value` (Required): The run parameter value.
 
- A protected\_parameter block supports the following arguments:
- - `name` (Required): The run parameter name.
- - `value` (Required): The run parameter value.
+  - `run_as_password` (Optional): Specifies the user account password on the VM when executing the Virtual Machine Run Command.
+  - `run_as_user` (Optional): Specifies the user account on the VM when executing the Virtual Machine Run Command.
 
 Type:
 
 ```hcl
 map(object({
-    protected_parameters = optional(list(object({
+    protected_parameters = optional(map(object({
       name  = string
       value = string
-    })), [])
+    })), {})
     run_as_password = optional(string)
     run_as_user     = optional(string)
   }))

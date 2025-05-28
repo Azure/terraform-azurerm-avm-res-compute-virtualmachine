@@ -70,7 +70,6 @@ module "vm_sku" {
 
   location      = azurerm_resource_group.this_rg.location
   cache_results = true
-
   vm_filters = {
     min_vcpus                      = 2
     max_vcpus                      = 2
@@ -87,11 +86,10 @@ module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
   version = "0.2.1"
 
-  name                = module.naming.nat_gateway.name_unique
-  enable_telemetry    = true
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.nat_gateway.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
-
+  enable_telemetry    = true
   public_ips = {
     public_ip_1 = {
       name = "nat_gw_pip1"
@@ -103,11 +101,10 @@ module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
   version = "=0.8.1"
 
-  resource_group_name = azurerm_resource_group.this_rg.name
   address_space       = ["10.0.0.0/16"]
-  name                = module.naming.virtual_network.name_unique
   location            = azurerm_resource_group.this_rg.location
-
+  resource_group_name = azurerm_resource_group.this_rg.name
+  name                = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-1"
@@ -198,16 +195,15 @@ module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
   version = "=0.10.0"
 
-  enabled_for_deployment = true # Required to deploy the certificates to the VM
   location               = azurerm_resource_group.this_rg.location
   name                   = "${module.naming.key_vault.name_unique}-win-rac"
   resource_group_name    = azurerm_resource_group.this_rg.name
   tenant_id              = data.azurerm_client_config.current.tenant_id
+  enabled_for_deployment = true # Required to deploy the certificates to the VM
   network_acls = {
     default_action = "Allow"
     bypass         = "AzureServices"
   }
-
   role_assignments = {
     deployment_user_certificates = {
       # give the deployment user access to certificates
@@ -231,12 +227,10 @@ module "avm_res_keyvault_vault" {
       principal_type             = "ServicePrincipal"
     }
   }
-
+  tags = local.tags
   wait_for_rbac_before_secret_operations = {
     create = "60s"
   }
-
-  tags = local.tags
 }
 
 resource "random_string" "public_ip_fqdn" {
@@ -315,23 +309,28 @@ resource "azurerm_key_vault_certificate" "self_signed_winrm" {
 
 module "testvm" {
   source = "../../"
-  #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.19.0"
 
-  enable_telemetry    = var.enable_telemetry
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.virtual_machine.name_unique
+  location = azurerm_resource_group.this_rg.location
+  name     = module.naming.virtual_machine.name_unique
+  network_interfaces = {
+    network_interface_1 = {
+      name = module.naming.network_interface.name_unique
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+          public_ip_address_resource_id = azurerm_public_ip.this.id
+        }
+      }
+    }
+  }
   resource_group_name = azurerm_resource_group.this_rg.name
-  os_type             = local.os_type
-  sku_size            = module.vm_sku.sku
   zone                = random_integer.zone_index.result
-
   account_credentials = {
     key_vault_configuration = {
       resource_id = module.avm_res_keyvault_vault.resource_id
     }
   }
-
   # custom_data got injected in the vm at c:\AzureData\CustomData.bin
   custom_data = base64encode(<<-CD
   # Enable WinRM HTTPS listener
@@ -354,7 +353,7 @@ module "testvm" {
   WinRM e winrm/config/listener
   CD
   )
-
+  enable_telemetry = var.enable_telemetry
   extensions = {
     install_winrms = {
       name                        = "install_winrms"
@@ -407,31 +406,10 @@ module "testvm" {
       # more
     }
   }
-
-  source_image_reference = {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2022-datacenter-g2"
-    version   = "latest"
-  }
-
   managed_identities = {
     user_assigned_resource_ids = [azurerm_user_assigned_identity.this.id]
   }
-
-  network_interfaces = {
-    network_interface_1 = {
-      name = module.naming.network_interface.name_unique
-      ip_configurations = {
-        ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-          public_ip_address_resource_id = azurerm_public_ip.this.id
-        }
-      }
-    }
-  }
-
+  os_type = local.os_type
   # Install the certiciate for WinRMs in the computer certificate store
   secrets = [
     {
@@ -444,9 +422,14 @@ module "testvm" {
       ]
     }
   ]
-
+  sku_size = module.vm_sku.sku
+  source_image_reference = {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2022-datacenter-g2"
+    version   = "latest"
+  }
   tags = local.tags
-
   winrm_listeners = [
     {
       protocol        = "Https"

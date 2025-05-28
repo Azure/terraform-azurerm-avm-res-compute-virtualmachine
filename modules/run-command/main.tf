@@ -4,8 +4,8 @@ resource "azurerm_virtual_machine_run_command" "this" {
   virtual_machine_id = var.virtualmachine_resource_id
   error_blob_uri     = var.error_blob_uri
   output_blob_uri    = var.output_blob_uri
-  run_as_password    = try(var.run_as_password, null)
-  run_as_user        = try(var.run_as_user, null)
+  run_as_password    = var.run_as_password
+  run_as_user        = var.run_as_user
   tags               = var.tags
 
   source {
@@ -47,7 +47,7 @@ resource "azurerm_virtual_machine_run_command" "this" {
     }
   }
   dynamic "protected_parameter" {
-    for_each = try(length(var.protected_parameters) > 0, false) ? var.protected_parameters : []
+    for_each = try(length(var.protected_parameters) > 0, false) ? var.protected_parameters : {}
 
     content {
       name  = protected_parameter.value.name

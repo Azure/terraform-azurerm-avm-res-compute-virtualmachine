@@ -77,24 +77,30 @@ DESCRIPTION
 }
 
 variable "parameters" {
-  type = list(object({
+  type = map(object({
     name  = string
     value = string
   }))
-  default     = []
+  default     = {}
   description = <<DESCRIPTION
-`parameters` - (Optional): A list of parameter blocks as defined below. The parameters used by the script.
-DESCRIPTION
+`parameters` - (Optional): A map of parameter blocks as defined below. The parameters used by the script.
+- `map key` (Required): A unique map key for each parameter.
+  - `name` (Required): The run parameter name.
+  - `value` (Required): The run parameter value.
+  DESCRIPTION
 }
 
 variable "protected_parameters" {
-  type = list(object({
+  type = map(object({
     name  = string
     value = string
   }))
-  default     = []
+  default     = {}
   description = <<DESCRIPTION
 `protected_parameters` - (Optional): A list of protected_parameter blocks as defined below. The protected parameters used by the script.
+- `map key` (Required): A unique map key for each parameter.
+  - `name` (Required): The run parameter name.
+  - `value` (Required): The run parameter value.
 DESCRIPTION
   sensitive   = true
 }
