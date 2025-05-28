@@ -220,6 +220,10 @@ resource "azurerm_orchestrated_virtual_machine_scale_set" "this" {
   platform_fault_domain_count = 1
   resource_group_name         = azurerm_resource_group.this_rg.name
   zones                       = ["1", "2", "3"]
+
+  automatic_instance_repair {
+    enabled = true
+  }
 }
 
 module "testvm" {
