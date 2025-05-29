@@ -85,7 +85,6 @@ module "vm_sku" {
 
   location      = azurerm_resource_group.this_rg.location
   cache_results = true
-
   vm_filters = {
     min_vcpus                      = 2
     max_vcpus                      = 2
@@ -102,11 +101,10 @@ module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
   version = "0.2.1"
 
-  name                = module.naming.nat_gateway.name_unique
-  enable_telemetry    = true
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.nat_gateway.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
-
+  enable_telemetry    = true
   public_ips = {
     public_ip_1 = {
       name = "nat_gw_pip1"
@@ -118,11 +116,10 @@ module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
   version = "=0.8.1"
 
-  resource_group_name = azurerm_resource_group.this_rg.name
   address_space       = ["10.0.0.0/16"]
-  name                = module.naming.virtual_network.name_unique
   location            = azurerm_resource_group.this_rg.location
-
+  resource_group_name = azurerm_resource_group.this_rg.name
+  name                = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-1"
@@ -171,43 +168,38 @@ resource "azurerm_bastion_host" "bastion" {
 data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
-  source                      = "Azure/avm-res-keyvault-vault/azurerm"
-  version                     = "=0.10.0"
-  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  source  = "Azure/avm-res-keyvault-vault/azurerm"
+  version = "=0.10.0"
+
+  location                    = azurerm_resource_group.this_rg.location
   name                        = "${module.naming.key_vault.name_unique}-win-rcm"
   resource_group_name         = azurerm_resource_group.this_rg.name
-  location                    = azurerm_resource_group.this_rg.location
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
   enabled_for_disk_encryption = true
   network_acls = {
     default_action = "Allow"
     bypass         = "AzureServices"
   }
-
   role_assignments = {
     deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
     }
   }
-
-  wait_for_rbac_before_key_operations = {
-    create = "60s"
-  }
-
-  wait_for_rbac_before_secret_operations = {
-    create = "60s"
-  }
-
-  tags = local.tags
-
   secrets = {
     admin_password = {
       name = "admin-password"
     }
   }
-
   secrets_value = {
     admin_password = random_password.admin_password.result
+  }
+  tags = local.tags
+  wait_for_rbac_before_key_operations = {
+    create = "60s"
+  }
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
   }
 }
 
@@ -278,48 +270,51 @@ resource "random_password" "admin_password" {
 
 module "testvm" {
   source = "../../"
-  #source = "Azure/avm-res-compute-virtualmachine/azurerm"
-  #version = "0.19.0"
 
-  enable_telemetry           = var.enable_telemetry
-  location                   = azurerm_resource_group.this_rg.location
-  resource_group_name        = azurerm_resource_group.this_rg.name
-  os_type                    = "Windows"
-  name                       = module.naming.virtual_machine.name_unique
-  sku_size                   = module.vm_sku.sku
-  encryption_at_host_enabled = true
-  zone                       = random_integer.zone_index.result
-
+  location = azurerm_resource_group.this_rg.location
+  name     = module.naming.virtual_machine.name_unique
+  network_interfaces = {
+    network_interface_1 = {
+      name = module.naming.network_interface.name_unique
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+        }
+      }
+    }
+  }
+  resource_group_name = azurerm_resource_group.this_rg.name
+  zone                = random_integer.zone_index.result
   account_credentials = {
     admin_credentials = {
       password                           = random_password.admin_password.result
       generate_admin_password_or_ssh_key = false
     }
   }
-
+  enable_telemetry           = var.enable_telemetry
+  encryption_at_host_enabled = true
   managed_identities = {
     system_assigned            = true
     user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
   }
-
   os_disk = {
     caching              = "ReadWrite"
     storage_account_type = "Premium_LRS"
   }
-
-  source_image_reference = {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2022-datacenter-g2"
-    version   = "latest"
-  }
-
+  os_type = "Windows"
   run_commands = {
     test_example_simple = {
       location = azurerm_resource_group.this_rg.location
       name     = "example-command"
       script_source = {
-        script = "echo Hello World"
+        script = "echo %param1%"
+      }
+      parameters = {
+        param1 = {
+          name  = "param1"
+          value = "value1"
+        }
       }
 
       tags = local.tags
@@ -345,30 +340,22 @@ module "testvm" {
       tags = local.tags
     }
   }
-
   run_commands_secrets = {
     test_example_from_storage = {
       run_as_password = random_password.admin_password.result
       run_as_user     = "azureuser"
     }
   }
-
-  network_interfaces = {
-    network_interface_1 = {
-      name = module.naming.network_interface.name_unique
-      ip_configurations = {
-        ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-        }
-      }
-    }
+  sku_size = module.vm_sku.sku
+  source_image_reference = {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2022-datacenter-g2"
+    version   = "latest"
   }
-
   tags = local.tags
 
   depends_on = [module.avm_res_keyvault_vault, azurerm_user_assigned_identity.example_identity, azurerm_role_assignment.this]
-
 }
 ```
 

@@ -39,8 +39,8 @@ resource "azurerm_virtual_machine_run_command" "this" {
   virtual_machine_id = var.virtualmachine_resource_id
   error_blob_uri     = var.error_blob_uri
   output_blob_uri    = var.output_blob_uri
-  run_as_password    = try(var.run_as_password, null)
-  run_as_user        = try(var.run_as_user, null)
+  run_as_password    = var.run_as_password
+  run_as_user        = var.run_as_user
   tags               = var.tags
 
   source {
@@ -82,7 +82,7 @@ resource "azurerm_virtual_machine_run_command" "this" {
     }
   }
   dynamic "protected_parameter" {
-    for_each = try(length(var.protected_parameters) > 0, false) ? var.protected_parameters : []
+    for_each = try(length(var.protected_parameters) > 0, false) ? var.protected_parameters : {}
 
     content {
       name  = protected_parameter.value.name
@@ -212,33 +212,39 @@ Default: `null`
 
 ### <a name="input_parameters"></a> [parameters](#input\_parameters)
 
-Description: `parameters` - (Optional): A list of parameter blocks as defined below. The parameters used by the script.
+Description: `parameters` - (Optional): A map of parameter blocks as defined below. The parameters used by the script.
+- `map key` (Required): A unique map key for each parameter.
+  - `name` (Required): The run parameter name.
+  - `value` (Required): The run parameter value.
 
 Type:
 
 ```hcl
-list(object({
+map(object({
     name  = string
     value = string
   }))
 ```
 
-Default: `[]`
+Default: `{}`
 
 ### <a name="input_protected_parameters"></a> [protected\_parameters](#input\_protected\_parameters)
 
 Description: `protected_parameters` - (Optional): A list of protected\_parameter blocks as defined below. The protected parameters used by the script.
+- `map key` (Required): A unique map key for each parameter.
+  - `name` (Required): The run parameter name.
+  - `value` (Required): The run parameter value.
 
 Type:
 
 ```hcl
-list(object({
+map(object({
     name  = string
     value = string
   }))
 ```
 
-Default: `[]`
+Default: `{}`
 
 ### <a name="input_run_as_password"></a> [run\_as\_password](#input\_run\_as\_password)
 

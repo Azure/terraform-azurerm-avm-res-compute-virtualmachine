@@ -48,12 +48,12 @@ locals {
 resource "azapi_resource" "this_backup_intent" {
   for_each = var.azure_backup_configurations
 
-  type = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01"
+  name      = "VM;iaasvmcontainerv2;${coalesce(each.value.resource_group_name, local.rsv_resource_group[each.key], var.resource_group_name)};${var.name}"
+  parent_id = "${each.value.recovery_vault_resource_id}/backupFabrics/Azure/protectionContainers/iaasvmcontainer;iaasvmcontainerv2;${var.resource_group_name};${var.name}"
+  type      = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01"
   body = {
     properties = local.backup_body_properties[each.key]
   }
-  name                   = "VM;iaasvmcontainerv2;${coalesce(each.value.resource_group_name, local.rsv_resource_group[each.key], var.resource_group_name)};${var.name}"
-  parent_id              = "${each.value.recovery_vault_resource_id}/backupFabrics/Azure/protectionContainers/iaasvmcontainer;iaasvmcontainerv2;${var.resource_group_name};${var.name}"
   response_export_values = ["*"]
 }
 
