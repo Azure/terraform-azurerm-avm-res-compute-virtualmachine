@@ -274,9 +274,8 @@ resource "azurerm_application_gateway" "network" {
     priority                   = 9
   }
   sku {
-    name     = "Standard_v2"
-    tier     = "Standard_v2"
-    capacity = 2
+    name = "Standard_v2"
+    tier = "Standard_v2"
   }
   autoscale_configuration {
     min_capacity = 2
