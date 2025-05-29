@@ -292,6 +292,12 @@ module "testvm" {
       generate_admin_password_or_ssh_key = false
     }
   }
+  additional_unattend_contents = [
+    {
+      setting = "FirstLogonCommands"
+      content = "<FirstLogonCommands><SynchronousCommand><CommandLine>%windir%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoProfile -ExecutionPolicy Bypass -file C:\\test.ps1</CommandLine><Description>script</Description><Order>2</Order></SynchronousCommand></FirstLogonCommands>"
+    }
+  ]
   enable_telemetry           = var.enable_telemetry
   encryption_at_host_enabled = true
   managed_identities = {

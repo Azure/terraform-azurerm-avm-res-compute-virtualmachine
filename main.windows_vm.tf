@@ -74,7 +74,7 @@ resource "azurerm_windows_virtual_machine" "this" {
   }
   dynamic "additional_unattend_content" {
     for_each = {
-      for content in var.additional_unattend_contents : sha256(content) => content
+      for content in var.additional_unattend_contents : sha256(content.content) => content
     }
 
     content {
