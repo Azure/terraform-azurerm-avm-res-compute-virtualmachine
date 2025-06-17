@@ -127,7 +127,7 @@ module "vnet" {
 
 /* Uncomment this section if you would like to include a bastion resource with this example.
 resource "azurerm_public_ip" "bastionpip" {
-  name                = module.naming.public_ip.name_unique
+  name                = "${module.naming.public_ip.name_unique}-bastion"
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
   allocation_method   = "Static"
@@ -172,6 +172,18 @@ module "avm_res_keyvault_vault" {
   }
 }
 
+resource "azurerm_managed_disk" "this" {
+  create_option                     = "Empty"
+  location                          = azurerm_resource_group.this_rg.location
+  name                              = "example-disk"
+  resource_group_name               = azurerm_resource_group.this_rg.name
+  storage_account_type              = "Premium_LRS"
+  disk_size_gb                      = 128
+  zone                              = random_integer.zone_index.result
+}
+
+
+
 module "testvm" {
   source = "../../"
 
@@ -197,6 +209,18 @@ module "testvm" {
       resource_id = module.avm_res_keyvault_vault.resource_id
     }
   }
+
+  data_disk_existing_disks = {
+    disk1 = {
+      managed_disk_resource_id = azurerm_managed_disk.this.id
+      name = "${module.naming.managed_disk.name_unique}-existing-lun1"
+      lun  = 1
+      caching = "ReadWrite"
+      disk_attachment_create_option = "Attach"
+      write_accelerator_enabled = false
+    }
+  }
+
   data_disk_managed_disks = {
     disk1 = {
       name                 = "${module.naming.managed_disk.name_unique}-lun0"
