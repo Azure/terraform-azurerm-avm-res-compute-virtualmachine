@@ -128,6 +128,7 @@ module "vnet" {
 #/* Uncomment this section if you would like to include a bastion resource with this example.
 resource "azurerm_public_ip" "bastionpip" {
   name                = "${module.naming.public_ip.name_unique}-bastion"
+  name                = "${module.naming.public_ip.name_unique}-bastion"
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
   allocation_method   = "Static"
