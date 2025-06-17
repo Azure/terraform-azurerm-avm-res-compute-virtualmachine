@@ -448,11 +448,11 @@ variable "custom_data" {
 
 variable "data_disk_existing_disks" {
   type = map(object({
-    caching                                   = string
-    managed_disk_resource_id                  = string
-    lun                                       = number
-    disk_attachment_create_option             = optional(string, "Attach")
-    write_accelerator_enabled                 = optional(bool, false)
+    caching                       = string
+    managed_disk_resource_id      = string
+    lun                           = number
+    disk_attachment_create_option = optional(string, "Attach")
+    write_accelerator_enabled     = optional(bool, false)
   }))
   default     = {}
   description = <<DATA_DISK_EXISTING_DISKS
@@ -465,7 +465,6 @@ A map of objects used to define one or more existing data disks for attachment t
   - `write_accelerator_enabled` (Optional) - Should Write Accelerator be enabled for this Data Disk? Defaults to false. Changing this forces a new resource to be created.
 DATA_DISK_EXISTING_DISKS
 }
-
 
 variable "data_disk_managed_disks" {
   type = map(object({
