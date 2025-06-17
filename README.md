@@ -11,7 +11,7 @@ This is the virtual machine resource module for the Azure Verified Modules libra
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.10, < 2.0)
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
 
@@ -53,7 +53,9 @@ The following resources are used by this module:
 - [azurerm_role_assignment.this_network_interface](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [azurerm_role_assignment.this_virtual_machine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
+- [azurerm_virtual_machine_data_disk_attachment.this_linux_existing](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_windows](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
+- [azurerm_virtual_machine_data_disk_attachment.this_windows_existing](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_windows_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/windows_virtual_machine) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
@@ -519,6 +521,30 @@ Description: (Optional) The Base64 encoded Custom Data for building this virtual
 Type: `string`
 
 Default: `null`
+
+### <a name="input_data_disk_existing_disks"></a> [data\_disk\_existing\_disks](#input\_data\_disk\_existing\_disks)
+
+Description: A map of objects used to define one or more existing data disks for attachment to the virtual machine. This will not create the disks but will instead attach previously created disks to the virtual machine using their resource Ids. Lun numbers need to be unique across all disks include disks created as part of the module.
+- `<map key>` - Use a custom map key to define each data disk
+  - `caching` (Required) - Specifies the caching requirements for this Data Disk. Possible values include None, ReadOnly and ReadWrite
+  - `lun` (Required) - The Logical Unit Number of the Data Disk, which needs to be unique within the Virtual Machine. Changing this forces a new resource to be created.
+  - `managed_disk_resource_id` (Required) - The Azure Resource ID of the existing Managed Disk to attach to the Virtual Machine. Changing this forces a new resource to be created.
+  - `disk_attachment_create_option` (Optional) - The disk attachment create Option of the Data Disk, such as Empty or Attach. Defaults to Attach. Changing this forces a new resource to be created.
+  - `write_accelerator_enabled` (Optional) - Should Write Accelerator be enabled for this Data Disk? Defaults to false. Changing this forces a new resource to be created.
+
+Type:
+
+```hcl
+map(object({
+    caching                       = string
+    managed_disk_resource_id      = string
+    lun                           = number
+    disk_attachment_create_option = optional(string, "Attach")
+    write_accelerator_enabled     = optional(bool, false)
+  }))
+```
+
+Default: `{}`
 
 ### <a name="input_data_disk_managed_disks"></a> [data\_disk\_managed\_disks](#input\_data\_disk\_managed\_disks)
 
@@ -1375,8 +1401,7 @@ The following arguments are supported:
  - `error_blob_uri` (Optional): Specifies the Azure storage blob where script error stream will be uploaded.
  - `output_blob_managed_identity` (Optional): An output\_blob\_managed\_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.
  - `output_blob_uri` (Optional): Specifies the Azure storage blob where script output stream will be uploaded. It can be basic blob URI with SAS token.
- - `parameter` (Optional): A list of parameter blocks as defined below. The parameters used by the script.
- - `protected_parameter` (Optional): A list of protected\_parameter blocks as defined below. The protected parameters used by the script.
+ - `parameter` (Optional): A list of parameter blocks as defined below. The parameters used by the script. If sensitive values are required, use the `run_commands_secrets` variable and ensure the map keys match.
  - `timeouts` (Optional): Timeouts for each run command.
  - `tags` (Optional): A mapping of tags which should be assigned to the Virtual Machine Run Command.
 
