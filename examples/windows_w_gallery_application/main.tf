@@ -129,11 +129,11 @@ module "vnet" {
   }
 }
 
-/* #uncomment these resources to enable bastion
+#/* #uncomment these resources to enable bastion
 resource "azurerm_public_ip" "bastionpip" {
   allocation_method   = "Static"
   location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.public_ip.name_unique
+  name                = "${module.naming.public_ip.name_unique}-bastion"
   resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
 }
@@ -149,7 +149,7 @@ resource "azurerm_bastion_host" "bastion" {
     subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
-*/
+#*/
 
 data "azurerm_client_config" "current" {}
 
@@ -315,6 +315,12 @@ module "testvm" {
           principal_type             = "ServicePrincipal"
         }
       }
+    }
+  }
+  azure_backup_configurations = {
+    vm_backup = {
+      recovery_vault_resource_id   = azurerm_recovery_services_vault.test_vault.id
+      backup_policy_resource_id    = azurerm_backup_policy_vm.test_policy.id
     }
   }
   resource_group_name = azurerm_resource_group.this_rg.name

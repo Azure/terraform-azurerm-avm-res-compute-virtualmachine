@@ -125,7 +125,7 @@ module "vnet" {
 }
 
 
-/* Uncomment this section if you would like to include a bastion resource with this example.
+#/* Uncomment this section if you would like to include a bastion resource with this example.
 resource "azurerm_public_ip" "bastionpip" {
   name                = "${module.naming.public_ip.name_unique}-bastion"
   location            = azurerm_resource_group.this_rg.location
@@ -145,7 +145,7 @@ resource "azurerm_bastion_host" "bastion" {
     public_ip_address_id = azurerm_public_ip.bastionpip.id
   }
 }
-*/
+#*/
 
 data "azurerm_client_config" "current" {}
 
