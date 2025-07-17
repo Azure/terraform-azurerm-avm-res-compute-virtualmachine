@@ -55,6 +55,10 @@ resource "azapi_resource" "this_backup_intent" {
     properties = local.backup_body_properties[each.key]
   }
   response_export_values = ["*"]
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 
