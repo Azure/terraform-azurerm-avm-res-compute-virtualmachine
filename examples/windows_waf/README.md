@@ -27,6 +27,7 @@ It includes the following resources in addition to the VM resource:
 ```hcl
 terraform {
   required_version = ">= 1.9, < 2.0"
+
   required_providers {
     azuread = {
       source  = "hashicorp/azuread"
