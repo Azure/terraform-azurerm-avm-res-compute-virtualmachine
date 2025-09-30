@@ -109,3 +109,38 @@ resource "azurerm_role_assignment" "disks" {
   role_definition_name                   = (length(split("/", each.value.role_assignment.role_definition_id_or_name))) > 3 ? null : each.value.role_assignment.role_definition_id_or_name
   skip_service_principal_aad_check       = each.value.role_assignment.skip_service_principal_aad_check
 }
+
+# Get the OS disk resource using azapi_resource to obtain its resource ID
+data "azapi_resource" "os_disk" {
+  count = var.os_disk.public_network_access_enabled != null ? 1 : 0
+
+  type      = "Microsoft.Compute/virtualMachines@2023-09-01"
+  parent_id = "/subscriptions/${split("/", local.virtualmachine_resource_id)[2]}/resourceGroups/${var.resource_group_name}"
+  name      = var.name
+
+  depends_on = [
+    azurerm_windows_virtual_machine.this,
+    azurerm_linux_virtual_machine.this
+  ]
+
+  response_export_values = ["properties.storageProfile.osDisk.managedDisk.id"]
+}
+
+# Update OS disk public network access using azapi_update_resource
+# This is required because the azurerm provider doesn't support public_network_access_enabled in the os_disk block
+resource "azapi_update_resource" "os_disk_public_network_access" {
+  count = var.os_disk.public_network_access_enabled != null ? 1 : 0
+
+  type        = "Microsoft.Compute/disks@2023-04-02"
+  resource_id = jsondecode(data.azapi_resource.os_disk[0].output).properties.storageProfile.osDisk.managedDisk.id
+
+  body = jsonencode({
+    properties = {
+      publicNetworkAccess = var.os_disk.public_network_access_enabled ? "Enabled" : "Disabled"
+    }
+  })
+
+  depends_on = [
+    data.azapi_resource.os_disk
+  ]
+}

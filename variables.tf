@@ -916,6 +916,7 @@ variable "os_disk" {
     disk_encryption_set_id           = optional(string)
     disk_size_gb                     = optional(number)
     name                             = optional(string)
+    public_network_access_enabled    = optional(bool)
     secure_vm_disk_encryption_set_id = optional(string)
     security_encryption_type         = optional(string)
     write_accelerator_enabled        = optional(bool, false)
@@ -936,6 +937,7 @@ Required configuration values for the OS disk on the virtual machine.
 - `disk_encryption_set_id`           = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. Conflicts with secure_vm_disk_encryption_set_id. The Disk Encryption Set must have the Reader Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault
 - `disk_size_gb`                     = (Optional) - The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from.
 - `name`                             = (Optional) - The name which should be used for the Internal OS Disk. Changing this forces a new resource to be created.
+- `public_network_access_enabled`    = (Optional) - Whether it is allowed to access the disk via public network. Defaults to true.
 - `secure_vm_disk_encryption_set_id` = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk when the Virtual Machine is a Confidential VM. Conflicts with disk_encryption_set_id. Changing this forces a new resource to be created.
 - `security_encryption_type`         = (Optional) - Encryption Type when the Virtual Machine is a Confidential VM. Possible values are `VMGuestStateOnly` and `DiskWithVMGuestState`. Changing this forces a new resource to be created. `vtpm_enabled` must be set to true when security_encryption_type is specified. encryption_at_host_enabled cannot be set to `true` when security_encryption_type is set to `DiskWithVMGuestState`
 - `write_accelerator_enabled`        = (Optional) - Should Write Accelerator be Enabled for this OS Disk? Defaults to `false`. This requires that the storage_account_type is set to `Premium_LRS` and that caching is set to `None`
