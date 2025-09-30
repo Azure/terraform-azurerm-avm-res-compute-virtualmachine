@@ -114,9 +114,8 @@ resource "azurerm_role_assignment" "disks" {
 data "azapi_resource" "os_disk" {
   count = var.os_disk.public_network_access_enabled != null ? 1 : 0
 
-  type      = "Microsoft.Compute/virtualMachines@2023-09-01"
-  parent_id = "/subscriptions/${split("/", local.virtualmachine_resource_id)[2]}/resourceGroups/${var.resource_group_name}"
-  name      = var.name
+  type        = "Microsoft.Compute/virtualMachines@2023-09-01"
+  resource_id = local.virtualmachine_resource_id
 
   depends_on = [
     azurerm_windows_virtual_machine.this,
