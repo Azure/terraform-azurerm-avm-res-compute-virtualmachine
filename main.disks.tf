@@ -143,4 +143,6 @@ resource "azapi_update_resource" "os_disk_public_network_access" {
   depends_on = [
     data.azapi_resource.os_disk
   ]
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
