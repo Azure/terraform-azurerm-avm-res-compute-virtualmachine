@@ -1,5 +1,6 @@
 terraform {
   required_version = ">= 1.9, < 2.0"
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -224,17 +225,17 @@ module "testvm" {
       }
     }
   }
-  azure_backup_configurations = {
-    vm_backup = {
-      recovery_vault_resource_id   = azurerm_recovery_services_vault.test_vault.id
-      backup_policy_resource_id    = azurerm_backup_policy_vm.test_policy.id
-    }
-  }
   resource_group_name = azurerm_resource_group.this_rg.name
   zone                = random_integer.zone_index.result
   account_credentials = {
     key_vault_configuration = {
       resource_id = module.avm_res_keyvault_vault.resource_id
+    }
+  }
+  azure_backup_configurations = {
+    vm_backup = {
+      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
+      backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
     }
   }
   data_disk_managed_disks = {
