@@ -1,4 +1,7 @@
 locals {
+  #handle the automatic_updates_enabled value and deprecated enable_automatic_updates value
+  #if the new variable is explicitly set (not default), use it; otherwise use the deprecated one
+  automatic_updates_enabled = var.automatic_updates_enabled
   #flatten the role assignments for the disks
   disks_role_assignments = { for ra in flatten([
     for dk, dv in var.data_disk_managed_disks : [

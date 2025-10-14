@@ -646,7 +646,7 @@ variable "edge_zone" {
   description = "(Optional) Specifies the Edge Zone within the Azure Region where this Virtual Machine should exist. Changing this forces a new Virtual Machine to be created."
 }
 
-variable "enable_automatic_updates" {
+variable "automatic_updates_enabled" {
   type        = bool
   default     = true
   description = "(Optional) Specifies if Automatic Updates are Enabled for the Windows Virtual Machine. Changing this forces a new resource to be created. Defaults to `true`."

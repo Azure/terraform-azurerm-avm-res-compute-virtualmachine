@@ -21,7 +21,7 @@ resource "azurerm_windows_virtual_machine" "this" {
   dedicated_host_id                                      = var.dedicated_host_resource_id
   disk_controller_type                                   = var.disk_controller_type
   edge_zone                                              = var.edge_zone
-  enable_automatic_updates                               = var.enable_automatic_updates
+  automatic_updates_enabled                              = local.automatic_updates_enabled
   encryption_at_host_enabled                             = var.encryption_at_host_enabled
   eviction_policy                                        = var.eviction_policy
   extensions_time_budget                                 = var.extensions_time_budget

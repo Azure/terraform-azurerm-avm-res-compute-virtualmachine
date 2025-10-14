@@ -85,3 +85,9 @@ For simplicity this module provides the option to use an auto-generated admin us
 - `tags` - (Optional) - Specific tags to assign to this secret resource
 DESCRIPTION
 }
+
+variable "enable_automatic_updates" {
+  type        = bool
+  default     = true
+  description = "DEPRECATED: This input has been renamed to `automatic_updates_enabled` to align with the azurerm provider naming convention. This input will be removed with the release of version v1.0.0. Specifies if Automatic Updates are Enabled for the Windows Virtual Machine. Changing this forces a new resource to be created. Defaults to `true`."
+}
