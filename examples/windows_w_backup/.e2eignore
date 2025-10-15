@@ -1,1 +1,1 @@
-# Ignore this example in the e2e tests
+# Ignore this example in the e2e tests because resource deletion will fail due to Vault soft delete.

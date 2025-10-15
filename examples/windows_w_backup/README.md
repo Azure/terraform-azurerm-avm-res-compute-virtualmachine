@@ -127,17 +127,11 @@ module "vnet" {
   }
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azurerm_user_assigned_identity" "example_identity" {
   location            = azurerm_resource_group.this_rg[0].location
   name                = module.naming.user_assigned_identity.name_unique
   resource_group_name = azurerm_resource_group.this_rg[0].name
   tags                = local.tags
-}
-
-data "azuread_service_principal" "backup_service_app" {
-  display_name = "Backup Management Service"
 }
 
 resource "azurerm_recovery_services_vault" "test_vault" {
@@ -244,8 +238,6 @@ The following resources are used by this module:
 - [azurerm_user_assigned_identity.example_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
-- [azuread_service_principal.backup_service_app](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/data-sources/service_principal) (data source)
-- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs

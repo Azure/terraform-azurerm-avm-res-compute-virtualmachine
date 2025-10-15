@@ -110,17 +110,11 @@ module "vnet" {
   }
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azurerm_user_assigned_identity" "example_identity" {
   location            = azurerm_resource_group.this_rg[0].location
   name                = module.naming.user_assigned_identity.name_unique
   resource_group_name = azurerm_resource_group.this_rg[0].name
   tags                = local.tags
-}
-
-data "azuread_service_principal" "backup_service_app" {
-  display_name = "Backup Management Service"
 }
 
 resource "azurerm_recovery_services_vault" "test_vault" {
