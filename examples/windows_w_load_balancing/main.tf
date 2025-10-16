@@ -116,6 +116,12 @@ module "vnet" {
       nat_gateway = {
         id = module.natgateway.resource_id
       }
+      delegations = [{
+        name = "Microsoft.Network.applicationGateways"
+        service_delegation = {
+          name = "Microsoft.Network/applicationGateways"
+        }
+      }]
     }
     lb_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-lb"
