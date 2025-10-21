@@ -50,7 +50,7 @@ provider "azurerm" {
 
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4"
+  version = "0.4.2"
 }
 
 module "regions" {
@@ -119,12 +119,12 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.8.1"
+  version = "=0.15.0"
 
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  name                = module.naming.virtual_network.name_unique
+  location      = azurerm_resource_group.this_rg.location
+  parent_id     = azurerm_resource_group.this_rg.id
+  address_space = ["10.0.0.0/16"]
+  name          = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-1"
@@ -139,6 +139,12 @@ module "vnet" {
       nat_gateway = {
         id = module.natgateway.resource_id
       }
+      delegations = [{
+        name = "Microsoft.Network.applicationGateways"
+        service_delegation = {
+          name = "Microsoft.Network/applicationGateways"
+        }
+      }]
     }
     lb_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-lb"
@@ -485,7 +491,7 @@ Version: 0.3.2
 
 Source: Azure/naming/azurerm
 
-Version: ~> 0.4
+Version: 0.4.2
 
 ### <a name="module_natgateway"></a> [natgateway](#module\_natgateway)
 
@@ -521,7 +527,7 @@ Version: 0.3.0
 
 Source: Azure/avm-res-network-virtualnetwork/azurerm
 
-Version: =0.8.1
+Version: =0.15.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

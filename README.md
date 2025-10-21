@@ -440,7 +440,7 @@ Description: This object describes the backup configuration to use for this VM i
 
 - `<map_key>` - An arbitrary map key to avoid terraform issues with know before apply challenges
   - `recovery_vault_resource_id - (Required) - The Azure Resource ID of the recovery services vault where the backup will be stored.
-  - `resource\_group\_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV resource group name will be extracted from the RSV resource id. The resource group name for the resource group containing the recovery services vault. If not supplied it will default to the deployment resource group.
+  - `resource\_group\_name` - (Optional) - This value is deprecated and will be removed in future versions as the VM resource group name will be used.
   - `recovery\_vault\_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV information will be pulled from the RSV resource id. The name of the recovery services vault where the backup will be stored.
   - `backup\_policy\_resource\_id` - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
   - `exclude\_disk\_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection. Only one of `exclude\_disk\_luns` or `include\_disk\_luns` can be set. If both are set then only the `exclude\_disk\_luns` value will be used.
