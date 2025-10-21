@@ -60,10 +60,8 @@ resource "random_integer" "zone_index" {
 }
 
 resource "azurerm_resource_group" "this_rg" {
-  count = 2
-
   location = local.deployment_region
-  name     = "${module.naming.resource_group.name_unique}-${count.index + 1}"
+  name     = "${module.naming.resource_group.name_unique}"
   tags     = local.tags
 }
 
@@ -72,7 +70,7 @@ module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
   version = "0.3.0"
 
-  location      = azurerm_resource_group.this_rg[0].location
+  location      = azurerm_resource_group.this_rg.location
   cache_results = true
   vm_filters = {
     min_vcpus                      = 2
@@ -91,104 +89,132 @@ module "vnet" {
   version = "=0.8.1"
 
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.this_rg[0].location
-  resource_group_name = azurerm_resource_group.this_rg[0].name
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
   name                = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-1"
       address_prefixes = ["10.0.1.0/24"]
+      nat_gateway = {
+        id = module.natgateway.resource_id
+      }
     }
-    vm_subnet_2 = {
-      name             = "${module.naming.subnet.name_unique}-2"
-      address_prefixes = ["10.0.2.0/24"]
+    AzureBastionSubnet = {
+      name             = "AzureBastionSubnet"
+      address_prefixes = ["10.0.3.0/24"]
     }
   }
 }
 
+resource "azurerm_public_ip" "bastionpip" {
+  name                = module.naming.public_ip.name_unique
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+resource "azurerm_bastion_host" "bastion" {
+  name                = module.naming.bastion_host.name_unique
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
+
+  ip_configuration {
+    name                 = "${module.naming.bastion_host.name_unique}-ipconf"
+    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
+    public_ip_address_id = azurerm_public_ip.bastionpip.id
+  }
+}
+
+module "natgateway" {
+  source  = "Azure/avm-res-network-natgateway/azurerm"
+  version = "0.2.1"
+
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.nat_gateway.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  enable_telemetry    = true
+  public_ips = {
+    public_ip_1 = {
+      name = "nat_gw_pip1"
+    }
+  }
+}
+
+
 resource "azurerm_user_assigned_identity" "example_identity" {
-  location            = azurerm_resource_group.this_rg[0].location
+  location            = azurerm_resource_group.this_rg.location
   name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this_rg[0].name
+  resource_group_name = azurerm_resource_group.this_rg.name
   tags                = local.tags
 }
 
-resource "azurerm_recovery_services_vault" "test_vault" {
-  location            = azurerm_resource_group.this_rg[1].location
-  name                = module.naming.recovery_services_vault.name_unique
-  resource_group_name = azurerm_resource_group.this_rg[1].name
-  sku                 = "Standard"
-  soft_delete_enabled = false
-  storage_mode_type   = "LocallyRedundant"
-
-  identity {
-    type = "SystemAssigned"
-  }
+variable "os_type" {
+  description = "The OS type of the Virtual Machine. Possible values are 'Windows' and 'Linux'."
+  type        = string
+  default     = "Linux"
 }
 
-resource "azurerm_backup_policy_vm" "test_policy" {
-  name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
-  recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
-  resource_group_name = azurerm_resource_group.this_rg[1].name
+module "vm" {
+  source  = "Azure/avm-res-compute-virtualmachine/azurerm"
+  version = "0.18.1"
 
-  backup {
-    frequency = "Daily"
-    time      = "23:00"
-  }
-  retention_daily {
-    count = 10
-  }
+  name                = module.naming.virtual_machine.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  os_type                            = "Linux"
 
-  depends_on = [azurerm_recovery_services_vault.test_vault]
-}
-
-module "testvm" {
-  source = "../../"
-
-  location = azurerm_resource_group.this_rg[0].location
-  name     = module.naming.virtual_machine.name_unique
+  location                                 = azurerm_resource_group.this_rg.location
+  zone                                     = 1
+  admin_username                           = "vmadmin"
+  admin_password                           = "abcd1234!@#$"
+  generate_admin_password_or_ssh_key       = false # Set this value to true if the deployment should create a strong password for the admin user. If `os_type` is Linux, this will generate and store an SSH key as the default. However, setting `disable_password_authentication` to `false` will generate and store a password value instead of an ssh key.
+  disable_password_authentication          = false
+  sku_size                                 = module.vm_sku.sku
+  enable_telemetry                         = false
+  encryption_at_host_enabled               = false
   network_interfaces = {
     network_interface_1 = {
-      name = module.naming.network_interface.name_unique
+      name = "nic1"
       ip_configurations = {
         ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          name                          = "ipconfig1"
           private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
         }
       }
     }
   }
-  resource_group_name = azurerm_resource_group.this_rg[0].name
-  zone                = random_integer.zone_index.result
-  azure_backup_configurations = {
-    arbitrary_key = {
-      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
-      backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
-    }
-  }
-  bypass_platform_safety_checks_on_user_schedule_enabled = true
-  enable_telemetry                                       = var.enable_telemetry
-  encryption_at_host_enabled                             = false
+
   managed_identities = {
     system_assigned            = true
     user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
   }
-  os_type               = "Windows"
-  patch_assessment_mode = "AutomaticByPlatform"
-  patch_mode            = "AutomaticByPlatform"
-  sku_size              = module.vm_sku.sku
-  source_image_reference = {
+
+  os_disk = {
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+  }
+
+  source_image_reference = var.os_type == "Windows" ? {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
     sku       = "2022-datacenter-g2"
     version   = "latest"
-  }
-  tags = {
-    scenario = "windows_w_azure_monitor_agent"
+    } : {
+    publisher = "Canonical"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
+    version   = "latest"
   }
 
-  depends_on = [
-    azurerm_backup_policy_vm.test_policy,
-    azurerm_recovery_services_vault.test_vault
-  ]
+  extensions = {
+    AADSSHLoginForLinux = {
+       name                        = "AADSSHLoginForLinux"
+       publisher                   = "Microsoft.Azure.ActiveDirectory"
+       type                        = "AADSSHLoginForLinux"
+       type_handler_version        = "1.0"
+       auto_upgrade_minor_version  = true
+       failure_suppression_enabled = false
+     }
+  }
 }
