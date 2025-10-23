@@ -24,6 +24,10 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 
   required_providers {
+    azapi = {
+      source  = "azure/azapi"
+      version = "~> 2.0"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116, < 5.0"
@@ -302,6 +306,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
+
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
@@ -310,7 +316,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azapi_update_resource.allow_drop_unencrypted_vnet](https://registry.terraform.io/providers/hashicorp/azapi/latest/docs/resources/update_resource) (resource)
+- [azapi_update_resource.allow_drop_unencrypted_vnet](https://registry.terraform.io/providers/azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azurerm_backup_policy_vm.test_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_policy_vm) (resource)
 - [azurerm_bastion_host.bastion](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/bastion_host) (resource)
 - [azurerm_public_ip.bastionpip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
