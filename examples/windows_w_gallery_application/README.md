@@ -28,6 +28,10 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 
   required_providers {
+    azapi = {
+      source  = "azure/azapi"
+      version = "~> 2.0"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116, < 5.0"
@@ -159,7 +163,7 @@ module "vnet" {
 resource "azurerm_public_ip" "bastionpip" {
   allocation_method   = "Static"
   location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.public_ip.name_unique
+  name                = "${module.naming.public_ip.name_unique}-bastion"
   resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
 }
@@ -350,6 +354,12 @@ module "testvm" {
       resource_id = module.avm_res_keyvault_vault.resource_id
     }
   }
+  azure_backup_configurations = {
+    vm_backup = {
+      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
+      backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
+    }
+  }
   bypass_platform_safety_checks_on_user_schedule_enabled = true
   data_disk_managed_disks = {
     disk1 = {
@@ -402,6 +412,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
+
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
@@ -410,6 +422,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_update_resource.allow_drop_unencrypted_vnet](https://registry.terraform.io/providers/azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azurerm_backup_policy_vm.test_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_policy_vm) (resource)
 - [azurerm_gallery_application.app_gallery_sample](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/gallery_application) (resource)
 - [azurerm_gallery_application_version.test_app_version](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/gallery_application_version) (resource)

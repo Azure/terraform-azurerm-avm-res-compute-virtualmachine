@@ -22,6 +22,10 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 
   required_providers {
+    azapi = {
+      source  = "azure/azapi"
+      version = "~> 2.0"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116, < 5.0"
@@ -147,22 +151,23 @@ module "vnet" {
 
 /* Uncomment this section if you would like to include a bastion resource with this example.
 resource "azurerm_public_ip" "bastionpip" {
-  name                = module.naming.public_ip.name_unique
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
   allocation_method   = "Static"
+  location            = azurerm_resource_group.this_rg.location
+  name                = "${module.naming.public_ip.name_unique}-bastion"
+  resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
+
 }
 
 resource "azurerm_bastion_host" "bastion" {
-  name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.bastion_host.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
 
   ip_configuration {
     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
-    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
     public_ip_address_id = azurerm_public_ip.bastionpip.id
+    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
 */
@@ -192,6 +197,18 @@ module "avm_res_keyvault_vault" {
   }
 }
 
+resource "azurerm_managed_disk" "this" {
+  create_option        = "Empty"
+  location             = azurerm_resource_group.this_rg.location
+  name                 = "example-disk"
+  resource_group_name  = azurerm_resource_group.this_rg.name
+  storage_account_type = "Premium_LRS"
+  disk_size_gb         = 128
+  zone                 = random_integer.zone_index.result
+}
+
+
+
 module "testvm" {
   source = "../../"
 
@@ -215,6 +232,16 @@ module "testvm" {
   account_credentials = {
     key_vault_configuration = {
       resource_id = module.avm_res_keyvault_vault.resource_id
+    }
+  }
+  data_disk_existing_disks = {
+    disk1 = {
+      managed_disk_resource_id      = azurerm_managed_disk.this.id
+      name                          = "${module.naming.managed_disk.name_unique}-existing-lun1"
+      lun                           = 1
+      caching                       = "ReadWrite"
+      disk_attachment_create_option = "Attach"
+      write_accelerator_enabled     = false
     }
   }
   data_disk_managed_disks = {
@@ -265,6 +292,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
+
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
@@ -273,6 +302,8 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_update_resource.allow_drop_unencrypted_vnet](https://registry.terraform.io/providers/azure/azapi/latest/docs/resources/update_resource) (resource)
+- [azurerm_managed_disk.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/managed_disk) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)

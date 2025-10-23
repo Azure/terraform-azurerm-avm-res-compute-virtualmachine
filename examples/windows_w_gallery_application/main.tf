@@ -2,6 +2,10 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 
   required_providers {
+    azapi = {
+      source  = "azure/azapi"
+      version = "~> 2.0"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116, < 5.0"
@@ -133,7 +137,7 @@ module "vnet" {
 resource "azurerm_public_ip" "bastionpip" {
   allocation_method   = "Static"
   location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.public_ip.name_unique
+  name                = "${module.naming.public_ip.name_unique}-bastion"
   resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
 }
@@ -322,6 +326,12 @@ module "testvm" {
   account_credentials = {
     key_vault_configuration = {
       resource_id = module.avm_res_keyvault_vault.resource_id
+    }
+  }
+  azure_backup_configurations = {
+    vm_backup = {
+      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
+      backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
     }
   }
   bypass_platform_safety_checks_on_user_schedule_enabled = true
