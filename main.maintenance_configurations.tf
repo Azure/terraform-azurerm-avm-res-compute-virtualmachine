@@ -14,18 +14,21 @@ resource "azurerm_maintenance_assignment_virtual_machine" "this" {
 */
 
 resource "azapi_resource" "this_maintenance_configuration_assignment" {
-  type     = "Microsoft.Maintenance/configurationAssignments@2023-04-01"
   for_each = var.maintenance_configuration_resource_ids
 
-  parent_id = local.virtualmachine_resource_id
+  location  = var.location
   name      = "${var.name}-maintenance-configuration-${each.key}"
-
-  location = var.location
+  parent_id = local.virtualmachine_resource_id
+  type      = "Microsoft.Maintenance/configurationAssignments@2023-04-01"
   body = {
     properties = {
       maintenanceConfigurationId = each.value
     }
   }
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 moved {
