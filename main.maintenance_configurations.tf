@@ -22,7 +22,7 @@ resource "azapi_resource" "this_maintenance_configuration_assignment" {
   type      = "Microsoft.Maintenance/configurationAssignments@2023-04-01"
   body = {
     properties = {
-      maintenanceConfigurationId = each.value
+      maintenanceConfigurationId = lower(each.value)
     }
   }
   create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
