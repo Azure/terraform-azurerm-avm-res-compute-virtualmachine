@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.7"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.11"
+    }
   }
 }
 
@@ -60,10 +64,8 @@ resource "random_integer" "zone_index" {
 }
 
 resource "azurerm_resource_group" "this_rg" {
-  count = 2
-
   location = local.deployment_region
-  name     = "${module.naming.resource_group.name_unique}-${count.index + 1}"
+  name     = "${module.naming.resource_group.name_unique}"
   tags     = local.tags
 }
 
@@ -72,7 +74,7 @@ module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
   version = "0.3.0"
 
-  location      = azurerm_resource_group.this_rg[0].location
+  location      = azurerm_resource_group.this_rg.location
   cache_results = true
   vm_filters = {
     min_vcpus                      = 2
@@ -91,8 +93,8 @@ module "vnet" {
   version = "=0.8.1"
 
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.this_rg[0].location
-  resource_group_name = azurerm_resource_group.this_rg[0].name
+  location            = azurerm_resource_group.this_rg.location
+  resource_group_name = azurerm_resource_group.this_rg.name
   name                = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
@@ -106,46 +108,65 @@ module "vnet" {
   }
 }
 
+data "azurerm_client_config" "current" {}
+
 resource "azurerm_user_assigned_identity" "example_identity" {
-  location            = azurerm_resource_group.this_rg[0].location
+  location            = azurerm_resource_group.this_rg.location
   name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this_rg[0].name
+  resource_group_name = azurerm_resource_group.this_rg.name
   tags                = local.tags
 }
 
-resource "azurerm_recovery_services_vault" "test_vault" {
-  location            = azurerm_resource_group.this_rg[1].location
-  name                = module.naming.recovery_services_vault.name_unique
-  resource_group_name = azurerm_resource_group.this_rg[1].name
-  sku                 = "Standard"
-  soft_delete_enabled = false
-  storage_mode_type   = "LocallyRedundant"
+data "azuread_service_principal" "backup_service_app" {
+  display_name = "Backup Management Service"
+}
 
-  identity {
-    type = "SystemAssigned"
+
+module "avm_res_keyvault_vault" {
+  source  = "Azure/avm-res-keyvault-vault/azurerm"
+  version = "=0.10.0"
+
+  location                    = azurerm_resource_group.this_rg.location
+  name                        = "${module.naming.key_vault.name_unique}-waf"
+  resource_group_name         = azurerm_resource_group.this_rg.name
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  enabled_for_disk_encryption = true
+  network_acls = {
+    default_action = "Allow"
+    bypass         = "AzureServices"
+  }
+  role_assignments = {
+    deployment_user_secrets = {
+      role_definition_id_or_name = "Key Vault Administrator"
+      principal_id               = data.azurerm_client_config.current.object_id
+    }
+    vm_identity = {
+      role_definition_id_or_name = "Key Vault Secrets User"
+      principal_id               = azurerm_user_assigned_identity.example_identity.principal_id
+    }
+  }
+  tags = local.tags
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
   }
 }
 
-resource "azurerm_backup_policy_vm" "test_policy" {
-  name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
-  recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
-  resource_group_name = azurerm_resource_group.this_rg[1].name
-
-  backup {
-    frequency = "Daily"
-    time      = "23:00"
-  }
-  retention_daily {
-    count = 10
-  }
-
-  depends_on = [azurerm_recovery_services_vault.test_vault]
+# Introduce an explicit delay after Key Vault deployment to allow for RBAC/replication propagation
+resource "time_sleep" "after_key_vault" {
+  depends_on      = [module.avm_res_keyvault_vault]
+  create_duration = "60s"
 }
 
-module "testvm" {
-  source = "../../"
+data "azurerm_key_vault" "this" {
+  name                = basename(module.avm_res_keyvault_vault.resource_id)
+  resource_group_name = azurerm_resource_group.this_rg.name
+}
 
-  location = azurerm_resource_group.this_rg[0].location
+module "avm-res-compute-virtualmachine" {
+  source  = "Azure/avm-res-compute-virtualmachine/azurerm"
+  version = "0.19.1"
+
+  location = azurerm_resource_group.this_rg.location
   name     = module.naming.virtual_machine.name_unique
   network_interfaces = {
     network_interface_1 = {
@@ -158,14 +179,9 @@ module "testvm" {
       }
     }
   }
-  resource_group_name = azurerm_resource_group.this_rg[0].name
+  resource_group_name = azurerm_resource_group.this_rg.name
   zone                = random_integer.zone_index.result
-  azure_backup_configurations = {
-    arbitrary_key = {
-      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
-      backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
-    }
-  }
+
   bypass_platform_safety_checks_on_user_schedule_enabled = true
   enable_telemetry                                       = var.enable_telemetry
   encryption_at_host_enabled                             = false
@@ -173,22 +189,41 @@ module "testvm" {
     system_assigned            = true
     user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
   }
-  os_type               = "Windows"
+  os_type               = "Linux"
   patch_assessment_mode = "AutomaticByPlatform"
   patch_mode            = "AutomaticByPlatform"
   sku_size              = module.vm_sku.sku
   source_image_reference = {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2022-datacenter-g2"
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
     version   = "latest"
+  }
+  account_credentials = {
+    admin_credentials = {
+      username = "adminpa"
+      generate_admin_password_or_ssh_key = true
+    }
+    key_vault_configuration = {
+      resource_id = data.azurerm_key_vault.this.id
+      name                  = var.nva.name
+    }
+    password_authentication_disabled = false
   }
   tags = {
     scenario = "windows_w_azure_monitor_agent"
   }
 
-  depends_on = [
-    azurerm_backup_policy_vm.test_policy,
-    azurerm_recovery_services_vault.test_vault
-  ]
+  # Ensure we wait for the post-Key Vault delay before creating the VM which depends on Key Vault access
+  depends_on = [time_sleep.after_key_vault]
+}
+
+variable "nva" {
+  description = "Network Virtual Appliance"
+  type = object({
+    name = string
+  })
+  default = {
+    name = "nva-example"
+  }
 }
