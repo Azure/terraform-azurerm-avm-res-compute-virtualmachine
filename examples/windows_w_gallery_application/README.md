@@ -272,18 +272,40 @@ resource "azurerm_resource_group" "rsv_rg" {
   tags     = local.tags
 }
 
-resource "azurerm_recovery_services_vault" "test_vault" {
-  location            = azurerm_resource_group.rsv_rg.location
-  name                = module.naming.recovery_services_vault.name_unique
-  resource_group_name = azurerm_resource_group.rsv_rg.name
-  sku                 = "Standard"
-  soft_delete_enabled = false
-  storage_mode_type   = "LocallyRedundant"
+resource "azapi_resource" "test_vault" {
+  location  = local.deployment_region
+  name      = module.naming.recovery_services_vault.name_unique
+  parent_id = azurerm_resource_group.rsv_rg.id
+  type      = "Microsoft.RecoveryServices/vaults@2025-02-01"
+  body = {
+    properties = {
+      publicNetworkAccess = "Enabled"
+      securitySettings = {
+        softDeleteSettings = {
+          enhancedSecurityState           = "Disabled"
+          softDeleteRetentionPeriodInDays = 0
+          softDeleteState                 = "Disabled"
+        }
+      }
+      restoreSettings = {
+        crossSubscriptionRestoreSettings = {
+          crossSubscriptionRestoreState = "Disabled"
+        }
+      }
+      redundancySettings = {
+        standardTierStorageRedundancy = "LocallyRedundant"
+        crossRegionRestore            = "Disabled"
+      }
+    }
+    sku = {
+      name = "Standard"
+    }
+  }
 }
 
 resource "azurerm_backup_policy_vm" "test_policy" {
   name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
-  recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
+  recovery_vault_name = azapi_resource.test_vault.name
   resource_group_name = azurerm_resource_group.rsv_rg.name
 
   backup {
@@ -294,7 +316,7 @@ resource "azurerm_backup_policy_vm" "test_policy" {
     count = 10
   }
 
-  depends_on = [azurerm_recovery_services_vault.test_vault]
+  depends_on = [azapi_resource.test_vault]
 }
 
 resource "azurerm_maintenance_configuration" "test_maintenance_config" {
@@ -356,7 +378,7 @@ module "testvm" {
   }
   azure_backup_configurations = {
     vm_backup = {
-      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
+      recovery_vault_resource_id = azapi_resource.test_vault.id
       backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
     }
   }
@@ -400,7 +422,7 @@ module "testvm" {
   depends_on = [
     module.avm_res_keyvault_vault,
     azurerm_backup_policy_vm.test_policy,
-    azurerm_recovery_services_vault.test_vault
+    azapi_resource.test_vault
   ]
 }
 ```
@@ -422,12 +444,12 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.test_vault](https://registry.terraform.io/providers/azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_update_resource.allow_drop_unencrypted_vnet](https://registry.terraform.io/providers/azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azurerm_backup_policy_vm.test_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_policy_vm) (resource)
 - [azurerm_gallery_application.app_gallery_sample](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/gallery_application) (resource)
 - [azurerm_gallery_application_version.test_app_version](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/gallery_application_version) (resource)
 - [azurerm_maintenance_configuration.test_maintenance_config](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/maintenance_configuration) (resource)
-- [azurerm_recovery_services_vault.test_vault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault) (resource)
 - [azurerm_resource_group.rsv_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_shared_image_gallery.app_gallery](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/shared_image_gallery) (resource)

@@ -246,18 +246,40 @@ resource "azurerm_resource_group" "rsv_rg" {
   tags     = local.tags
 }
 
-resource "azurerm_recovery_services_vault" "test_vault" {
-  location            = azurerm_resource_group.rsv_rg.location
-  name                = module.naming.recovery_services_vault.name_unique
-  resource_group_name = azurerm_resource_group.rsv_rg.name
-  sku                 = "Standard"
-  soft_delete_enabled = false
-  storage_mode_type   = "LocallyRedundant"
+resource "azapi_resource" "test_vault" {
+  location  = local.deployment_region
+  name      = module.naming.recovery_services_vault.name_unique
+  parent_id = azurerm_resource_group.rsv_rg.id
+  type      = "Microsoft.RecoveryServices/vaults@2025-02-01"
+  body = {
+    properties = {
+      publicNetworkAccess = "Enabled"
+      securitySettings = {
+        softDeleteSettings = {
+          enhancedSecurityState           = "Disabled"
+          softDeleteRetentionPeriodInDays = 0
+          softDeleteState                 = "Disabled"
+        }
+      }
+      restoreSettings = {
+        crossSubscriptionRestoreSettings = {
+          crossSubscriptionRestoreState = "Disabled"
+        }
+      }
+      redundancySettings = {
+        standardTierStorageRedundancy = "LocallyRedundant"
+        crossRegionRestore            = "Disabled"
+      }
+    }
+    sku = {
+      name = "Standard"
+    }
+  }
 }
 
 resource "azurerm_backup_policy_vm" "test_policy" {
   name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
-  recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
+  recovery_vault_name = azapi_resource.test_vault.name
   resource_group_name = azurerm_resource_group.rsv_rg.name
 
   backup {
@@ -268,7 +290,7 @@ resource "azurerm_backup_policy_vm" "test_policy" {
     count = 10
   }
 
-  depends_on = [azurerm_recovery_services_vault.test_vault]
+  depends_on = [azapi_resource.test_vault]
 }
 
 resource "azurerm_maintenance_configuration" "test_maintenance_config" {
@@ -330,7 +352,7 @@ module "testvm" {
   }
   azure_backup_configurations = {
     vm_backup = {
-      recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
+      recovery_vault_resource_id = azapi_resource.test_vault.id
       backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
     }
   }
@@ -374,6 +396,6 @@ module "testvm" {
   depends_on = [
     module.avm_res_keyvault_vault,
     azurerm_backup_policy_vm.test_policy,
-    azurerm_recovery_services_vault.test_vault
+    azapi_resource.test_vault
   ]
 }
