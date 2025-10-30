@@ -266,59 +266,6 @@ resource "azurerm_gallery_application_version" "test_app_version" {
   }
 }
 
-resource "azurerm_resource_group" "rsv_rg" {
-  location = local.deployment_region
-  name     = "${module.naming.resource_group.name_unique}-RSV-rg"
-  tags     = local.tags
-}
-
-resource "azapi_resource" "test_vault" {
-  location  = local.deployment_region
-  name      = module.naming.recovery_services_vault.name_unique
-  parent_id = azurerm_resource_group.rsv_rg.id
-  type      = "Microsoft.RecoveryServices/vaults@2025-02-01"
-  body = {
-    properties = {
-      publicNetworkAccess = "Enabled"
-      securitySettings = {
-        softDeleteSettings = {
-          enhancedSecurityState           = "Disabled"
-          softDeleteRetentionPeriodInDays = 0
-          softDeleteState                 = "Disabled"
-        }
-      }
-      restoreSettings = {
-        crossSubscriptionRestoreSettings = {
-          crossSubscriptionRestoreState = "Disabled"
-        }
-      }
-      redundancySettings = {
-        standardTierStorageRedundancy = "LocallyRedundant"
-        crossRegionRestore            = "Disabled"
-      }
-    }
-    sku = {
-      name = "Standard"
-    }
-  }
-}
-
-resource "azurerm_backup_policy_vm" "test_policy" {
-  name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
-  recovery_vault_name = azapi_resource.test_vault.name
-  resource_group_name = azurerm_resource_group.rsv_rg.name
-
-  backup {
-    frequency = "Daily"
-    time      = "23:00"
-  }
-  retention_daily {
-    count = 10
-  }
-
-  depends_on = [azapi_resource.test_vault]
-}
-
 resource "azurerm_maintenance_configuration" "test_maintenance_config" {
   location                 = azurerm_resource_group.this_rg.location
   name                     = "${module.naming.virtual_machine.name_unique}-test-maint-config"
@@ -376,12 +323,6 @@ module "testvm" {
       resource_id = module.avm_res_keyvault_vault.resource_id
     }
   }
-  azure_backup_configurations = {
-    vm_backup = {
-      recovery_vault_resource_id = azapi_resource.test_vault.id
-      backup_policy_resource_id  = azurerm_backup_policy_vm.test_policy.id
-    }
-  }
   bypass_platform_safety_checks_on_user_schedule_enabled = true
   data_disk_managed_disks = {
     disk1 = {
@@ -420,9 +361,7 @@ module "testvm" {
   tags = local.tags
 
   depends_on = [
-    module.avm_res_keyvault_vault,
-    azurerm_backup_policy_vm.test_policy,
-    azapi_resource.test_vault
+    module.avm_res_keyvault_vault
   ]
 }
 ```
@@ -444,13 +383,10 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azapi_resource.test_vault](https://registry.terraform.io/providers/azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_update_resource.allow_drop_unencrypted_vnet](https://registry.terraform.io/providers/azure/azapi/latest/docs/resources/update_resource) (resource)
-- [azurerm_backup_policy_vm.test_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_policy_vm) (resource)
 - [azurerm_gallery_application.app_gallery_sample](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/gallery_application) (resource)
 - [azurerm_gallery_application_version.test_app_version](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/gallery_application_version) (resource)
 - [azurerm_maintenance_configuration.test_maintenance_config](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/maintenance_configuration) (resource)
-- [azurerm_resource_group.rsv_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_shared_image_gallery.app_gallery](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/shared_image_gallery) (resource)
 - [azurerm_storage_account.app_account](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
