@@ -170,6 +170,10 @@ resource "azurerm_network_interface_application_gateway_backend_address_pool_ass
   ip_configuration_name   = each.value.ipconfig_name
   network_interface_id    = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
 
+  timeouts {
+    delete = "60m"
+  }
+
   depends_on = [azurerm_network_interface_security_group_association.this,
     azurerm_network_interface_application_security_group_association.this,
   azurerm_network_interface_backend_address_pool_association.this]
