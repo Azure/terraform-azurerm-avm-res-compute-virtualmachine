@@ -2,6 +2,10 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 
   required_providers {
+    azapi = {
+      source  = "azure/azapi"
+      version = "~> 2.0"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116, < 5.0"
@@ -133,7 +137,7 @@ module "vnet" {
 resource "azurerm_public_ip" "bastionpip" {
   allocation_method   = "Static"
   location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.public_ip.name_unique
+  name                = "${module.naming.public_ip.name_unique}-bastion"
   resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
 }
@@ -236,37 +240,6 @@ resource "azurerm_gallery_application_version" "test_app_version" {
   }
 }
 
-resource "azurerm_resource_group" "rsv_rg" {
-  location = local.deployment_region
-  name     = "${module.naming.resource_group.name_unique}-RSV-rg"
-  tags     = local.tags
-}
-
-resource "azurerm_recovery_services_vault" "test_vault" {
-  location            = azurerm_resource_group.rsv_rg.location
-  name                = module.naming.recovery_services_vault.name_unique
-  resource_group_name = azurerm_resource_group.rsv_rg.name
-  sku                 = "Standard"
-  soft_delete_enabled = false
-  storage_mode_type   = "LocallyRedundant"
-}
-
-resource "azurerm_backup_policy_vm" "test_policy" {
-  name                = "${module.naming.recovery_services_vault.name_unique}-test-policy"
-  recovery_vault_name = azurerm_recovery_services_vault.test_vault.name
-  resource_group_name = azurerm_resource_group.rsv_rg.name
-
-  backup {
-    frequency = "Daily"
-    time      = "23:00"
-  }
-  retention_daily {
-    count = 10
-  }
-
-  depends_on = [azurerm_recovery_services_vault.test_vault]
-}
-
 resource "azurerm_maintenance_configuration" "test_maintenance_config" {
   location                 = azurerm_resource_group.this_rg.location
   name                     = "${module.naming.virtual_machine.name_unique}-test-maint-config"
@@ -362,8 +335,6 @@ module "testvm" {
   tags = local.tags
 
   depends_on = [
-    module.avm_res_keyvault_vault,
-    azurerm_backup_policy_vm.test_policy,
-    azurerm_recovery_services_vault.test_vault
+    module.avm_res_keyvault_vault
   ]
 }

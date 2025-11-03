@@ -446,6 +446,26 @@ variable "custom_data" {
   }
 }
 
+variable "data_disk_existing_disks" {
+  type = map(object({
+    caching                       = string
+    managed_disk_resource_id      = string
+    lun                           = number
+    disk_attachment_create_option = optional(string, "Attach")
+    write_accelerator_enabled     = optional(bool, false)
+  }))
+  default     = {}
+  description = <<DATA_DISK_EXISTING_DISKS
+A map of objects used to define one or more existing data disks for attachment to the virtual machine. This will not create the disks but will instead attach previously created disks to the virtual machine using their resource Ids. Lun numbers need to be unique across all disks include disks created as part of the module.
+- `<map key>` - Use a custom map key to define each data disk
+  - `caching` (Required) - Specifies the caching requirements for this Data Disk. Possible values include None, ReadOnly and ReadWrite
+  - `lun` (Required) - The Logical Unit Number of the Data Disk, which needs to be unique within the Virtual Machine. Changing this forces a new resource to be created.
+  - `managed_disk_resource_id` (Required) - The Azure Resource ID of the existing Managed Disk to attach to the Virtual Machine. Changing this forces a new resource to be created.
+  - `disk_attachment_create_option` (Optional) - The disk attachment create Option of the Data Disk, such as Empty or Attach. Defaults to Attach. Changing this forces a new resource to be created.
+  - `write_accelerator_enabled` (Optional) - Should Write Accelerator be enabled for this Data Disk? Defaults to false. Changing this forces a new resource to be created.
+DATA_DISK_EXISTING_DISKS
+}
+
 variable "data_disk_managed_disks" {
   type = map(object({
     caching                                   = string
@@ -1240,8 +1260,7 @@ The following arguments are supported:
  - `error_blob_uri` (Optional): Specifies the Azure storage blob where script error stream will be uploaded.
  - `output_blob_managed_identity` (Optional): An output_blob_managed_identity block as defined below. User-assigned managed Identity that has access to outputBlobUri storage blob.
  - `output_blob_uri` (Optional): Specifies the Azure storage blob where script output stream will be uploaded. It can be basic blob URI with SAS token.
- - `parameter` (Optional): A list of parameter blocks as defined below. The parameters used by the script.
- - `protected_parameter` (Optional): A list of protected_parameter blocks as defined below. The protected parameters used by the script.
+ - `parameter` (Optional): A list of parameter blocks as defined below. The parameters used by the script. If sensitive values are required, use the `run_commands_secrets` variable and ensure the map keys match.
  - `timeouts` (Optional): Timeouts for each run command.
  - `tags` (Optional): A mapping of tags which should be assigned to the Virtual Machine Run Command.
 

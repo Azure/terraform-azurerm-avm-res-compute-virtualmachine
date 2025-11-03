@@ -145,6 +145,8 @@ resource "azurerm_network_interface_application_security_group_association" "thi
 
   application_security_group_id = each.value.application_security_groups.application_security_group_resource_id
   network_interface_id          = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+
+  depends_on = [azurerm_network_interface_security_group_association.this]
 }
 
 
@@ -155,6 +157,9 @@ resource "azurerm_network_interface_backend_address_pool_association" "this" {
   backend_address_pool_id = each.value.lb_pools.load_balancer_backend_pool_resource_id
   ip_configuration_name   = each.value.ipconfig_name
   network_interface_id    = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+
+  depends_on = [azurerm_network_interface_security_group_association.this,
+  azurerm_network_interface_application_security_group_association.this]
 }
 
 ### App GW Assocation
@@ -164,6 +169,14 @@ resource "azurerm_network_interface_application_gateway_backend_address_pool_ass
   backend_address_pool_id = each.value.ag_pools.app_gateway_backend_pool_resource_id
   ip_configuration_name   = each.value.ipconfig_name
   network_interface_id    = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+
+  timeouts {
+    delete = "60m"
+  }
+
+  depends_on = [azurerm_network_interface_security_group_association.this,
+    azurerm_network_interface_application_security_group_association.this,
+  azurerm_network_interface_backend_address_pool_association.this]
 }
 
 ### NAT Rule Assocation
@@ -173,4 +186,9 @@ resource "azurerm_network_interface_nat_rule_association" "this" {
   ip_configuration_name = each.value.ipconfig_name
   nat_rule_id           = each.value.lb_nat_rules.load_balancer_nat_rule_resource_id
   network_interface_id  = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+
+  depends_on = [azurerm_network_interface_security_group_association.this,
+    azurerm_network_interface_application_security_group_association.this,
+    azurerm_network_interface_backend_address_pool_association.this,
+  azurerm_network_interface_application_gateway_backend_address_pool_association.this]
 }
