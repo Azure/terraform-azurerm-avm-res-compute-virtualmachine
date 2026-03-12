@@ -7,7 +7,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   name           = var.name
   #network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
   network_interface_ids = [for interface in local.ordered_network_interface_keys : azurerm_network_interface.virtualmachine_network_interfaces[interface].id]
-  resource_group_name   = var.resource_group_name
+  resource_group_name   = local.normalized_resource_group_name
   size                  = var.sku_size
   #optional properties
   admin_password                                         = (local.password_authentication_disabled ? null : local.admin_password_linux)

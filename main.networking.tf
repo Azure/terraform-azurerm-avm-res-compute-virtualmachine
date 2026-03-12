@@ -5,7 +5,7 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
   allocation_method       = var.public_ip_configuration_details.allocation_method
   location                = var.location
   name                    = each.value.ipconfig.public_ip_address_name
-  resource_group_name     = var.resource_group_name
+  resource_group_name     = local.normalized_resource_group_name
   ddos_protection_mode    = var.public_ip_configuration_details.ddos_protection_mode
   ddos_protection_plan_id = var.public_ip_configuration_details.ddos_protection_plan_id
   domain_name_label       = var.public_ip_configuration_details.domain_name_label
@@ -25,7 +25,7 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
 
   location                       = var.location
   name                           = each.value.name
-  resource_group_name            = coalesce(each.value.resource_group_name, var.resource_group_name)
+  resource_group_name            = coalesce(each.value.resource_group_name, local.normalized_resource_group_name)
   accelerated_networking_enabled = each.value.accelerated_networking_enabled
   dns_servers                    = each.value.dns_servers
   edge_zone                      = var.edge_zone #each.value.edge_zone

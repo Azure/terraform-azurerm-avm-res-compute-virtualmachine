@@ -1,4 +1,5 @@
 locals {
+  normalized_resource_group_name = lower(var.resource_group_name)
   #flatten the role assignments for the disks
   disks_role_assignments = { for ra in flatten([
     for dk, dv in var.data_disk_managed_disks : [
