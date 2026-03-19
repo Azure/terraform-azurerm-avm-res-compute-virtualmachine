@@ -31,7 +31,8 @@ locals {
   # 1. account_credentials.username
   # 2. admin_username
   # 3. azureuser (default value if not provided))
-  admin_username = var.account_credentials.admin_credentials.username != "azureuser" ? var.account_credentials.admin_credentials.username : (var.admin_username != "azureuser" ? var.admin_username : "azureuser") #both default to azureuser without input so no need for special handling.  After deprecation, set admin_username to var.account_credentials.username
+  # When os_managed_disk_id is set, admin_username must be null (Provider ExactlyOneOf constraint)
+  admin_username = local.os_disk_is_imported ? null : (var.account_credentials.admin_credentials.username != "azureuser" ? var.account_credentials.admin_credentials.username : (var.admin_username != "azureuser" ? var.admin_username : "azureuser")) #both default to azureuser without input so no need for special handling.  After deprecation, set admin_username to var.account_credentials.username
   #set the name for the password secret in the key vault if the key vault secret configuration is not null and there is a password input.
   credential_secret_name_password = (
     local.credentials_key_vault_config != null ? (
@@ -66,6 +67,7 @@ locals {
   #ssh key for handling deprecated ssh key input (the schema's are different,so we need to handle this)
   flattened_ssh_keys = flatten([for key in var.admin_ssh_keys : key.public_key])
   generate_admin_ssh_key_count = (
+    !local.os_disk_is_imported &&
     (lower(var.os_type) == "linux") &&
     (
       (var.generate_admin_password_or_ssh_key == true) &&
@@ -73,18 +75,19 @@ locals {
     ) && (local.password_authentication_disabled == true) ? 1 : 0
   )
   generate_random_password_count = (
-    (
-      (lower(var.os_type) == "windows") &&
+    local.os_disk_is_imported ? 0 : (
       (
-        (var.generate_admin_password_or_ssh_key == true) &&
-        (var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
-      )
-      ) ? 1 : (
-      (lower(var.os_type) == "linux") &&
-      (
-        (var.generate_admin_password_or_ssh_key == true && var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true) && (local.password_authentication_disabled == false)
-      )
-    ) ? 1 : 0
+        (lower(var.os_type) == "windows") &&
+        (
+          (var.generate_admin_password_or_ssh_key == true) &&
+          (var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
+        )
+        ) ? 1 : (
+        (lower(var.os_type) == "linux") &&
+        (
+          (var.generate_admin_password_or_ssh_key == true && var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true) && (local.password_authentication_disabled == false)
+        )
+    ) ? 1 : 0)
   )
   generated_secret_expiration_date_utc = local.generated_secret_expiration_date_utc_new == null ? local.generated_secret_expiration_date_utc_depr : local.generated_secret_expiration_date_utc_new
   #calculate the expiration date for the key vault secret.  If the key vault config is set, then use that value.  Otherwise, use the default value of 45 days.

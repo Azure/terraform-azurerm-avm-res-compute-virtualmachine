@@ -1,4 +1,6 @@
 locals {
+  # Whether the OS disk is being imported from an existing managed disk (Attach mode)
+  os_disk_is_imported = var.os_managed_disk_id != null
   #flatten the role assignments for the disks
   disks_role_assignments = { for ra in flatten([
     for dk, dv in var.data_disk_managed_disks : [
