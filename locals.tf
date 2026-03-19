@@ -1,6 +1,4 @@
 locals {
-  # Whether the OS disk is being imported from an existing managed disk (Attach mode)
-  os_disk_is_imported = var.os_managed_disk_id != null
   #flatten the role assignments for the disks
   disks_role_assignments = { for ra in flatten([
     for dk, dv in var.data_disk_managed_disks : [
@@ -119,6 +117,8 @@ locals {
     [for nic, value in var.network_interfaces : nic if value.is_primary],
     [for nic, value in var.network_interfaces : nic if !value.is_primary]
   )
+  # Whether the OS disk is being imported from an existing managed disk (Attach mode)
+  os_disk_is_imported = var.os_managed_disk_id != null
   #concat the input variable with the simple list going forward - this is a placeholder so that we can continue to reference the local source image reference value when it includes the simpleOS option.
   source_image_reference = var.source_image_reference
   #get the first system managed identity id if it is provisioned and depending on whether the vm type is linux or windows
