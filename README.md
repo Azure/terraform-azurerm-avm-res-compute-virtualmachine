@@ -1140,6 +1140,25 @@ Default:
 }
 ```
 
+### <a name="input_os_managed_disk_id"></a> [os\_managed\_disk\_id](#input\_os\_managed\_disk\_id)
+
+Description: (Optional) The ID of an existing Managed Disk which should be attached as the OS Disk of this Virtual Machine. Changing this forces a new resource to be created.
+
+When set, `source_image_resource_id` and `source_image_reference` must not be used, and the module will not manage OS profile settings
+(admin credentials, computer name, custom data, patching configuration, etc.) since the OS is pre-configured on the existing disk.
+
+> Note: This is mutually exclusive with `source_image_resource_id` and `source_image_reference`. Only one source for the OS disk can be specified.
+
+Example Inputs:
+
+```hcl
+os_managed_disk_id = "/subscriptions/{subscription_id}/resourceGroups/{rg_name}/providers/Microsoft.Compute/disks/{disk_name}"
+```
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_os_type"></a> [os\_type](#input\_os\_type)
 
 Description: The base OS type of the vm to be built.  Valid answers are Windows or Linux
@@ -1661,7 +1680,7 @@ Default:
 
 ### <a name="input_source_image_resource_id"></a> [source\_image\_resource\_id](#input\_source\_image\_resource\_id)
 
-Description: The Azure resource ID of the source image used to create the VM. Either `source_image_resource_id` or `source_image_reference` must be set and both can not be null at the same time.
+Description: The Azure resource ID of the source image used to create the VM. Either `source_image_resource_id` or `source_image_reference` must be set and both can not be null at the same time. Not used when `os_managed_disk_id` is set.
 
 Type: `string`
 

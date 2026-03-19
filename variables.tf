@@ -985,6 +985,34 @@ OS_DISK
   nullable    = false
 }
 
+variable "os_managed_disk_id" {
+  type        = string
+  default     = null
+  description = <<-DESCRIPTION
+  (Optional) The ID of an existing Managed Disk which should be attached as the OS Disk of this Virtual Machine. Changing this forces a new resource to be created.
+
+  When set, `source_image_resource_id` and `source_image_reference` must not be used, and the module will not manage OS profile settings
+  (admin credentials, computer name, custom data, patching configuration, etc.) since the OS is pre-configured on the existing disk.
+
+  > Note: This is mutually exclusive with `source_image_resource_id` and `source_image_reference`. Only one source for the OS disk can be specified.
+
+  Example Inputs:
+
+  ```hcl
+  os_managed_disk_id = "/subscriptions/{subscription_id}/resourceGroups/{rg_name}/providers/Microsoft.Compute/disks/{disk_name}"
+  ```
+  DESCRIPTION
+
+  validation {
+    condition     = var.os_managed_disk_id == null || can(regex("^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft.Compute/disks/[^/]+$", var.os_managed_disk_id))
+    error_message = "The os_managed_disk_id must be a valid Azure Managed Disk resource ID (e.g., /subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Compute/disks/{name})."
+  }
+  validation {
+    condition     = var.os_managed_disk_id == null || var.source_image_resource_id == null
+    error_message = "The os_managed_disk_id and source_image_resource_id are mutually exclusive. Only one source for the OS disk can be specified."
+  }
+}
+
 variable "os_type" {
   type        = string
   default     = "Windows"
@@ -1455,34 +1483,6 @@ source_image_reference = {
 }
 ```
 SOURCE_IMAGE_REFERENCE
-}
-
-variable "os_managed_disk_id" {
-  type        = string
-  default     = null
-  description = <<-DESCRIPTION
-  (Optional) The ID of an existing Managed Disk which should be attached as the OS Disk of this Virtual Machine. Changing this forces a new resource to be created.
-
-  When set, `source_image_resource_id` and `source_image_reference` must not be used, and the module will not manage OS profile settings
-  (admin credentials, computer name, custom data, patching configuration, etc.) since the OS is pre-configured on the existing disk.
-
-  > Note: This is mutually exclusive with `source_image_resource_id` and `source_image_reference`. Only one source for the OS disk can be specified.
-
-  Example Inputs:
-
-  ```hcl
-  os_managed_disk_id = "/subscriptions/{subscription_id}/resourceGroups/{rg_name}/providers/Microsoft.Compute/disks/{disk_name}"
-  ```
-  DESCRIPTION
-
-  validation {
-    condition     = var.os_managed_disk_id == null || can(regex("^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft.Compute/disks/[^/]+$", var.os_managed_disk_id))
-    error_message = "The os_managed_disk_id must be a valid Azure Managed Disk resource ID (e.g., /subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Compute/disks/{name})."
-  }
-  validation {
-    condition     = var.os_managed_disk_id == null || var.source_image_resource_id == null
-    error_message = "The os_managed_disk_id and source_image_resource_id are mutually exclusive. Only one source for the OS disk can be specified."
-  }
 }
 
 variable "source_image_resource_id" {
