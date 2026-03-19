@@ -1,7 +1,7 @@
 resource "azurerm_linux_virtual_machine" "this" {
   count = (lower(var.os_type) == "linux") ? 1 : 0
 
-  #required properties
+  #required properties (admin_username is null when using os_managed_disk_id per Provider ExactlyOneOf constraint)
   admin_username = local.admin_username
   location       = var.location
   name           = var.name
@@ -10,13 +10,13 @@ resource "azurerm_linux_virtual_machine" "this" {
   resource_group_name   = var.resource_group_name
   size                  = var.sku_size
   #optional properties
-  admin_password                                         = (local.password_authentication_disabled ? null : local.admin_password_linux)
+  admin_password                                         = local.os_disk_is_imported ? null : (local.password_authentication_disabled ? null : local.admin_password_linux)
   allow_extension_operations                             = var.allow_extension_operations
   availability_set_id                                    = var.availability_set_resource_id
-  bypass_platform_safety_checks_on_user_schedule_enabled = var.bypass_platform_safety_checks_on_user_schedule_enabled
+  bypass_platform_safety_checks_on_user_schedule_enabled = local.os_disk_is_imported ? null : var.bypass_platform_safety_checks_on_user_schedule_enabled
   capacity_reservation_group_id                          = var.capacity_reservation_group_resource_id
-  computer_name                                          = coalesce(var.computer_name, var.name)
-  custom_data                                            = var.custom_data
+  computer_name                                          = local.os_disk_is_imported ? null : coalesce(var.computer_name, var.name)
+  custom_data                                            = local.os_disk_is_imported ? null : var.custom_data
   dedicated_host_group_id                                = var.dedicated_host_group_resource_id
   dedicated_host_id                                      = var.dedicated_host_resource_id
   disable_password_authentication                        = local.password_authentication_disabled
@@ -27,15 +27,16 @@ resource "azurerm_linux_virtual_machine" "this" {
   extensions_time_budget                                 = var.extensions_time_budget
   license_type                                           = var.license_type
   max_bid_price                                          = var.max_bid_price
-  patch_assessment_mode                                  = var.patch_assessment_mode
-  patch_mode                                             = var.patch_mode
+  os_managed_disk_id                                     = var.os_managed_disk_id
+  patch_assessment_mode                                  = local.os_disk_is_imported ? null : var.patch_assessment_mode
+  patch_mode                                             = local.os_disk_is_imported ? null : var.patch_mode
   platform_fault_domain                                  = var.platform_fault_domain
   priority                                               = var.priority
-  provision_vm_agent                                     = var.provision_vm_agent
+  provision_vm_agent                                     = local.os_disk_is_imported ? null : var.provision_vm_agent
   proximity_placement_group_id                           = var.proximity_placement_group_resource_id
-  reboot_setting                                         = var.reboot_setting
+  reboot_setting                                         = local.os_disk_is_imported ? null : var.reboot_setting
   secure_boot_enabled                                    = var.secure_boot_enabled
-  source_image_id                                        = var.source_image_resource_id
+  source_image_id                                        = local.os_disk_is_imported ? null : var.source_image_resource_id
   tags                                                   = local.tags
   user_data                                              = var.user_data
   virtual_machine_scale_set_id                           = var.virtual_machine_scale_set_resource_id
@@ -71,7 +72,7 @@ resource "azurerm_linux_virtual_machine" "this" {
     }
   }
   dynamic "admin_ssh_key" {
-    for_each = toset(local.admin_ssh_keys)
+    for_each = local.os_disk_is_imported ? [] : toset(local.admin_ssh_keys)
 
     content {
       public_key = admin_ssh_key.value.public_key
@@ -128,7 +129,7 @@ resource "azurerm_linux_virtual_machine" "this" {
     }
   }
   dynamic "source_image_reference" {
-    for_each = var.source_image_resource_id == null ? ["source_image_reference"] : []
+    for_each = (var.source_image_resource_id == null && !local.os_disk_is_imported) ? ["source_image_reference"] : []
 
     content {
       offer     = local.source_image_reference.offer
