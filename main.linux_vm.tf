@@ -46,7 +46,7 @@ resource "azurerm_linux_virtual_machine" "this" {
 
   os_disk {
     caching                          = var.os_disk.caching
-    storage_account_type             = var.os_disk.storage_account_type
+    storage_account_type             = local.os_disk_is_imported ? null : var.os_disk.storage_account_type
     disk_encryption_set_id           = var.os_disk.disk_encryption_set_id
     disk_size_gb                     = var.os_disk.disk_size_gb
     name                             = var.os_disk.name
