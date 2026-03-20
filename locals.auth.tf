@@ -13,8 +13,8 @@ locals {
       local.admin_password_input == null ? random_password.admin_password[0].result : local.admin_password_input #use generated password if input is null, otherwise use input password
     ) : null                                                                                                     #null value if os is not windows
   )
-  # set the ssh key for the admin user in linux
-  admin_ssh_key = ((local.password_authentication_disabled == true) && (lower(var.os_type) == "linux")) ? (
+  # set the ssh key for the admin user in linux (skip in attach mode since no SSH key is generated)
+  admin_ssh_key = (!local.os_disk_is_imported && (local.password_authentication_disabled == true) && (lower(var.os_type) == "linux")) ? (
     length(local.admin_ssh_key_input) == 0 ? [{
       public_key = tls_private_key.this[0].public_key_openssh
       username   = local.admin_username
@@ -28,7 +28,7 @@ locals {
   #if ssh key set in multiple places, prefer the var.account_credentials value
   admin_ssh_key_input = (length(var.account_credentials.admin_credentials.ssh_keys) > 0 ? var.account_credentials.admin_credentials.ssh_keys : (length(local.deprecated_keys) > 0 ? local.deprecated_keys : []))
   #set the ssh key secret value to the generated key if password authentication is disabled and no ssh key is provided.  Otherwise, set it to "no_key" to indicate that no key was provided.
-  admin_ssh_key_secret_value = ((local.password_authentication_disabled == true) && (lower(var.os_type) == "linux") && length(local.admin_ssh_key_input) == 0) ? tls_private_key.this[0].private_key_pem : "no_key"
+  admin_ssh_key_secret_value = (!local.os_disk_is_imported && (local.password_authentication_disabled == true) && (lower(var.os_type) == "linux") && length(local.admin_ssh_key_input) == 0) ? tls_private_key.this[0].private_key_pem : "no_key"
   #concat the ssh key values list
   admin_ssh_keys = concat(var.admin_ssh_keys, local.admin_ssh_key) #set this to the local after deprecation
   #set the admin user to use the following order:
@@ -41,14 +41,14 @@ locals {
   credential_secret_name_password = (
     local.credentials_key_vault_config != null ? (
       local.credentials_key_vault_config.secret_configuration != null ? (
-        local.credentials_key_vault_config.secret_configuration.name != null ? local.credentials_key_vault_config.secret_configuration.name : "${var.name}-${local.admin_username}-password"
-  ) : "${var.name}-${local.admin_username}-password") : "${var.name}-${local.admin_username}-password")
+        local.credentials_key_vault_config.secret_configuration.name != null ? local.credentials_key_vault_config.secret_configuration.name : "${var.name}-${coalesce(local.admin_username, "imported")}-password"
+  ) : "${var.name}-${coalesce(local.admin_username, "imported")}-password") : "${var.name}-${coalesce(local.admin_username, "imported")}-password")
   #set the name for the ssh secret in the key vault if the key vault secret configuration is not null and there is a password input.
   credential_secret_name_ssh_key = (
     local.credentials_key_vault_config != null ? (
       local.credentials_key_vault_config.secret_configuration != null ? (
-        local.credentials_key_vault_config.secret_configuration.name != null ? local.credentials_key_vault_config.secret_configuration.name : "${var.name}-${local.admin_username}-ssh-private-key"
-  ) : "${var.name}-${local.admin_username}-ssh-private-key") : "${var.name}-${local.admin_username}-ssh-private-key")
+        local.credentials_key_vault_config.secret_configuration.name != null ? local.credentials_key_vault_config.secret_configuration.name : "${var.name}-${coalesce(local.admin_username, "imported")}-ssh-private-key"
+  ) : "${var.name}-${coalesce(local.admin_username, "imported")}-ssh-private-key") : "${var.name}-${coalesce(local.admin_username, "imported")}-ssh-private-key")
   #use locals to define whether a secret should be created in the key vault
   credential_secret_vault_count = (                    #if the key vault config is set, then create a credential secret
     local.credentials_key_vault_config != null ? 1 : 0 #the resource_id value is a required field in both cases, so we can use that to determine if the key vault config is set.
