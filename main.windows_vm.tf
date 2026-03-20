@@ -176,6 +176,11 @@ resource "azurerm_windows_virtual_machine" "this" {
       winrm_listener,                   # Once the certificate got rotated, it will trigger a destroy/recreate of the VM.
       vm_agent_platform_updates_enabled # Added property to ignore_changes as it continues to detect change in state.
     ]
+
+    precondition {
+      condition     = var.os_managed_disk_id == null || var.os_disk.diff_disk_settings == null
+      error_message = "The os_managed_disk_id and os_disk.diff_disk_settings are mutually exclusive. Ephemeral OS disks cannot be used when attaching an existing managed disk."
+    }
   }
 }
 

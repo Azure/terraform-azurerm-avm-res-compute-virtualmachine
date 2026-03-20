@@ -1456,7 +1456,7 @@ variable "source_image_reference" {
     version   = "latest"
   }
   description = <<SOURCE_IMAGE_REFERENCE
-The source image to use when building the virtual machine. Either `source_image_resource_id` or `source_image_reference` must be set and both can not be null at the same time.
+The source image to use when building the virtual machine. Either `source_image_resource_id` or `source_image_reference` must be set and both can not be null at the same time. Not used when `os_managed_disk_id` is set.
 
 - `publisher` = (Required) Specifies the publisher of the image this virtual machine should be created from.  Changing this forces a new virtual machine to be created.
 - `offer`     = (Required) Specifies the offer of the image used to create this virtual machine.  Changing this forces a new virtual machine to be created.

@@ -1,14 +1,18 @@
 locals {
   admin_password_input = (var.account_credentials.admin_credentials.password != null ? var.account_credentials.admin_credentials.password : (var.admin_password != null ? var.admin_password : null))
   #set the admin password to either a generated value or the entered value
-  admin_password_linux = (lower(var.os_type) == "linux") ? (
-    local.password_authentication_disabled == false ? (                                                          #if os is linux and password authentication is enabled
+  admin_password_linux = local.os_disk_is_imported ? null : ( #null when using imported OS disk (Attach mode)
+    (lower(var.os_type) == "linux") ? (
+      local.password_authentication_disabled == false ? (                                                          #if os is linux and password authentication is enabled
+        local.admin_password_input == null ? random_password.admin_password[0].result : local.admin_password_input #use generated password if input is null, otherwise use input password
+      ) : null                                                                                                     #null value if password authentication is disabled
+    ) : null                                                                                                       #null value if os is not linux
+  )
+  admin_password_windows = local.os_disk_is_imported ? null : ( #null when using imported OS disk (Attach mode)
+    (lower(var.os_type) == "windows") ? (
       local.admin_password_input == null ? random_password.admin_password[0].result : local.admin_password_input #use generated password if input is null, otherwise use input password
-    ) : null                                                                                                     #null value if password authentication is disabled
-  ) : null                                                                                                       #null value if os is not linux
-  admin_password_windows = (lower(var.os_type) == "windows") ? (
-    local.admin_password_input == null ? random_password.admin_password[0].result : local.admin_password_input #use generated password if input is null, otherwise use input password
-  ) : null                                                                                                     #null value if os is not windows
+    ) : null                                                                                                     #null value if os is not windows
+  )
   # set the ssh key for the admin user in linux
   admin_ssh_key = ((local.password_authentication_disabled == true) && (lower(var.os_type) == "linux")) ? (
     length(local.admin_ssh_key_input) == 0 ? [{
@@ -96,10 +100,11 @@ locals {
   password_authentication_disabled = var.account_credentials.password_authentication_disabled == false ? var.account_credentials.password_authentication_disabled : (
   var.disable_password_authentication == false ? var.disable_password_authentication : true) #defaults to true for both vars. Prefer var.account_credentials value if set, otherwise use var.disable_password_authentication.  If both are set, prefer var.account_credentials value. After deprecation, set password_authentication_disabled to var.account_credentials.password_authentication_disabled
   #set the count to 1 if a password value is provided and a secret configuration is provided or generated. This will be used to create the key vault secret.
-  password_secret_count = (
+  #skip credential secrets when using imported OS disk (Attach mode) since no credentials are managed
+  password_secret_count = local.os_disk_is_imported ? 0 : (
     (local.credential_secret_vault_count == 1 && lower(var.os_type) == "windows") ||
     (local.credential_secret_vault_count == 1 && lower(var.os_type) == "linux" && local.password_authentication_disabled == false) ? 1 : 0
   )
   #set the count to 1 if a ssh value is provided and a secret configuration is provided or generated. This will be used to create the key vault secret.
-  ssh_secret_count = (local.credential_secret_vault_count == 1 && local.generate_admin_ssh_key_count == 1) ? 1 : 0
+  ssh_secret_count = local.os_disk_is_imported ? 0 : (local.credential_secret_vault_count == 1 && local.generate_admin_ssh_key_count == 1) ? 1 : 0
 }
