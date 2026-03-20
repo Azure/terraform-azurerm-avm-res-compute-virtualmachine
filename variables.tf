@@ -985,6 +985,28 @@ OS_DISK
   nullable    = false
 }
 
+variable "os_disk_attach_mode" {
+  type        = bool
+  default     = false
+  description = <<-DESCRIPTION
+  (Optional) Set to `true` when using `os_managed_disk_id` to attach an existing managed disk as the OS disk (Attach mode).
+
+  This variable must be set explicitly because Terraform cannot determine `os_managed_disk_id != null` at plan time when the
+  disk ID comes from a computed resource attribute (e.g., `azurerm_managed_disk.example.id`). Setting this to `true` ensures
+  that credential generation, Key Vault secret creation, and other OS profile settings are correctly skipped during planning.
+
+  > Note: Always set `os_disk_attach_mode = true` when setting `os_managed_disk_id`.
+
+  Example Inputs:
+
+  ```hcl
+  os_disk_attach_mode = true
+  os_managed_disk_id  = azurerm_managed_disk.restored_os_disk.id
+  ```
+  DESCRIPTION
+  nullable    = false
+}
+
 variable "os_managed_disk_id" {
   type        = string
   default     = null
@@ -995,11 +1017,13 @@ variable "os_managed_disk_id" {
   (admin credentials, computer name, custom data, patching configuration, etc.) since the OS is pre-configured on the existing disk.
 
   > Note: This is mutually exclusive with `source_image_resource_id` and `source_image_reference`. Only one source for the OS disk can be specified.
+  > Note: Always set `os_disk_attach_mode = true` when using this variable.
 
   Example Inputs:
 
   ```hcl
-  os_managed_disk_id = "/subscriptions/{subscription_id}/resourceGroups/{rg_name}/providers/Microsoft.Compute/disks/{disk_name}"
+  os_disk_attach_mode = true
+  os_managed_disk_id  = "/subscriptions/{subscription_id}/resourceGroups/{rg_name}/providers/Microsoft.Compute/disks/{disk_name}"
   ```
   DESCRIPTION
 
