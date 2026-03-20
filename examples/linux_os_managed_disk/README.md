@@ -179,6 +179,7 @@ module "testvm" {
   resource_group_name = azurerm_resource_group.this_rg.name
   zone                = random_integer.zone_index.result
   enable_telemetry    = var.enable_telemetry
+  os_disk_attach_mode = true
   os_managed_disk_id  = azurerm_managed_disk.os_disk.id
   os_type             = "Linux"
   sku_size            = module.vm_sku.sku
