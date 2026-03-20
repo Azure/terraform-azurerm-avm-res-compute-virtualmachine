@@ -117,6 +117,11 @@ locals {
     [for nic, value in var.network_interfaces : nic if value.is_primary],
     [for nic, value in var.network_interfaces : nic if !value.is_primary]
   )
+  # Whether the OS disk is being imported from an existing managed disk (Attach mode)
+  # Uses var.os_disk_attach_mode (known at plan time) rather than var.os_managed_disk_id != null
+  # because os_managed_disk_id is typically a computed resource attribute (unknown at plan time),
+  # which would make count expressions that depend on this local undeterminable during planning.
+  os_disk_is_imported = var.os_disk_attach_mode
   #concat the input variable with the simple list going forward - this is a placeholder so that we can continue to reference the local source image reference value when it includes the simpleOS option.
   source_image_reference = var.source_image_reference
   #get the first system managed identity id if it is provisioned and depending on whether the vm type is linux or windows
