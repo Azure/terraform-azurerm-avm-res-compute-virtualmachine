@@ -34,7 +34,7 @@ resource "azurerm_managed_disk" "this" {
   tier                              = each.value.tier
   trusted_launch_enabled            = each.value.trusted_launch_enabled
   upload_size_bytes                 = each.value.upload_size_bytes
-  zone                              = var.zone
+  zone                              = strcontains(each.value.storage_account_type, "ZRS") ? null : var.zone
 
   dynamic "encryption_settings" {
     for_each = each.value.encryption_settings
