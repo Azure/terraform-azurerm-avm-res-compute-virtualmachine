@@ -441,7 +441,15 @@ variable "custom_data" {
   description = "(Optional) The Base64 encoded Custom Data for building this virtual machine. Changing this forces a new resource to be created"
 
   validation {
-    condition     = var.custom_data == null ? true : can(base64decode(var.custom_data))
+    # Gzipped payloads (e.g. from cloudinit_config with gzip=true) are valid
+    # base64 but base64decode() rejects them because the decoded bytes are not
+    # valid UTF-8. Gzip streams always start with magic bytes 0x1f 0x8b 0x08,
+    # which base64-encode to the prefix "H4sI". We check for that prefix as a
+    # fallback to accept gzipped cloud-init data.
+    condition = var.custom_data == null ? true : (
+      can(base64decode(var.custom_data)) ||
+      startswith(var.custom_data, "H4sI")
+    )
     error_message = "The `custom_data` must be either `null` or a valid Base64-Encoded string."
   }
 }
