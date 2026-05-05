@@ -159,6 +159,17 @@ resource "azurerm_linux_virtual_machine" "this" {
   ]
 
   lifecycle {
+    ignore_changes = [
+      # Azure rejects any change to osProfile after VM create with
+      # 409 PropertyChangeNotAllowed. Suppress diffs on every osProfile
+      # sub-field so attach-mode imports and greenfield drift never trigger
+      # a rejected UPDATE.
+      admin_password, admin_ssh_key, admin_username,
+      allow_extension_operations, bypass_platform_safety_checks_on_user_schedule_enabled,
+      computer_name, custom_data, disable_password_authentication,
+      patch_assessment_mode, patch_mode, provision_vm_agent, reboot_setting, secret,
+    ]
+
     precondition {
       condition     = var.os_managed_disk_id == null || var.os_disk.diff_disk_settings == null
       error_message = "The os_managed_disk_id and os_disk.diff_disk_settings are mutually exclusive. Ephemeral OS disks cannot be used when attaching an existing managed disk."

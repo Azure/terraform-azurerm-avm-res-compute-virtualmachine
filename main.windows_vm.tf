@@ -173,8 +173,16 @@ resource "azurerm_windows_virtual_machine" "this" {
 
   lifecycle {
     ignore_changes = [
-      winrm_listener,                   # Once the certificate got rotated, it will trigger a destroy/recreate of the VM.
-      vm_agent_platform_updates_enabled # Added property to ignore_changes as it continues to detect change in state.
+      winrm_listener,                    # Once the certificate got rotated, it will trigger a destroy/recreate of the VM.
+      vm_agent_platform_updates_enabled, # Added property to ignore_changes as it continues to detect change in state.
+      # Azure rejects any change to osProfile after VM create with
+      # 409 PropertyChangeNotAllowed. Suppress diffs on every osProfile
+      # sub-field so attach-mode imports and greenfield drift never trigger
+      # a rejected UPDATE.
+      additional_unattend_content, admin_password, admin_username,
+      allow_extension_operations, bypass_platform_safety_checks_on_user_schedule_enabled,
+      computer_name, custom_data, enable_automatic_updates, hotpatching_enabled,
+      patch_assessment_mode, patch_mode, provision_vm_agent, reboot_setting, secret, timezone,
     ]
 
     precondition {
