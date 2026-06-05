@@ -223,7 +223,7 @@ Default: `null`
 
 ### <a name="input_admin_password"></a> [admin\_password](#input\_admin\_password)
 
-Description: Password to use for the default admin account created for the virtual machine. Passing this as a key vault secret value is recommended.
+Description: DEPRECATED:  This input has been moved to `account_credentials.admin_credentials.password` and will be removed with the release of version v1.0.0. Password to use for the default admin account created for the virtual machine. Passing this as a key vault secret value is recommended.
 
 Type: `string`
 
@@ -239,7 +239,8 @@ Default: `null`
 
 ### <a name="input_admin_ssh_keys"></a> [admin\_ssh\_keys](#input\_admin\_ssh\_keys)
 
-Description: A list of objects defining one or more ssh public keys
+Description: DEPRECATED:  This input has been moved to `account_credentials.admin_credentials.ssh_keys` and will be removed with the release of version v1.0.0.  
+A list of objects defining one or more ssh public keys
 
 - `public_key` (Required) - The Public Key which should be used for authentication, which needs to be at least 2048-bit and in `ssh-rsa` format. Changing this forces a new resource to be created.
 - `username` (Required) - The Username for which this Public SSH Key should be configured. Changing this forces a new resource to be created. The Azure VM Agent only allows creating SSH Keys at the path `/home/{admin_username}/.ssh/authorized_keys`. As such this public key will be written to the authorized keys file. If no username is provided this module will use var.admin\_username.
@@ -272,7 +273,7 @@ Default: `[]`
 
 ### <a name="input_admin_username"></a> [admin\_username](#input\_admin\_username)
 
-Description: Name to use for the default admin account created for the virtual machine
+Description: DEPRECATED:  This input has been moved to `account_credentials.admin_credentials.username` and will be removed with the release of version v1.0.0. Name to use for the default admin account created for the virtual machine
 
 Type: `string`
 
@@ -604,7 +605,7 @@ Default: `{}`
 
 ### <a name="input_disable_password_authentication"></a> [disable\_password\_authentication](#input\_disable\_password\_authentication)
 
-Description: If true this value will disallow password authentication on linux vm's. This will require at least one public key to be configured.
+Description: DEPRECATED:  This input has been moved to `account_credentials.password_authentication_disabled` and will be removed with the release of version v1.0.0. If true this value will disallow password authentication on linux vm's. This will require at least one public key to be configured. If using the option to auto generate passwords and keys, setting this value to `false` will cause a password to be generated an stored instead of an SSH key.
 
 Type: `bool`
 
@@ -803,7 +804,7 @@ Default: `{}`
 
 ### <a name="input_generate_admin_password_or_ssh_key"></a> [generate\_admin\_password\_or\_ssh\_key](#input\_generate\_admin\_password\_or\_ssh\_key)
 
-Description: Set this value to true if the deployment should create a strong password for the admin user.
+Description: DEPRECATED:  The logic behind this input has been moved to `account_credentials`. This input will be removed with the release of version v1.0.0. Set this value to true if the deployment should create a strong password for the admin user. If `os_type` is Linux, this will generate and store an SSH key as the default. However, setting `disable_password_authentication` to `false` will generate and store a password value instead of an ssh key.
 
 Type: `bool`
 

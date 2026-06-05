@@ -70,62 +70,10 @@ variable "admin_generated_ssh_key_vault_secret_name" {
   description = "Use this to provide a custom name for the key vault secret when using the generate an admin ssh key option."
 }
 
-variable "admin_password" {
-  type        = string
-  default     = null
-  description = "Password to use for the default admin account created for the virtual machine. Passing this as a key vault secret value is recommended."
-  sensitive   = true
-}
-
 variable "admin_password_key_vault_secret_name" {
   type        = string
   default     = null
   description = "The name of the key vault secret which should be used for the auto-generated admin password. This is only used to store auto-generated passwords. Use the `admin_password` variable and a key vault secret value reference if storing the password value in an external key vault secret."
-}
-
-variable "admin_ssh_keys" {
-  type = list(object({
-    public_key = string
-    username   = string
-  }))
-  default     = []
-  description = <<ADMIN_SSH_KEYS
-A list of objects defining one or more ssh public keys
-
-- `public_key` (Required) - The Public Key which should be used for authentication, which needs to be at least 2048-bit and in `ssh-rsa` format. Changing this forces a new resource to be created.
-- `username` (Required) - The Username for which this Public SSH Key should be configured. Changing this forces a new resource to be created. The Azure VM Agent only allows creating SSH Keys at the path `/home/{admin_username}/.ssh/authorized_keys`. As such this public key will be written to the authorized keys file. If no username is provided this module will use var.admin_username.
-
-Example Input:
-
-```hcl
-admin_ssh_keys = [
-  {
-    public_key = "<base64 string for the key>"
-    username   = "exampleuser"
-  },
-  {
-    public_key = "<base64 string for the next user key>"
-    username   = "examleuser2"
-  }
-]
-```
-  ADMIN_SSH_KEYS
-}
-
-variable "admin_username" {
-  type        = string
-  default     = "azureuser"
-  description = "Name to use for the default admin account created for the virtual machine"
-  nullable    = false
-
-  validation {
-    condition     = !can(regex("^(administrator|admin|user|user1|test|user2|test2|user3|admin1|1|123|a|actuser|adm|admin2|aspnet|backup|console|david|guest|john|owner|root|server|sql|support|support_388945a0|sys|test2|test3|user4|user5)$", lower(var.admin_username)))
-    error_message = "Admin username may not contain any of the following reserved values. ( administrator, admin, user, user1, test, user2, test1, user3, admin1, 1, 123, a, actuser, adm, admin2, aspnet, backup, console, david, guest, john, owner, root, server, sql, support, support_388945a0, sys, test2, test3, user4, user5 )"
-  }
-  validation {
-    condition     = can(regex("^.{1,64}$", var.admin_username))
-    error_message = "Admin username for linux must be between 1 and 64 characters in length. Admin name for windows must be between 1 and 20 characters in length."
-  }
 }
 
 variable "allow_extension_operations" {
@@ -370,12 +318,6 @@ DIAGNOSTIC_SETTINGS
   nullable    = false
 }
 
-variable "disable_password_authentication" {
-  type        = bool
-  default     = true
-  description = "If true this value will disallow password authentication on linux vm's. This will require at least one public key to be configured."
-}
-
 variable "disk_controller_type" {
   type        = string
   default     = null
@@ -545,12 +487,6 @@ gallery_applications = {
 ```
 GALLERY_APPLICATIONS
   nullable    = false
-}
-
-variable "generate_admin_password_or_ssh_key" {
-  type        = bool
-  default     = true
-  description = "Set this value to true if the deployment should create a strong password for the admin user."
 }
 
 variable "hotpatching_enabled" {
