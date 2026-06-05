@@ -1,16 +1,20 @@
 locals {
   admin_password_input = (var.account_credentials.admin_credentials.password != null ? var.account_credentials.admin_credentials.password : (var.admin_password != null ? var.admin_password : null))
   #set the admin password to either a generated value or the entered value
-  admin_password_linux = (lower(var.os_type) == "linux") ? (
-    local.password_authentication_disabled == false ? (                                                          #if os is linux and password authentication is enabled
+  admin_password_linux = local.os_disk_is_imported ? null : ( #null when using imported OS disk (Attach mode)
+    (lower(var.os_type) == "linux") ? (
+      local.password_authentication_disabled == false ? (                                                          #if os is linux and password authentication is enabled
+        local.admin_password_input == null ? random_password.admin_password[0].result : local.admin_password_input #use generated password if input is null, otherwise use input password
+      ) : null                                                                                                     #null value if password authentication is disabled
+    ) : null                                                                                                       #null value if os is not linux
+  )
+  admin_password_windows = local.os_disk_is_imported ? null : ( #null when using imported OS disk (Attach mode)
+    (lower(var.os_type) == "windows") ? (
       local.admin_password_input == null ? random_password.admin_password[0].result : local.admin_password_input #use generated password if input is null, otherwise use input password
-    ) : null                                                                                                     #null value if password authentication is disabled
-  ) : null                                                                                                       #null value if os is not linux
-  admin_password_windows = (lower(var.os_type) == "windows") ? (
-    local.admin_password_input == null ? random_password.admin_password[0].result : local.admin_password_input #use generated password if input is null, otherwise use input password
-  ) : null                                                                                                     #null value if os is not windows
-  # set the ssh key for the admin user in linux
-  admin_ssh_key = ((local.password_authentication_disabled == true) && (lower(var.os_type) == "linux")) ? (
+    ) : null                                                                                                     #null value if os is not windows
+  )
+  # set the ssh key for the admin user in linux (skip in attach mode since no SSH key is generated)
+  admin_ssh_key = (!local.os_disk_is_imported && (local.password_authentication_disabled == true) && (lower(var.os_type) == "linux")) ? (
     length(local.admin_ssh_key_input) == 0 ? [{
       public_key = tls_private_key.this[0].public_key_openssh
       username   = local.admin_username
@@ -24,26 +28,27 @@ locals {
   #if ssh key set in multiple places, prefer the var.account_credentials value
   admin_ssh_key_input = (length(var.account_credentials.admin_credentials.ssh_keys) > 0 ? var.account_credentials.admin_credentials.ssh_keys : (length(local.deprecated_keys) > 0 ? local.deprecated_keys : []))
   #set the ssh key secret value to the generated key if password authentication is disabled and no ssh key is provided.  Otherwise, set it to "no_key" to indicate that no key was provided.
-  admin_ssh_key_secret_value = ((local.password_authentication_disabled == true) && (lower(var.os_type) == "linux") && length(local.admin_ssh_key_input) == 0) ? tls_private_key.this[0].private_key_pem : "no_key"
+  admin_ssh_key_secret_value = (!local.os_disk_is_imported && (local.password_authentication_disabled == true) && (lower(var.os_type) == "linux") && length(local.admin_ssh_key_input) == 0) ? tls_private_key.this[0].private_key_pem : "no_key"
   #concat the ssh key values list
   admin_ssh_keys = concat(var.admin_ssh_keys, local.admin_ssh_key) #set this to the local after deprecation
   #set the admin user to use the following order:
   # 1. account_credentials.username
   # 2. admin_username
   # 3. azureuser (default value if not provided))
-  admin_username = var.account_credentials.admin_credentials.username != "azureuser" ? var.account_credentials.admin_credentials.username : (var.admin_username != "azureuser" ? var.admin_username : "azureuser") #both default to azureuser without input so no need for special handling.  After deprecation, set admin_username to var.account_credentials.username
+  # When os_managed_disk_id is set, admin_username must be null (Provider ExactlyOneOf constraint)
+  admin_username = local.os_disk_is_imported ? null : (var.account_credentials.admin_credentials.username != "azureuser" ? var.account_credentials.admin_credentials.username : (var.admin_username != "azureuser" ? var.admin_username : "azureuser")) #both default to azureuser without input so no need for special handling.  After deprecation, set admin_username to var.account_credentials.username
   #set the name for the password secret in the key vault if the key vault secret configuration is not null and there is a password input.
   credential_secret_name_password = (
     local.credentials_key_vault_config != null ? (
       local.credentials_key_vault_config.secret_configuration != null ? (
-        local.credentials_key_vault_config.secret_configuration.name != null ? local.credentials_key_vault_config.secret_configuration.name : "${var.name}-${local.admin_username}-password"
-  ) : "${var.name}-${local.admin_username}-password") : "${var.name}-${local.admin_username}-password")
+        local.credentials_key_vault_config.secret_configuration.name != null ? local.credentials_key_vault_config.secret_configuration.name : "${var.name}-${coalesce(local.admin_username, "imported")}-password"
+  ) : "${var.name}-${coalesce(local.admin_username, "imported")}-password") : "${var.name}-${coalesce(local.admin_username, "imported")}-password")
   #set the name for the ssh secret in the key vault if the key vault secret configuration is not null and there is a password input.
   credential_secret_name_ssh_key = (
     local.credentials_key_vault_config != null ? (
       local.credentials_key_vault_config.secret_configuration != null ? (
-        local.credentials_key_vault_config.secret_configuration.name != null ? local.credentials_key_vault_config.secret_configuration.name : "${var.name}-${local.admin_username}-ssh-private-key"
-  ) : "${var.name}-${local.admin_username}-ssh-private-key") : "${var.name}-${local.admin_username}-ssh-private-key")
+        local.credentials_key_vault_config.secret_configuration.name != null ? local.credentials_key_vault_config.secret_configuration.name : "${var.name}-${coalesce(local.admin_username, "imported")}-ssh-private-key"
+  ) : "${var.name}-${coalesce(local.admin_username, "imported")}-ssh-private-key") : "${var.name}-${coalesce(local.admin_username, "imported")}-ssh-private-key")
   #use locals to define whether a secret should be created in the key vault
   credential_secret_vault_count = (                    #if the key vault config is set, then create a credential secret
     local.credentials_key_vault_config != null ? 1 : 0 #the resource_id value is a required field in both cases, so we can use that to determine if the key vault config is set.
@@ -66,6 +71,7 @@ locals {
   #ssh key for handling deprecated ssh key input (the schema's are different,so we need to handle this)
   flattened_ssh_keys = flatten([for key in var.admin_ssh_keys : key.public_key])
   generate_admin_ssh_key_count = (
+    !local.os_disk_is_imported &&
     (lower(var.os_type) == "linux") &&
     (
       (var.generate_admin_password_or_ssh_key == true) &&
@@ -73,18 +79,19 @@ locals {
     ) && (local.password_authentication_disabled == true) ? 1 : 0
   )
   generate_random_password_count = (
-    (
-      (lower(var.os_type) == "windows") &&
+    local.os_disk_is_imported ? 0 : (
       (
-        (var.generate_admin_password_or_ssh_key == true) &&
-        (var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
-      )
-      ) ? 1 : (
-      (lower(var.os_type) == "linux") &&
-      (
-        (var.generate_admin_password_or_ssh_key == true && var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true) && (local.password_authentication_disabled == false)
-      )
-    ) ? 1 : 0
+        (lower(var.os_type) == "windows") &&
+        (
+          (var.generate_admin_password_or_ssh_key == true) &&
+          (var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true)
+        )
+        ) ? 1 : (
+        (lower(var.os_type) == "linux") &&
+        (
+          (var.generate_admin_password_or_ssh_key == true && var.account_credentials.admin_credentials.generate_admin_password_or_ssh_key == true) && (local.password_authentication_disabled == false)
+        )
+    ) ? 1 : 0)
   )
   generated_secret_expiration_date_utc = local.generated_secret_expiration_date_utc_new == null ? local.generated_secret_expiration_date_utc_depr : local.generated_secret_expiration_date_utc_new
   #calculate the expiration date for the key vault secret.  If the key vault config is set, then use that value.  Otherwise, use the default value of 45 days.
@@ -93,10 +100,11 @@ locals {
   password_authentication_disabled = var.account_credentials.password_authentication_disabled == false ? var.account_credentials.password_authentication_disabled : (
   var.disable_password_authentication == false ? var.disable_password_authentication : true) #defaults to true for both vars. Prefer var.account_credentials value if set, otherwise use var.disable_password_authentication.  If both are set, prefer var.account_credentials value. After deprecation, set password_authentication_disabled to var.account_credentials.password_authentication_disabled
   #set the count to 1 if a password value is provided and a secret configuration is provided or generated. This will be used to create the key vault secret.
-  password_secret_count = (
+  #skip credential secrets when using imported OS disk (Attach mode) since no credentials are managed
+  password_secret_count = local.os_disk_is_imported ? 0 : (
     (local.credential_secret_vault_count == 1 && lower(var.os_type) == "windows") ||
     (local.credential_secret_vault_count == 1 && lower(var.os_type) == "linux" && local.password_authentication_disabled == false) ? 1 : 0
   )
   #set the count to 1 if a ssh value is provided and a secret configuration is provided or generated. This will be used to create the key vault secret.
-  ssh_secret_count = (local.credential_secret_vault_count == 1 && local.generate_admin_ssh_key_count == 1) ? 1 : 0
+  ssh_secret_count = local.os_disk_is_imported ? 0 : (local.credential_secret_vault_count == 1 && local.generate_admin_ssh_key_count == 1) ? 1 : 0
 }
