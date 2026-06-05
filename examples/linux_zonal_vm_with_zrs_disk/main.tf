@@ -199,10 +199,13 @@ module "testvm" {
     }
   }
   data_disk_managed_disks = {
-    caching              = "None"
-    lun                  = 10
-    name                 = "data-disk-01"
-    storage_account_type = "StandardSSD_ZRS"
+    disk_1 = {
+      caching              = "None"
+      lun                  = 10
+      name                 = "data-disk-01"
+      storage_account_type = "StandardSSD_ZRS"
+      disk_size_gb         = 32
+    }
   }
   enable_telemetry = var.enable_telemetry
   os_type          = "Linux"

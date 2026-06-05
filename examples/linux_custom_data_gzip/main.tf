@@ -2,10 +2,6 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 
   required_providers {
-    azapi = {
-      source  = "azure/azapi"
-      version = "~> 2.0"
-    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116, < 5.0"
@@ -13,6 +9,10 @@ terraform {
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7"
+    }
+    cloudinit = {
+      source  = "hashicorp/cloudinit"
+      version = "~> 2.0"
     }
   }
 }
@@ -73,7 +73,7 @@ module "vm_sku" {
   vm_filters = {
     min_vcpus                      = 2
     max_vcpus                      = 2
-    encryption_at_host_supported   = false
+    encryption_at_host_supported   = true
     accelerated_networking_enabled = true
     premium_io_supported           = true
     location_zone                  = random_integer.zone_index.result
@@ -245,7 +245,7 @@ module "vm_gzipped_custom_data" {
   enable_telemetry           = var.enable_telemetry
   encryption_at_host_enabled = false
   os_type                    = "Linux"
-  sku_size         = module.vm_sku.sku
+  sku_size                   = module.vm_sku.sku
   source_image_reference = {
     publisher = "Canonical"
     offer     = "0001-com-ubuntu-server-focal"

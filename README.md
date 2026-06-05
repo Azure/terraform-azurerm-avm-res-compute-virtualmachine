@@ -19,7 +19,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
+- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.6.2, < 4.0.0)
 
 - <a name="requirement_tls"></a> [tls](#requirement\_tls) (~> 4.0)
 
