@@ -210,8 +210,16 @@ resource "azurerm_orchestrated_virtual_machine_scale_set" "this" {
 module "testvm" {
   source = "../../"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = module.naming.virtual_machine.name_unique
+  location                           = azurerm_resource_group.this_rg.location
+  name                               = module.naming.virtual_machine.name_unique
+  resource_group_name                = azurerm_resource_group.this_rg.name
+  zone                               = random_integer.zone_index.result
+  admin_password                     = random_password.admin_password.result
+  admin_username                     = "azureuser"
+  disable_password_authentication    = false
+  enable_telemetry                   = var.enable_telemetry
+  encryption_at_host_enabled         = true
+  generate_admin_password_or_ssh_key = false
   network_interfaces = {
     network_interface_1 = {
       name = module.naming.network_interface.name_unique
@@ -223,14 +231,6 @@ module "testvm" {
       }
     }
   }
-  resource_group_name                = azurerm_resource_group.this_rg.name
-  zone                               = random_integer.zone_index.result
-  admin_password                     = random_password.admin_password.result
-  admin_username                     = "azureuser"
-  disable_password_authentication    = false
-  enable_telemetry                   = var.enable_telemetry
-  encryption_at_host_enabled         = true
-  generate_admin_password_or_ssh_key = false
   os_disk = {
     caching              = "ReadWrite"
     storage_account_type = "Premium_LRS"
@@ -254,19 +254,8 @@ module "testvm" {
 module "testvm2" {
   source = "../../"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = "${module.naming.virtual_machine.name_unique}-01"
-  network_interfaces = {
-    network_interface_1 = {
-      name = "${module.naming.network_interface.name_unique}-01"
-      ip_configurations = {
-        ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-01-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-        }
-      }
-    }
-  }
+  location            = azurerm_resource_group.this_rg.location
+  name                = "${module.naming.virtual_machine.name_unique}-01"
   resource_group_name = azurerm_resource_group.this_rg.name
   zone                = random_integer.zone_index.result
   account_credentials = {
@@ -279,6 +268,17 @@ module "testvm2" {
   }
   enable_telemetry           = var.enable_telemetry
   encryption_at_host_enabled = true
+  network_interfaces = {
+    network_interface_1 = {
+      name = "${module.naming.network_interface.name_unique}-01"
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "${module.naming.network_interface.name_unique}-01-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+        }
+      }
+    }
+  }
   os_disk = {
     caching              = "ReadWrite"
     storage_account_type = "Premium_LRS"

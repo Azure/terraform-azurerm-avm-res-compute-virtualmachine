@@ -342,20 +342,8 @@ resource "azurerm_key_vault_certificate" "self_signed_winrm" {
 module "testvm" {
   source = "../../"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = module.naming.virtual_machine.name_unique
-  network_interfaces = {
-    network_interface_1 = {
-      name = module.naming.network_interface.name_unique
-      ip_configurations = {
-        ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-          public_ip_address_resource_id = azurerm_public_ip.this.id
-        }
-      }
-    }
-  }
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.virtual_machine.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
   zone                = random_integer.zone_index.result
   account_credentials = {
@@ -440,6 +428,18 @@ module "testvm" {
   }
   managed_identities = {
     user_assigned_resource_ids = [azurerm_user_assigned_identity.this.id]
+  }
+  network_interfaces = {
+    network_interface_1 = {
+      name = module.naming.network_interface.name_unique
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+          public_ip_address_resource_id = azurerm_public_ip.this.id
+        }
+      }
+    }
   }
   os_type = local.os_type
   # Install the certiciate for WinRMs in the computer certificate store

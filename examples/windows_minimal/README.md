@@ -160,8 +160,11 @@ resource "azurerm_bastion_host" "bastion" {
 module "testvm" {
   source = "../../"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = module.naming.virtual_machine.name_unique
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.virtual_machine.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  zone                = random_integer.zone_index.result
+  enable_telemetry    = var.enable_telemetry
   network_interfaces = {
     network_interface_1 = {
       name = module.naming.network_interface.name_unique
@@ -173,10 +176,7 @@ module "testvm" {
       }
     }
   }
-  resource_group_name = azurerm_resource_group.this_rg.name
-  zone                = random_integer.zone_index.result
-  enable_telemetry    = var.enable_telemetry
-  sku_size            = module.vm_sku.sku
+  sku_size = module.vm_sku.sku
 }
 ```
 

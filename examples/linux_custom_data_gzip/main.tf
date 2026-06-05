@@ -6,13 +6,13 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 3.116, < 5.0"
     }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.7"
-    }
     cloudinit = {
       source  = "hashicorp/cloudinit"
       version = "~> 2.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.7"
     }
   }
 }
@@ -179,8 +179,18 @@ data "cloudinit_config" "gzipped" {
 module "vm_plaintext_custom_data" {
   source = "../../"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = "${module.naming.virtual_machine.name_unique}-plain"
+  location            = azurerm_resource_group.this_rg.location
+  name                = "${module.naming.virtual_machine.name_unique}-plain"
+  resource_group_name = azurerm_resource_group.this_rg.name
+  zone                = random_integer.zone_index.result
+  account_credentials = {
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+    }
+  }
+  custom_data                = data.cloudinit_config.plaintext.rendered
+  enable_telemetry           = var.enable_telemetry
+  encryption_at_host_enabled = false
   network_interfaces = {
     network_interface_1 = {
       name = "${module.naming.network_interface.name_unique}-plain"
@@ -192,18 +202,8 @@ module "vm_plaintext_custom_data" {
       }
     }
   }
-  resource_group_name = azurerm_resource_group.this_rg.name
-  zone                = random_integer.zone_index.result
-  account_credentials = {
-    key_vault_configuration = {
-      resource_id = module.avm_res_keyvault_vault.resource_id
-    }
-  }
-  custom_data                = data.cloudinit_config.plaintext.rendered
-  enable_telemetry           = var.enable_telemetry
-  encryption_at_host_enabled = false
-  os_type                    = "Linux"
-  sku_size         = module.vm_sku.sku
+  os_type  = "Linux"
+  sku_size = module.vm_sku.sku
   source_image_reference = {
     publisher = "Canonical"
     offer     = "0001-com-ubuntu-server-focal"
@@ -221,8 +221,18 @@ module "vm_plaintext_custom_data" {
 module "vm_gzipped_custom_data" {
   source = "../../"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = "${module.naming.virtual_machine.name_unique}-gzip"
+  location            = azurerm_resource_group.this_rg.location
+  name                = "${module.naming.virtual_machine.name_unique}-gzip"
+  resource_group_name = azurerm_resource_group.this_rg.name
+  zone                = random_integer.zone_index.result
+  account_credentials = {
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+    }
+  }
+  custom_data                = data.cloudinit_config.gzipped.rendered
+  enable_telemetry           = var.enable_telemetry
+  encryption_at_host_enabled = false
   network_interfaces = {
     network_interface_1 = {
       name = "${module.naming.network_interface.name_unique}-gzip"
@@ -234,18 +244,8 @@ module "vm_gzipped_custom_data" {
       }
     }
   }
-  resource_group_name = azurerm_resource_group.this_rg.name
-  zone                = random_integer.zone_index.result
-  account_credentials = {
-    key_vault_configuration = {
-      resource_id = module.avm_res_keyvault_vault.resource_id
-    }
-  }
-  custom_data                = data.cloudinit_config.gzipped.rendered
-  enable_telemetry           = var.enable_telemetry
-  encryption_at_host_enabled = false
-  os_type                    = "Linux"
-  sku_size                   = module.vm_sku.sku
+  os_type  = "Linux"
+  sku_size = module.vm_sku.sku
   source_image_reference = {
     publisher = "Canonical"
     offer     = "0001-com-ubuntu-server-focal"
