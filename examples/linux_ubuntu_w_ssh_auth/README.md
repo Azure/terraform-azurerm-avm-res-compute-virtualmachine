@@ -290,7 +290,7 @@ resource "azurerm_disk_encryption_set" "this" {
 
 module "testvm" {
   source = "../../"
-
+  
   location = azurerm_resource_group.this_rg.location
   name     = module.naming.virtual_machine.name_unique
   network_interfaces = {

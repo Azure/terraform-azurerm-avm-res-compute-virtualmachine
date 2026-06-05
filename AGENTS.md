@@ -6,7 +6,16 @@ applyTo: "**/*.terraform, **/*.tf, **/*.tfvars, **/*.tfstate, **/*.tflint.hcl, *
 # Azure Verified Modules (AVM) Terraform
 
 This repository uses Azure Verified Modules (AVM) for Terraform.
-For detailed guidance on module development, refer to the [AVM-Terraform-Development skill](.agents/skills/AVM-Terraform-Development/SKILL.md).
+For detailed guidance on module development, refer to the [avm-terraform-module-development skill](.agents/skills/avm-terraform-module-development/SKILL.md).
+
+## AVM Specifications
+
+The authoritative source for every AVM rule (Bicep, Terraform, shared) is the spec index:
+
+- **Index of all specs and docs (raw markdown URLs):** `https://azure.github.io/Azure-Verified-Modules/llms.txt`
+- **Rendered docs site:** `https://azure.github.io/Azure-Verified-Modules/`
+
+When a spec ID is mentioned (e.g. `TFFR3`, `RMFR4`, `SNFR1`), fetch `llms.txt` once, look up the raw markdown URL for that ID, and read the current text. Do not cite a spec from memory.
 
 ## Module Discovery
 

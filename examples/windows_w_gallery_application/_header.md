@@ -13,7 +13,7 @@ This example demonstrates the creation of a simple Windows Server 2022 VM with t
 
 It includes the following resources in addition to the VM resource:
 
-    - A vnet with three subnets 
+    - A vnet with three subnets
     - A keyvault for storing the login secrets and disk encryption key
     - An optional subnet, public ip, and bastion which can be enabled by uncommenting the bastion resources when running the example.
     - A simple gallery application that installs visual studio code to demonstrate and test gallery application functionality.

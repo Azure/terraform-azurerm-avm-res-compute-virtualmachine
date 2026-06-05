@@ -219,6 +219,14 @@ resource "azurerm_public_ip" "app_gw_pip" {
   zones               = ["1", "2", "3"]
 }
 
+resource "azurerm_public_ip" "app_gw_pip" {
+  allocation_method   = "Static"
+  location            = azurerm_resource_group.this_rg.location
+  name                = local.app_gw_public_ip_name
+  resource_group_name = azurerm_resource_group.this_rg.name
+  sku                 = "Standard"
+}
+
 resource "azurerm_application_gateway" "network" {
   location            = azurerm_resource_group.this_rg.location
   name                = "example-appgateway"
@@ -291,6 +299,7 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
   }
   tags = local.tags
