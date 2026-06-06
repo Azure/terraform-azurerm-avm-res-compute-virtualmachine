@@ -295,27 +295,8 @@ resource "azurerm_maintenance_configuration" "test_maintenance_config" {
 module "testvm" {
   source = "../../"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = module.naming.virtual_machine.name_unique
-  network_interfaces = {
-    network_interface_1 = {
-      name = module.naming.network_interface.name_unique
-      ip_configurations = {
-        ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-        }
-      }
-      role_assignments = {
-        role_assignment_1 = {
-          principal_id               = data.azurerm_client_config.current.client_id
-          role_definition_id_or_name = "Contributor"
-          description                = "Assign the Contributor role to the deployment user on this network interface resource scope."
-          principal_type             = "ServicePrincipal"
-        }
-      }
-    }
-  }
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.virtual_machine.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
   zone                = random_integer.zone_index.result
   account_credentials = {
@@ -343,6 +324,25 @@ module "testvm" {
   }
   maintenance_configuration_resource_ids = {
     config_1 = azurerm_maintenance_configuration.test_maintenance_config.id
+  }
+  network_interfaces = {
+    network_interface_1 = {
+      name = module.naming.network_interface.name_unique
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+        }
+      }
+      role_assignments = {
+        role_assignment_1 = {
+          principal_id               = data.azurerm_client_config.current.client_id
+          role_definition_id_or_name = "Contributor"
+          description                = "Assign the Contributor role to the deployment user on this network interface resource scope."
+          principal_type             = "ServicePrincipal"
+        }
+      }
+    }
   }
   os_disk = {
     caching              = "ReadWrite"
@@ -373,17 +373,11 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.6)
-
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.90)
-
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
-
-- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
 ## Resources
 

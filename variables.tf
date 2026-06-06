@@ -2,6 +2,8 @@
 #
 # The following arguments are supported:
 
+########## optional variables
+
 ########## Required variables
 variable "location" {
   type        = string
@@ -193,25 +195,6 @@ additional_unattend_contents = [
 ```
 ADDITIONAL_UNATTEND_CONTENTS
   nullable    = false
-}
-
-########## optional variables
-variable "admin_credential_key_vault_resource_id" {
-  type        = string
-  default     = null
-  description = "The Azure resource ID for the key vault that stores admin credential information"
-}
-
-variable "admin_generated_ssh_key_vault_secret_name" {
-  type        = string
-  default     = null
-  description = "Use this to provide a custom name for the key vault secret when using the generate an admin ssh key option."
-}
-
-variable "admin_password_key_vault_secret_name" {
-  type        = string
-  default     = null
-  description = "The name of the key vault secret which should be used for the auto-generated admin password. This is only used to store auto-generated passwords. Use the `admin_password` variable and a key vault secret value reference if storing the password value in an external key vault secret."
 }
 
 variable "allow_extension_operations" {

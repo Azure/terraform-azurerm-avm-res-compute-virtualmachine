@@ -205,33 +205,9 @@ list(object({
 
 Default: `[]`
 
-### <a name="input_admin_credential_key_vault_resource_id"></a> [admin\_credential\_key\_vault\_resource\_id](#input\_admin\_credential\_key\_vault\_resource\_id)
-
-Description: The Azure resource ID for the key vault that stores admin credential information
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_admin_generated_ssh_key_vault_secret_name"></a> [admin\_generated\_ssh\_key\_vault\_secret\_name](#input\_admin\_generated\_ssh\_key\_vault\_secret\_name)
-
-Description: Use this to provide a custom name for the key vault secret when using the generate an admin ssh key option.
-
-Type: `string`
-
-Default: `null`
-
 ### <a name="input_admin_password"></a> [admin\_password](#input\_admin\_password)
 
 Description: DEPRECATED:  This input has been moved to `account_credentials.admin_credentials.password` and will be removed with the release of version v1.0.0. Password to use for the default admin account created for the virtual machine. Passing this as a key vault secret value is recommended.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_admin_password_key_vault_secret_name"></a> [admin\_password\_key\_vault\_secret\_name](#input\_admin\_password\_key\_vault\_secret\_name)
-
-Description: The name of the key vault secret which should be used for the auto-generated admin password. This is only used to store auto-generated passwords. Use the `admin_password` variable and a key vault secret value reference if storing the password value in an external key vault secret.
 
 Type: `string`
 
