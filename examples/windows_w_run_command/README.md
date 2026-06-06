@@ -277,19 +277,8 @@ resource "random_password" "admin_password" {
 module "testvm" {
   source = "../../"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = module.naming.virtual_machine.name_unique
-  network_interfaces = {
-    network_interface_1 = {
-      name = module.naming.network_interface.name_unique
-      ip_configurations = {
-        ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-        }
-      }
-    }
-  }
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.virtual_machine.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
   zone                = random_integer.zone_index.result
   account_credentials = {
@@ -309,6 +298,17 @@ module "testvm" {
   managed_identities = {
     system_assigned            = true
     user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
+  }
+  network_interfaces = {
+    network_interface_1 = {
+      name = module.naming.network_interface.name_unique
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+        }
+      }
+    }
   }
   os_disk = {
     caching              = "ReadWrite"

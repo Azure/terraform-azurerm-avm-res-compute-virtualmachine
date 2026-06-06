@@ -200,6 +200,7 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Administrator"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
   }
   tags = local.tags
@@ -225,27 +226,8 @@ data "azurerm_key_vault" "this" {
 module "testvm" {
   source = "../../"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = module.naming.virtual_machine.name_unique
-  network_interfaces = {
-    network_interface_1 = {
-      name = module.naming.network_interface.name_unique
-      ip_configurations = {
-        ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-        }
-      }
-
-      diagnostic_settings = {
-        nic_diags = {
-          name                  = module.naming.monitor_diagnostic_setting.name_unique
-          workspace_resource_id = azurerm_log_analytics_workspace.this_workspace.id
-          metric_categories     = ["AllMetrics"]
-        }
-      }
-    }
-  }
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.virtual_machine.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
   zone                = random_integer.zone_index.result
   account_credentials = {
@@ -296,6 +278,25 @@ module "testvm" {
   managed_identities = {
     system_assigned            = true
     user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
+  }
+  network_interfaces = {
+    network_interface_1 = {
+      name = module.naming.network_interface.name_unique
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+        }
+      }
+
+      diagnostic_settings = {
+        nic_diags = {
+          name                  = module.naming.monitor_diagnostic_setting.name_unique
+          workspace_resource_id = azurerm_log_analytics_workspace.this_workspace.id
+          metric_categories     = ["AllMetrics"]
+        }
+      }
+    }
   }
   os_type  = "Windows"
   sku_size = module.vm_sku.sku

@@ -314,6 +314,7 @@ module "avm_res_keyvault_vault" {
     deployment_user_secrets = { #give the deployment user access to secrets
       role_definition_id_or_name = "Key Vault Secrets Officer"
       principal_id               = data.azurerm_client_config.current.object_id
+      principal_type             = "ServicePrincipal"
     }
   }
   tags = local.tags
@@ -364,8 +365,17 @@ resource "azurerm_application_security_group" "test_asg" {
 module "testvm" {
   source = "../../"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = module.naming.virtual_machine.name_unique
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.virtual_machine.name_unique
+  resource_group_name = azurerm_resource_group.this_rg.name
+  zone                = random_integer.zone_index.result
+  account_credentials = {
+    key_vault_configuration = {
+      resource_id = module.avm_res_keyvault_vault.resource_id
+    }
+  }
+  enable_telemetry           = var.enable_telemetry
+  encryption_at_host_enabled = true
   network_interfaces = {
     network_interface_1 = {
       name = module.naming.network_interface.name_unique
@@ -402,15 +412,6 @@ module "testvm" {
       }
     }
   }
-  resource_group_name = azurerm_resource_group.this_rg.name
-  zone                = random_integer.zone_index.result
-  account_credentials = {
-    key_vault_configuration = {
-      resource_id = module.avm_res_keyvault_vault.resource_id
-    }
-  }
-  enable_telemetry           = var.enable_telemetry
-  encryption_at_host_enabled = true
   os_disk = {
     caching              = "ReadWrite"
     storage_account_type = "Premium_LRS"

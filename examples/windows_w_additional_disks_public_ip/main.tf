@@ -192,21 +192,8 @@ resource "azurerm_managed_disk" "this" {
 module "testvm" {
   source = "../../"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = module.naming.virtual_machine.name_unique
-  network_interfaces = {
-    network_interface_1 = {
-      name = module.naming.network_interface.name_unique
-      ip_configurations = {
-        ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
-          create_public_ip_address      = true
-          public_ip_address_name        = module.naming.public_ip.name_unique
-        }
-      }
-    }
-  }
+  location            = azurerm_resource_group.this_rg.location
+  name                = module.naming.virtual_machine.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
   zone                = random_integer.zone_index.result
   account_credentials = {
@@ -234,7 +221,20 @@ module "testvm" {
     }
   }
   enable_telemetry = var.enable_telemetry
-  os_type          = "Windows"
+  network_interfaces = {
+    network_interface_1 = {
+      name = module.naming.network_interface.name_unique
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+          create_public_ip_address      = true
+          public_ip_address_name        = module.naming.public_ip.name_unique
+        }
+      }
+    }
+  }
+  os_type = "Windows"
   shutdown_schedules = {
     test_schedule = {
       daily_recurrence_time = "1700"

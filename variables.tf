@@ -2,6 +2,8 @@
 #
 # The following arguments are supported:
 
+########## optional variables
+
 ########## Required variables
 variable "location" {
   type        = string
@@ -18,169 +20,6 @@ variable "name" {
     condition     = can(regex("^.{1,64}$", var.name))
     error_message = "virtual machine names for linux must be between 1 and 64 characters in length. Virtual machine name for windows must be between 1 and 20 characters in length."
   }
-}
-
-variable "network_interfaces" {
-  type = map(object({
-    name = string
-    ip_configurations = map(object({
-      name = string
-      app_gateway_backend_pools = optional(map(object({
-        app_gateway_backend_pool_resource_id = string
-      })), {})
-      create_public_ip_address                                    = optional(bool, false)
-      gateway_load_balancer_frontend_ip_configuration_resource_id = optional(string)
-      is_primary_ipconfiguration                                  = optional(bool, true)
-      load_balancer_backend_pools = optional(map(object({
-        load_balancer_backend_pool_resource_id = string
-      })), {})
-      load_balancer_nat_rules = optional(map(object({
-        load_balancer_nat_rule_resource_id = string
-      })), {})
-      private_ip_address            = optional(string)
-      private_ip_address_allocation = optional(string, "Dynamic")
-      private_ip_address_version    = optional(string, "IPv4")
-      private_ip_subnet_resource_id = optional(string)
-      public_ip_address_lock_name   = optional(string)
-      public_ip_address_name        = optional(string)
-      public_ip_address_resource_id = optional(string)
-    }))
-    accelerated_networking_enabled = optional(bool, false)
-    application_security_groups = optional(map(object({
-      application_security_group_resource_id = string
-    })), {})
-    diagnostic_settings = optional(map(object({
-      name                                     = optional(string, null)
-      log_categories                           = optional(set(string), [])
-      log_groups                               = optional(set(string), [])
-      metric_categories                        = optional(set(string), ["AllMetrics"])
-      log_analytics_destination_type           = optional(string, null)
-      workspace_resource_id                    = optional(string, null)
-      storage_account_resource_id              = optional(string, null)
-      event_hub_authorization_rule_resource_id = optional(string, null)
-      event_hub_name                           = optional(string, null)
-      marketplace_partner_resource_id          = optional(string, null)
-    })), {})
-    dns_servers             = optional(list(string))
-    inherit_tags            = optional(bool, true)
-    internal_dns_name_label = optional(string)
-    ip_forwarding_enabled   = optional(bool, false)
-    is_primary              = optional(bool, false)
-    lock_level              = optional(string)
-    lock_name               = optional(string)
-    network_security_groups = optional(map(object({
-      network_security_group_resource_id = string
-    })), {})
-    resource_group_name = optional(string)
-    role_assignments = optional(map(object({
-      principal_id                           = string
-      role_definition_id_or_name             = string
-      assign_to_child_public_ip_addresses    = optional(bool, true)
-      condition                              = optional(string, null)
-      condition_version                      = optional(string, null)
-      delegated_managed_identity_resource_id = optional(string, null)
-      description                            = optional(string, null)
-      skip_service_principal_aad_check       = optional(bool, false)
-      principal_type                         = optional(string, null)
-    })), {})
-    tags = optional(map(string), null)
-  }))
-  description = <<NETWORK_INTERFACES
-A map of objects representing each network virtual machine network interface
-
-- `<map key>` - Use a custom map key to define each network interface
-  - `name` = (Required) The name of the Network Interface. Changing this forces a new resource to be created.
-  - `ip_configurations` - A required map of objects defining each interfaces IP configurations
-    - `<map key>` - Use a custom map key to define each ip configuration
-      - `name`                                                        = (Required) - A name used for this IP Configuration.
-      - `app_gateway_backend_pools`                                   = (Optional) - A map defining app gateway backend pool(s) this IP configuration should be associated to.
-        - `<map key>` - Use a custom map key to define each app gateway backend pool association.  This is done to handle issues with certain details not being known until after apply.
-          - `app_gateway_backend_pool_resource_id`                    = (Required) - An application gateway backend pool Azure Resource ID can be entered to join this ip configuration to the backend pool of an Application Gateway.
-      - `create_public_ip_address`                                    = (Optional) - Select true here to have the module create the public IP address for this IP Configuration
-      - `gateway_load_balancer_frontend_ip_configuration_resource_id` = (Optional) - The Frontend IP Configuration Azure Resource ID of a Gateway SKU Load Balancer.)
-      - `is_primary_ipconfiguration`                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified.
-      - `load_balancer_backend_pools`                                 = (Optional) - A map defining load balancer backend pool(s) this IP configuration should be associated to.
-        - `<map key>` - Use a custom map key to define each load balancer backend pool association.  This is done to handle issues with certain details not being known until after apply.
-          - `load_balancer_backend_pool_resource_id`                  = (Required) - A Load Balancer backend pool Azure Resource ID can be entered to join this ip configuration to a load balancer backend pool.
-      - `load_balancer_nat_rules`                                     = (Optional) - A map defining load balancer NAT rule(s) that this IP Configuration should be associated to.
-        - `<map key>` - Use a custom map key to define each load balancer NAT Rule association.  This is done to handle issues with certain details not being known until after apply.
-          - `load_balancer_nat_rule_resource_id`                        = (Optional) - A Load Balancer Nat Rule Azure Resource ID can be entered to associate this ip configuration to a load balancer NAT rule.
-      - `private_ip_address`                                          = (Optional) - The Static IP Address which should be used. Configured when private_ip_address_allocation is set to Static
-      - `private_ip_address_allocation`                               = (Optional) - The allocation method used for the Private IP Address. Possible values are Dynamic and Static. Dynamic means "An IP is automatically assigned during creation of this Network Interface" and is the default; Static means "User supplied IP address will be used"
-      - `private_ip_address_version`                                  = (Optional) - The IP Version to use. Possible values are IPv4 or IPv6. Defaults to IPv4.
-      - `private_ip_subnet_resource_id`                               = (Optional) - The Azure Resource ID of the Subnet where this Network Interface should be located in.
-      - `public_ip_address_resource_id`                               = (Optional) - Reference to a Public IP Address resource ID to associate with this NIC
-  - `accelerated_networking_enabled`                                  = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.
-  - `application_security_groups`                                     = (Optional) - A map defining the Application Security Group(s) that this network interface should be a part of.
-    - `<map key>` - Use a custom map key to define each Application Security Group association.  This is done to handle issues with certain details not being known until after apply.
-      - `application_security_group_resource_id`                     = (Required) - The Application Security Group (ASG) Azure Resource ID for this Network Interface to be associated to.
-  - `diagnostic_settings`                                             = (Optional) - A map of objects defining the network interface resource diagnostic settings
-    - `<map key>` - Use a custom map key to define each diagnostic setting configuration
-      - `name`                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
-      - `event_hub_authorization_rule_resource_id` = (Optional) - The Event Hub Namespace Authorization Rule Resource ID when sending logs or metrics to an Event Hub Namespace
-      - `event_hub_name`                           = (Optional) - The Event Hub name when sending logs or metrics to an Event Hub
-      - `log_analytics_destination_type`           = (Optional) - Valid values are null, AzureDiagnostics, and Dedicated.  Defaults to null
-      - `log_categories_and_groups`                = (Optional) - List of strings used to define log categories and groups. Currently not valid for the VM resource
-      - `marketplace_partner_resource_id`          = (Optional) - The marketplace partner solution Azure Resource ID when sending logs or metrics to a partner integration
-      - `metric_categories`                        = (Optional) - List of strings used to define metric categories. Currently only AllMetrics is valid
-      - `storage_account_resource_id`              = (Optional) - The Storage Account Azure Resource ID when sending logs or metrics to a Storage Account
-      - `workspace_resource_id`                    = (Optional) - The Log Analytics Workspace Azure Resource ID when sending logs or metrics to a Log Analytics Workspace
-  - `dns_servers`                                                     = (Optional) - A list of IP Addresses defining the DNS Servers which should be used for this Network Interface.
-  - `inherit_tags`                                                    = (Optional) - Defaults to true.  Set this to false if only the tags defined on this resource should be applied. This is potential future functionality and is currently ignored.
-  - `internal_dns_name_label`                                         = (Optional) - The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network.
-  - `ip_forwarding_enabled`                                           = (Optional) - Should IP Forwarding be enabled? Defaults to false
-  - `lock_level`                                                      = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-  - `lock_name`                                                       = (Optional) - The name for the lock on this nic
-  - `network_security_groups`                                         = (Optional) - A map describing Network Security Group(s) that this Network Interface should be associated to.
-    - `<map key>` - Use a custom map key to define each network security group association.  This is done to handle issues with certain details not being known until after apply.
-      - `network_security_group_resource_id` = (Optional) - The Network Security Group (NSG) Azure Resource ID used to associate this Network Interface to the NSG.
-  - `resource_group_name` (Optional) - Specify a resource group name if the network interface should be created in a separate resource group from the virtual machine
-  - `role_assignments` = An optional map of objects defining role assignments on the individual network configuration resource
-    - `<map key>` - Use a custom map key to define each role assignment configuration
-      - `assign_to_child_public_ip_addresses`        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.
-      - `condition`                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
-      - `condition_version`                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
-      - `delegated_managed_identity_resource_id`     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.
-      - `description`                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.
-      - `principal_id`                               = (optional) - The ID of the Principal (User, Group or Service Principal) to assign the Role Definition to. Changing this forces a new resource to be created.
-      - `role_definition_id_or_name`                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name
-      - `skip_service_principal_aad_check`           = (Optional) - If the principal_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal_id is a Service Principal identity. Defaults to true.
-      - `principal_type`                             = (Optional) - The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
-  - `tags`                           = (Optional) - A mapping of tags to assign to the resource.
-
-Example Inputs:
-
-```hcl
-#Simple private IP single NIC with IPV4 private address
-network_interfaces = {
-  network_interface_1 = {
-    name = "testnic1"
-    ip_configurations = {
-      ip_configuration_1 = {
-        name                          = "testnic1-ipconfig1"
-        private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
-      }
-    }
-  }
-}
-
-#Simple NIC with private and public IP address
-network_interfaces = {
-  network_interface_1 = {
-    name = "testnic1"
-    ip_configurations = {
-      ip_configuration_1 = {
-        name                          = "testnic1-ipconfig1"
-        private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
-        create_public_ip_address      = true
-        public_ip_address_name        = "vm1-testnic1-publicip1"
-      }
-    }
-  }
-}
-```
-NETWORK_INTERFACES
-  nullable    = false
 }
 
 variable "resource_group_name" {
@@ -441,7 +280,15 @@ variable "custom_data" {
   description = "(Optional) The Base64 encoded Custom Data for building this virtual machine. Changing this forces a new resource to be created"
 
   validation {
-    condition     = var.custom_data == null ? true : can(base64decode(var.custom_data))
+    # Gzipped payloads (e.g. from cloudinit_config with gzip=true) are valid
+    # base64 but base64decode() rejects them because the decoded bytes are not
+    # valid UTF-8. Gzip streams always start with magic bytes 0x1f 0x8b 0x08,
+    # which base64-encode to the prefix "H4sI". We check for that prefix as a
+    # fallback to accept gzipped cloud-init data.
+    condition = var.custom_data == null ? true : (
+      can(base64decode(var.custom_data)) ||
+      startswith(var.custom_data, "H4sI")
+    )
     error_message = "The `custom_data` must be either `null` or a valid Base64-Encoded string."
   }
 }
@@ -929,6 +776,190 @@ variable "max_bid_price" {
   description = "(Optional) The maximum price you're willing to pay for this Virtual Machine, in US Dollars; which must be greater than the current spot price. If this bid price falls below the current spot price the Virtual Machine will be evicted using the `eviction_policy`. Defaults to `-1`, which means that the Virtual Machine should not be evicted for price reasons. This can only be configured when `priority` is set to `Spot`."
 }
 
+variable "network_interfaces" {
+  type = map(object({
+    name = string
+    ip_configurations = map(object({
+      name = string
+      app_gateway_backend_pools = optional(map(object({
+        app_gateway_backend_pool_resource_id = string
+      })), {})
+      create_public_ip_address                                    = optional(bool, false)
+      gateway_load_balancer_frontend_ip_configuration_resource_id = optional(string)
+      is_primary_ipconfiguration                                  = optional(bool, true)
+      load_balancer_backend_pools = optional(map(object({
+        load_balancer_backend_pool_resource_id = string
+      })), {})
+      load_balancer_nat_rules = optional(map(object({
+        load_balancer_nat_rule_resource_id = string
+      })), {})
+      private_ip_address            = optional(string)
+      private_ip_address_allocation = optional(string, "Dynamic")
+      private_ip_address_version    = optional(string, "IPv4")
+      private_ip_subnet_resource_id = optional(string)
+      public_ip_address_lock_name   = optional(string)
+      public_ip_address_name        = optional(string)
+      public_ip_address_resource_id = optional(string)
+    }))
+    accelerated_networking_enabled = optional(bool, false)
+    application_security_groups = optional(map(object({
+      application_security_group_resource_id = string
+    })), {})
+    diagnostic_settings = optional(map(object({
+      name                                     = optional(string, null)
+      log_categories                           = optional(set(string), [])
+      log_groups                               = optional(set(string), [])
+      metric_categories                        = optional(set(string), ["AllMetrics"])
+      log_analytics_destination_type           = optional(string, null)
+      workspace_resource_id                    = optional(string, null)
+      storage_account_resource_id              = optional(string, null)
+      event_hub_authorization_rule_resource_id = optional(string, null)
+      event_hub_name                           = optional(string, null)
+      marketplace_partner_resource_id          = optional(string, null)
+    })), {})
+    dns_servers             = optional(list(string))
+    inherit_tags            = optional(bool, true)
+    internal_dns_name_label = optional(string)
+    ip_forwarding_enabled   = optional(bool, false)
+    is_primary              = optional(bool, false)
+    lock_level              = optional(string)
+    lock_name               = optional(string)
+    network_security_groups = optional(map(object({
+      network_security_group_resource_id = string
+    })), {})
+    resource_group_name = optional(string)
+    role_assignments = optional(map(object({
+      principal_id                           = string
+      role_definition_id_or_name             = string
+      assign_to_child_public_ip_addresses    = optional(bool, true)
+      condition                              = optional(string, null)
+      condition_version                      = optional(string, null)
+      delegated_managed_identity_resource_id = optional(string, null)
+      description                            = optional(string, null)
+      skip_service_principal_aad_check       = optional(bool, false)
+      principal_type                         = optional(string, null)
+    })), {})
+    tags = optional(map(string), null)
+  }))
+  default = {
+    ipconfig_1 = {
+      name = "default-ipv4-ipconfig"
+      ip_configurations = {
+        ip_config_1 = {
+          name                                                        = "ipv4-ipconfig"
+          private_ip_address                                          = null
+          private_ip_address_version                                  = "IPv4"
+          private_ip_address_allocation                               = "Dynamic"
+          private_ip_subnet_resource_id                               = null
+          public_ip_address_resource_id                               = null
+          is_primary_ipconfiguration                                  = true
+          gateway_load_balancer_frontend_ip_configuration_resource_id = null
+        }
+      }
+      dns_servers                    = null
+      accelerated_networking_enabled = true
+      ip_forwarding_enabled          = false
+      internal_dns_name_label        = null
+      tags                           = null
+  } }
+  description = <<NETWORK_INTERFACES
+A map of objects representing each network virtual machine network interface
+
+- `<map key>` - Use a custom map key to define each network interface
+  - `name` = (Required) The name of the Network Interface. Changing this forces a new resource to be created.
+  - `ip_configurations` - A required map of objects defining each interfaces IP configurations
+    - `<map key>` - Use a custom map key to define each ip configuration
+      - `name`                                                        = (Required) - A name used for this IP Configuration.
+      - `app_gateway_backend_pools`                                   = (Optional) - A map defining app gateway backend pool(s) this IP configuration should be associated to.
+        - `<map key>` - Use a custom map key to define each app gateway backend pool association.  This is done to handle issues with certain details not being known until after apply.
+          - `app_gateway_backend_pool_resource_id`                    = (Required) - An application gateway backend pool Azure Resource ID can be entered to join this ip configuration to the backend pool of an Application Gateway.
+      - `create_public_ip_address`                                    = (Optional) - Select true here to have the module create the public IP address for this IP Configuration
+      - `gateway_load_balancer_frontend_ip_configuration_resource_id` = (Optional) - The Frontend IP Configuration Azure Resource ID of a Gateway SKU Load Balancer.)
+      - `is_primary_ipconfiguration`                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified.
+      - `load_balancer_backend_pools`                                 = (Optional) - A map defining load balancer backend pool(s) this IP configuration should be associated to.
+        - `<map key>` - Use a custom map key to define each load balancer backend pool association.  This is done to handle issues with certain details not being known until after apply.
+          - `load_balancer_backend_pool_resource_id`                  = (Required) - A Load Balancer backend pool Azure Resource ID can be entered to join this ip configuration to a load balancer backend pool.
+      - `load_balancer_nat_rules`                                     = (Optional) - A map defining load balancer NAT rule(s) that this IP Configuration should be associated to.
+        - `<map key>` - Use a custom map key to define each load balancer NAT Rule association.  This is done to handle issues with certain details not being known until after apply.
+          - `load_balancer_nat_rule_resource_id`                        = (Optional) - A Load Balancer Nat Rule Azure Resource ID can be entered to associate this ip configuration to a load balancer NAT rule.
+      - `private_ip_address`                                          = (Optional) - The Static IP Address which should be used. Configured when private_ip_address_allocation is set to Static
+      - `private_ip_address_allocation`                               = (Optional) - The allocation method used for the Private IP Address. Possible values are Dynamic and Static. Dynamic means "An IP is automatically assigned during creation of this Network Interface" and is the default; Static means "User supplied IP address will be used"
+      - `private_ip_address_version`                                  = (Optional) - The IP Version to use. Possible values are IPv4 or IPv6. Defaults to IPv4.
+      - `private_ip_subnet_resource_id`                               = (Optional) - The Azure Resource ID of the Subnet where this Network Interface should be located in.
+      - `public_ip_address_resource_id`                               = (Optional) - Reference to a Public IP Address resource ID to associate with this NIC
+  - `accelerated_networking_enabled`                                  = (Optional) - Should Accelerated Networking be enabled? Defaults to false. Only certain Virtual Machine sizes are supported for Accelerated Networking. To use Accelerated Networking in an Availability Set, the Availability Set must be deployed onto an Accelerated Networking enabled cluster.
+  - `application_security_groups`                                     = (Optional) - A map defining the Application Security Group(s) that this network interface should be a part of.
+    - `<map key>` - Use a custom map key to define each Application Security Group association.  This is done to handle issues with certain details not being known until after apply.
+      - `application_security_group_resource_id`                     = (Required) - The Application Security Group (ASG) Azure Resource ID for this Network Interface to be associated to.
+  - `diagnostic_settings`                                             = (Optional) - A map of objects defining the network interface resource diagnostic settings
+    - `<map key>` - Use a custom map key to define each diagnostic setting configuration
+      - `name`                                     = (required) - Name to use for the Diagnostic setting configuration.  Changing this creates a new resource
+      - `event_hub_authorization_rule_resource_id` = (Optional) - The Event Hub Namespace Authorization Rule Resource ID when sending logs or metrics to an Event Hub Namespace
+      - `event_hub_name`                           = (Optional) - The Event Hub name when sending logs or metrics to an Event Hub
+      - `log_analytics_destination_type`           = (Optional) - Valid values are null, AzureDiagnostics, and Dedicated.  Defaults to null
+      - `log_categories_and_groups`                = (Optional) - List of strings used to define log categories and groups. Currently not valid for the VM resource
+      - `marketplace_partner_resource_id`          = (Optional) - The marketplace partner solution Azure Resource ID when sending logs or metrics to a partner integration
+      - `metric_categories`                        = (Optional) - List of strings used to define metric categories. Currently only AllMetrics is valid
+      - `storage_account_resource_id`              = (Optional) - The Storage Account Azure Resource ID when sending logs or metrics to a Storage Account
+      - `workspace_resource_id`                    = (Optional) - The Log Analytics Workspace Azure Resource ID when sending logs or metrics to a Log Analytics Workspace
+  - `dns_servers`                                                     = (Optional) - A list of IP Addresses defining the DNS Servers which should be used for this Network Interface.
+  - `inherit_tags`                                                    = (Optional) - Defaults to true.  Set this to false if only the tags defined on this resource should be applied. This is potential future functionality and is currently ignored.
+  - `internal_dns_name_label`                                         = (Optional) - The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network.
+  - `ip_forwarding_enabled`                                           = (Optional) - Should IP Forwarding be enabled? Defaults to false
+  - `lock_level`                                                      = (Optional) - Set this value to override the resource level lock value.  Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+  - `lock_name`                                                       = (Optional) - The name for the lock on this nic
+  - `network_security_groups`                                         = (Optional) - A map describing Network Security Group(s) that this Network Interface should be associated to.
+    - `<map key>` - Use a custom map key to define each network security group association.  This is done to handle issues with certain details not being known until after apply.
+      - `network_security_group_resource_id` = (Optional) - The Network Security Group (NSG) Azure Resource ID used to associate this Network Interface to the NSG.
+  - `resource_group_name` (Optional) - Specify a resource group name if the network interface should be created in a separate resource group from the virtual machine
+  - `role_assignments` = An optional map of objects defining role assignments on the individual network configuration resource
+    - `<map key>` - Use a custom map key to define each role assignment configuration
+      - `assign_to_child_public_ip_addresses`        = (Optional) - Set this to true if the assignment should also apply to any children public IP addresses.
+      - `condition`                                  = (Optional) - The condition that limits the resources that the role can be assigned to. Changing this forces a new resource to be created.
+      - `condition_version`                          = (Optional) - The version of the condition. Possible values are 1.0 or 2.0. Changing this forces a new resource to be created.
+      - `delegated_managed_identity_resource_id`     = (Optional) - The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created.
+      - `description`                                = (Optional) - The description for this Role Assignment. Changing this forces a new resource to be created.
+      - `principal_id`                               = (optional) - The ID of the Principal (User, Group or Service Principal) to assign the Role Definition to. Changing this forces a new resource to be created.
+      - `role_definition_id_or_name`                 = (Optional) - The Scoped-ID of the Role Definition or the built-in role name. Changing this forces a new resource to be created. Conflicts with role_definition_name
+      - `skip_service_principal_aad_check`           = (Optional) - If the principal_id is a newly provisioned Service Principal set this value to true to skip the Azure Active Directory check which may fail due to replication lag. This argument is only valid if the principal_id is a Service Principal identity. Defaults to true.
+      - `principal_type`                             = (Optional) - The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
+  - `tags`                           = (Optional) - A mapping of tags to assign to the resource.
+
+Example Inputs:
+
+```hcl
+#Simple private IP single NIC with IPV4 private address
+network_interfaces = {
+  network_interface_1 = {
+    name = "testnic1"
+    ip_configurations = {
+      ip_configuration_1 = {
+        name                          = "testnic1-ipconfig1"
+        private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
+      }
+    }
+  }
+}
+
+#Simple NIC with private and public IP address
+network_interfaces = {
+  network_interface_1 = {
+    name = "testnic1"
+    ip_configurations = {
+      ip_configuration_1 = {
+        name                          = "testnic1-ipconfig1"
+        private_ip_subnet_resource_id = azurerm_subnet.this_subnet_1.id
+        create_public_ip_address      = true
+        public_ip_address_name        = "vm1-testnic1-publicip1"
+      }
+    }
+  }
+}
+```
+NETWORK_INTERFACES
+  nullable    = false
+}
+
 variable "os_disk" {
   type = object({
     caching                          = string
@@ -983,6 +1014,58 @@ os_disk = {
 ```
 OS_DISK
   nullable    = false
+}
+
+variable "os_disk_attach_mode" {
+  type        = bool
+  default     = false
+  description = <<-DESCRIPTION
+  (Optional) Set to `true` when using `os_managed_disk_id` to attach an existing managed disk as the OS disk (Attach mode).
+
+  This variable must be set explicitly because Terraform cannot determine `os_managed_disk_id != null` at plan time when the
+  disk ID comes from a computed resource attribute (e.g., `azurerm_managed_disk.example.id`). Setting this to `true` ensures
+  that credential generation, Key Vault secret creation, and other OS profile settings are correctly skipped during planning.
+
+  > Note: Always set `os_disk_attach_mode = true` when setting `os_managed_disk_id`.
+
+  Example Inputs:
+
+  ```hcl
+  os_disk_attach_mode = true
+  os_managed_disk_id  = azurerm_managed_disk.restored_os_disk.id
+  ```
+  DESCRIPTION
+  nullable    = false
+}
+
+variable "os_managed_disk_id" {
+  type        = string
+  default     = null
+  description = <<-DESCRIPTION
+  (Optional) The ID of an existing Managed Disk which should be attached as the OS Disk of this Virtual Machine. Changing this forces a new resource to be created.
+
+  When set, `source_image_resource_id` and `source_image_reference` must not be used, and the module will not manage OS profile settings
+  (admin credentials, computer name, custom data, patching configuration, etc.) since the OS is pre-configured on the existing disk.
+
+  > Note: This is mutually exclusive with `source_image_resource_id` and `source_image_reference`. Only one source for the OS disk can be specified.
+  > Note: Always set `os_disk_attach_mode = true` when using this variable.
+
+  Example Inputs:
+
+  ```hcl
+  os_disk_attach_mode = true
+  os_managed_disk_id  = "/subscriptions/{subscription_id}/resourceGroups/{rg_name}/providers/Microsoft.Compute/disks/{disk_name}"
+  ```
+  DESCRIPTION
+
+  validation {
+    condition     = var.os_managed_disk_id == null || can(regex("^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft.Compute/disks/[^/]+$", var.os_managed_disk_id))
+    error_message = "The os_managed_disk_id must be a valid Azure Managed Disk resource ID (e.g., /subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Compute/disks/{name})."
+  }
+  validation {
+    condition     = var.os_managed_disk_id == null || var.source_image_resource_id == null
+    error_message = "The os_managed_disk_id and source_image_resource_id are mutually exclusive. Only one source for the OS disk can be specified."
+  }
 }
 
 variable "os_type" {
@@ -1428,7 +1511,7 @@ variable "source_image_reference" {
     version   = "latest"
   }
   description = <<SOURCE_IMAGE_REFERENCE
-The source image to use when building the virtual machine. Either `source_image_resource_id` or `source_image_reference` must be set and both can not be null at the same time.
+The source image to use when building the virtual machine. Either `source_image_resource_id` or `source_image_reference` must be set and both can not be null at the same time. Not used when `os_managed_disk_id` is set.
 
 - `publisher` = (Required) Specifies the publisher of the image this virtual machine should be created from.  Changing this forces a new virtual machine to be created.
 - `offer`     = (Required) Specifies the offer of the image used to create this virtual machine.  Changing this forces a new virtual machine to be created.
@@ -1460,7 +1543,7 @@ SOURCE_IMAGE_REFERENCE
 variable "source_image_resource_id" {
   type        = string
   default     = null
-  description = "The Azure resource ID of the source image used to create the VM. Either `source_image_resource_id` or `source_image_reference` must be set and both can not be null at the same time."
+  description = "The Azure resource ID of the source image used to create the VM. Either `source_image_resource_id` or `source_image_reference` must be set and both can not be null at the same time. Not used when `os_managed_disk_id` is set."
 }
 
 variable "tags" {
