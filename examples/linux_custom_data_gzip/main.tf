@@ -40,7 +40,7 @@ module "naming" {
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.5.0"
+  version = "0.12.0"
 
   availability_zones_filter = true
 }
