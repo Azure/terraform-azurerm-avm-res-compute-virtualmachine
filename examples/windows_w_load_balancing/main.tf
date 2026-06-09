@@ -100,7 +100,7 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.15.0"
+  version = "0.17.1"
 
   location      = azurerm_resource_group.this_rg.location
   parent_id     = azurerm_resource_group.this_rg.id
