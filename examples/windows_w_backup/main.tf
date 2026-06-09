@@ -90,7 +90,7 @@ module "vm_sku" {
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.1"
+  version = "0.3.2"
 
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.nat_gateway.name_unique
