@@ -171,7 +171,7 @@ resource "azurerm_user_assigned_identity" "example_identity" {
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.10.0"
+  version = "0.10.2"
 
   location                    = azurerm_resource_group.this_rg.location
   name                        = "${module.naming.key_vault.name_unique}-linux-ssh"
