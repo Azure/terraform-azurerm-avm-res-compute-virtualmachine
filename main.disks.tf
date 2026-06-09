@@ -4,7 +4,7 @@ resource "azurerm_managed_disk" "this" {
   create_option                     = each.value.create_option
   location                          = var.location
   name                              = each.value.name
-  resource_group_name               = coalesce(each.value.resource_group_name, var.resource_group_name)
+  resource_group_name               = coalesce(each.value.resource_group_name, local.normalized_resource_group_name)
   storage_account_type              = each.value.storage_account_type
   disk_access_id                    = each.value.disk_access_resource_id
   disk_encryption_set_id            = each.value.disk_encryption_set_resource_id #preview feature to be activated at a later date

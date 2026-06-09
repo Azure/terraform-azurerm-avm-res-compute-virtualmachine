@@ -38,7 +38,7 @@ locals {
     protectedItemType = "Microsoft.Compute/virtualMachines"
     sourceResourceId  = local.virtualmachine_resource_id
     policyId          = value.backup_policy_resource_id
-    containerName     = "iaasvmcontainerv2;${var.resource_group_name};${var.name}"
+    containerName     = "iaasvmcontainerv2;${local.normalized_resource_group_name};${var.name}"
     policyName        = basename(value.backup_policy_resource_id)
     }
   }
@@ -48,8 +48,8 @@ locals {
 resource "azapi_resource" "this_backup_intent" {
   for_each = var.azure_backup_configurations
 
-  name      = "VM;iaasvmcontainerv2;${coalesce(var.resource_group_name, each.value.resource_group_name, local.rsv_resource_group[each.key])};${var.name}"
-  parent_id = "${each.value.recovery_vault_resource_id}/backupFabrics/Azure/protectionContainers/iaasvmcontainer;iaasvmcontainerv2;${var.resource_group_name};${var.name}"
+  name      = "VM;iaasvmcontainerv2;${coalesce(local.normalized_resource_group_name, each.value.resource_group_name, local.rsv_resource_group[each.key])};${var.name}"
+  parent_id = "${each.value.recovery_vault_resource_id}/backupFabrics/Azure/protectionContainers/iaasvmcontainer;iaasvmcontainerv2;${local.normalized_resource_group_name};${var.name}"
   type      = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01"
   body = {
     properties = local.backup_body_properties[each.key]
