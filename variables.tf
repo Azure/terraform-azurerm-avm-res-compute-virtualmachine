@@ -4,6 +4,7 @@
 
 ########## optional variables
 
+
 ########## Required variables
 variable "location" {
   type        = string

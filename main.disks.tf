@@ -102,6 +102,7 @@ moved {
   from = azurerm_management_lock.this-disk
   to   = azurerm_management_lock.this_disk
 }
+
 #configure resource locks on each Data Disk if the lock values are set. Set explicit dependencies on the attachments and vm's to ensure provisioning is complete prior to setting resource locks
 resource "azurerm_management_lock" "this_disk" {
   for_each = { for disk, diskvalues in var.data_disk_managed_disks : disk => diskvalues if diskvalues.lock_level != null }
