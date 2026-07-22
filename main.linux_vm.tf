@@ -1,16 +1,16 @@
 resource "azurerm_linux_virtual_machine" "this" {
   count = (lower(var.os_type) == "linux") ? 1 : 0
 
-  #required properties (admin_username is null when using os_managed_disk_id per Provider ExactlyOneOf constraint)
-  admin_username = local.admin_username
-  location       = var.location
-  name           = var.name
+  location = var.location
+  name     = var.name
   #network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
   network_interface_ids = [for interface in local.ordered_network_interface_keys : azurerm_network_interface.virtualmachine_network_interfaces[interface].id]
   resource_group_name   = var.resource_group_name
   size                  = var.sku_size
   #optional properties
-  admin_password                                         = local.os_disk_is_imported ? null : (local.password_authentication_disabled ? null : local.admin_password_linux)
+  admin_password = local.os_disk_is_imported ? null : (local.password_authentication_disabled ? null : local.admin_password_linux)
+  #required properties (admin_username is null when using os_managed_disk_id per Provider ExactlyOneOf constraint)
+  admin_username                                         = local.admin_username
   allow_extension_operations                             = var.allow_extension_operations
   availability_set_id                                    = var.availability_set_resource_id
   bypass_platform_safety_checks_on_user_schedule_enabled = local.os_disk_is_imported ? null : var.bypass_platform_safety_checks_on_user_schedule_enabled
@@ -63,6 +63,7 @@ resource "azurerm_linux_virtual_machine" "this" {
       }
     }
   }
+
   dynamic "additional_capabilities" {
     for_each = var.vm_additional_capabilities == null ? [] : ["additional_capabilities"]
 
@@ -71,6 +72,7 @@ resource "azurerm_linux_virtual_machine" "this" {
       ultra_ssd_enabled   = var.vm_additional_capabilities.ultra_ssd_enabled
     }
   }
+
   dynamic "admin_ssh_key" {
     for_each = local.os_disk_is_imported ? [] : toset(local.admin_ssh_keys)
 
@@ -79,6 +81,7 @@ resource "azurerm_linux_virtual_machine" "this" {
       username   = admin_ssh_key.value.username
     }
   }
+
   dynamic "boot_diagnostics" {
     for_each = var.boot_diagnostics ? ["boot_diagnostics"] : []
 
@@ -86,6 +89,7 @@ resource "azurerm_linux_virtual_machine" "this" {
       storage_account_uri = var.boot_diagnostics_storage_account_uri
     }
   }
+
   dynamic "gallery_application" {
     for_each = { for app, app_details in var.gallery_applications : app => app_details }
 
@@ -96,6 +100,7 @@ resource "azurerm_linux_virtual_machine" "this" {
       tag                    = gallery_application.value.tag
     }
   }
+
   dynamic "identity" {
     for_each = local.managed_identity_type == null ? [] : ["identity"]
 
@@ -104,6 +109,7 @@ resource "azurerm_linux_virtual_machine" "this" {
       identity_ids = var.managed_identities.user_assigned_resource_ids
     }
   }
+
   dynamic "plan" {
     for_each = var.plan == null ? [] : ["plan"]
 
@@ -113,6 +119,7 @@ resource "azurerm_linux_virtual_machine" "this" {
       publisher = var.plan.publisher
     }
   }
+
   dynamic "secret" {
     for_each = toset(var.secrets)
 
@@ -128,6 +135,7 @@ resource "azurerm_linux_virtual_machine" "this" {
       }
     }
   }
+
   dynamic "source_image_reference" {
     for_each = (var.source_image_resource_id == null && !local.os_disk_is_imported) ? ["source_image_reference"] : []
 
@@ -138,6 +146,7 @@ resource "azurerm_linux_virtual_machine" "this" {
       version   = local.source_image_reference.version
     }
   }
+
   dynamic "termination_notification" {
     for_each = var.termination_notification == null ? [] : [
       "termination_notification"
@@ -149,15 +158,6 @@ resource "azurerm_linux_virtual_machine" "this" {
     }
   }
 
-  depends_on = [ #set explicit depends on for each association to address delete order issues.
-    azurerm_network_interface.virtualmachine_network_interfaces,
-    azurerm_network_interface_security_group_association.this,
-    azurerm_network_interface_application_security_group_association.this,
-    azurerm_network_interface_backend_address_pool_association.this,
-    azurerm_network_interface_application_gateway_backend_address_pool_association.this,
-    azurerm_network_interface_nat_rule_association.this
-  ]
-
   lifecycle {
     ignore_changes = [
       vm_agent_platform_updates_enabled # Added property to ignore_changes as it continues to detect change in state.
@@ -168,6 +168,14 @@ resource "azurerm_linux_virtual_machine" "this" {
       error_message = "The os_managed_disk_id and os_disk.diff_disk_settings are mutually exclusive. Ephemeral OS disks cannot be used when attaching an existing managed disk."
     }
   }
+  depends_on = [ #set explicit depends on for each association to address delete order issues.
+    azurerm_network_interface.virtualmachine_network_interfaces,
+    azurerm_network_interface_security_group_association.this,
+    azurerm_network_interface_application_security_group_association.this,
+    azurerm_network_interface_backend_address_pool_association.this,
+    azurerm_network_interface_application_gateway_backend_address_pool_association.this,
+    azurerm_network_interface_nat_rule_association.this
+  ]
 }
 
 moved {
