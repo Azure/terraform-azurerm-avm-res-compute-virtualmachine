@@ -8,7 +8,7 @@ terraform {
     }
     azuread = {
       source  = "hashicorp/azuread"
-      version = "~> 2.15"
+      version = "~> 3.9"
     }
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -40,12 +40,12 @@ provider "azurerm" {
 
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.2"
+  version = "0.4.3"
 }
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.5.0"
+  version = "0.12.0"
 
   availability_zones_filter = true
 }
@@ -94,7 +94,7 @@ module "vm_sku" {
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.1"
+  version = "0.3.2"
 
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.nat_gateway.name_unique
@@ -109,7 +109,7 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.8.1"
+  version = "0.19.0"
 
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this_rg.location
@@ -176,7 +176,7 @@ data "azuread_service_principal" "backup_service_app" {
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.10.0"
+  version = "0.10.2"
 
   location                    = azurerm_resource_group.this_rg.location
   name                        = "${module.naming.key_vault.name_unique}-waf"
