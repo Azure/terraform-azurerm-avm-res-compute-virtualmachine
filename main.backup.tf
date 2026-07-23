@@ -62,9 +62,7 @@ resource "azapi_resource" "this_backup_intent" {
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
-
 moved {
   from = azurerm_backup_protected_vm.this
   to   = azapi_resource.this_backup_intent
 }
-

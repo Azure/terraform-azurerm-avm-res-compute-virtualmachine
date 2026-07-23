@@ -18,7 +18,6 @@ resource "azurerm_public_ip" "virtualmachine_public_ips" {
   zones                   = var.public_ip_configuration_details.zones #var.zone != null ? [var.zone] : [] #
 }
 
-
 #create the Nics
 resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
   for_each = var.network_interfaces
@@ -121,6 +120,7 @@ resource "azurerm_monitor_diagnostic_setting" "this_nic_diags" {
       category_group = enabled_log.value
     }
   }
+
   dynamic "metric" {
     for_each = each.value.diagnostic_setting.metric_categories
 
@@ -148,7 +148,6 @@ resource "azurerm_network_interface_application_security_group_association" "thi
 
   depends_on = [azurerm_network_interface_security_group_association.this]
 }
-
 
 ### LB Pool Association
 resource "azurerm_network_interface_backend_address_pool_association" "this" {
