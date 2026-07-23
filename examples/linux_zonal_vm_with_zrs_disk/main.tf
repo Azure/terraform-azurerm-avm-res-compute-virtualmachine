@@ -192,7 +192,7 @@ module "testvm" {
       caching              = "None"
       lun                  = 10
       name                 = "data-disk-01"
-      storage_account_type = "StandardSSD_ZRS"
+      storage_account_type = "Premium_ZRS"
       disk_size_gb         = 32
     }
   }
