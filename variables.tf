@@ -19,7 +19,7 @@ variable "name" {
 
   validation {
     condition     = can(regex("^.{1,64}$", var.name))
-    error_message = "virtual machine names for linux must be between 1 and 64 characters in length. Virtual machine name for windows must be between 1 and 20 characters in length."
+    error_message = "The virtual machine name (the ARM resource name) must be between 1 and 64 characters in length. Note: for Windows the OS computer name (hostname) is limited to 15 characters, so if `name` exceeds 15 characters you must also set `computer_name` to a value of 15 characters or fewer."
   }
 }
 

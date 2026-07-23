@@ -182,6 +182,10 @@ resource "azurerm_windows_virtual_machine" "this" {
       condition     = var.os_managed_disk_id == null || var.os_disk.diff_disk_settings == null
       error_message = "The os_managed_disk_id and os_disk.diff_disk_settings are mutually exclusive. Ephemeral OS disks cannot be used when attaching an existing managed disk."
     }
+    precondition {
+      condition     = local.os_disk_is_imported || length(coalesce(var.computer_name, var.name)) <= 15
+      error_message = "For a Windows VM the OS computer name (hostname) must be 15 characters or fewer. It is taken from `computer_name` when set, otherwise it falls back to `name`. The effective computer name here exceeds 15 characters - set `computer_name` to a value of 15 characters or fewer. (The `name` / ARM resource name itself may be up to 64 characters.)"
+    }
   }
   depends_on = [ #set explicit depends on for each association to address delete order issues.
     azurerm_network_interface.virtualmachine_network_interfaces,
