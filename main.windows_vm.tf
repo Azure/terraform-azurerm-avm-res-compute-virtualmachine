@@ -5,7 +5,7 @@ resource "azurerm_windows_virtual_machine" "this" {
   name     = var.name
   #network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
   network_interface_ids = [for interface in local.ordered_network_interface_keys : azurerm_network_interface.virtualmachine_network_interfaces[interface].id]
-  resource_group_name   = var.resource_group_name
+  resource_group_name   = local.normalized_resource_group_name
   size                  = var.sku_size
   #required properties (admin_password and admin_username are null when using os_managed_disk_id per Provider ExactlyOneOf/ConflictsWith constraints)
   admin_password = local.os_disk_is_imported ? null : local.admin_password_windows
