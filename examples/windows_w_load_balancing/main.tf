@@ -31,12 +31,12 @@ provider "azurerm" {
 
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.2"
+  version = "0.4.3"
 }
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.5.0"
+  version = "0.12.0"
 
   availability_zones_filter = true
 }
@@ -85,7 +85,7 @@ module "vm_sku" {
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.1"
+  version = "0.3.2"
 
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.nat_gateway.name_unique
@@ -100,7 +100,7 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.15.0"
+  version = "0.19.0"
 
   location      = azurerm_resource_group.this_rg.location
   parent_id     = azurerm_resource_group.this_rg.id
@@ -167,7 +167,7 @@ resource "azurerm_bastion_host" "bastion" {
 
 module "loadbalancer" {
   source  = "Azure/avm-res-network-loadbalancer/azurerm"
-  version = "0.3.2"
+  version = "0.5.0"
 
   # Frontend IP Configuration
   frontend_ip_configurations = {
@@ -276,7 +276,7 @@ data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.10.0"
+  version = "0.10.2"
 
   location                    = azurerm_resource_group.this_rg.location
   name                        = "${module.naming.key_vault.name_unique}-win-alb"
@@ -302,7 +302,7 @@ module "avm_res_keyvault_vault" {
 
 module "testnsg" {
   source  = "Azure/avm-res-network-networksecuritygroup/azurerm"
-  version = "0.1.1"
+  version = "0.5.1"
 
   location = azurerm_resource_group.this_rg.location
   name     = module.naming.network_security_group.name_unique
