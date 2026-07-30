@@ -12,6 +12,7 @@ resource "azurerm_windows_virtual_machine" "this" {
   admin_username = local.admin_username
   #optional properties
   allow_extension_operations                             = var.allow_extension_operations
+  automatic_updates_enabled                              = local.os_disk_is_imported ? null : local.automatic_updates_enabled
   availability_set_id                                    = var.availability_set_resource_id
   bypass_platform_safety_checks_on_user_schedule_enabled = local.os_disk_is_imported ? null : var.bypass_platform_safety_checks_on_user_schedule_enabled
   capacity_reservation_group_id                          = var.capacity_reservation_group_resource_id
@@ -21,7 +22,6 @@ resource "azurerm_windows_virtual_machine" "this" {
   dedicated_host_id                                      = var.dedicated_host_resource_id
   disk_controller_type                                   = var.disk_controller_type
   edge_zone                                              = var.edge_zone
-  enable_automatic_updates                               = local.os_disk_is_imported ? null : var.enable_automatic_updates
   encryption_at_host_enabled                             = var.encryption_at_host_enabled
   eviction_policy                                        = var.eviction_policy
   extensions_time_budget                                 = var.extensions_time_budget

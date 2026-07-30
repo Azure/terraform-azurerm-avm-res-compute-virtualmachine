@@ -15,7 +15,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.42, < 5.0)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
@@ -262,6 +262,14 @@ Description: (Optional) Should Extension Operations be allowed on this Virtual M
 Type: `bool`
 
 Default: `true`
+
+### <a name="input_automatic_updates_enabled"></a> [automatic\_updates\_enabled](#input\_automatic\_updates\_enabled)
+
+Description: (Optional) Specifies if Automatic Updates are Enabled for the Windows Virtual Machine. Changing this forces a new resource to be created. Defaults to `true` when neither this input nor the deprecated `enable_automatic_updates` input is set.
+
+Type: `bool`
+
+Default: `null`
 
 ### <a name="input_availability_set_resource_id"></a> [availability\_set\_resource\_id](#input\_availability\_set\_resource\_id)
 
@@ -605,7 +613,7 @@ Default: `null`
 
 ### <a name="input_enable_automatic_updates"></a> [enable\_automatic\_updates](#input\_enable\_automatic\_updates)
 
-Description: (Optional) Specifies if Automatic Updates are Enabled for the Windows Virtual Machine. Changing this forces a new resource to be created. Defaults to `true`.
+Description: DEPRECATED: This input has been renamed to `automatic_updates_enabled` to align with the `azurerm` provider, which removed `enable_automatic_updates` in provider version 5.0. This input will be removed with the release of version v1.0.0. Specifies if Automatic Updates are Enabled for the Windows Virtual Machine. Changing this forces a new resource to be created. Defaults to `true`. If `automatic_updates_enabled` is also set, `automatic_updates_enabled` takes precedence.
 
 Type: `bool`
 

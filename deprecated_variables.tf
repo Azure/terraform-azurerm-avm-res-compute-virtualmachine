@@ -58,6 +58,12 @@ variable "disable_password_authentication" {
   nullable    = false
 }
 
+variable "enable_automatic_updates" {
+  type        = bool
+  default     = true
+  description = "DEPRECATED: This input has been renamed to `automatic_updates_enabled` to align with the `azurerm` provider, which removed `enable_automatic_updates` in provider version 5.0. This input will be removed with the release of version v1.0.0. Specifies if Automatic Updates are Enabled for the Windows Virtual Machine. Changing this forces a new resource to be created. Defaults to `true`. If `automatic_updates_enabled` is also set, `automatic_updates_enabled` takes precedence."
+}
+
 variable "generate_admin_password_or_ssh_key" {
   type        = bool
   default     = true

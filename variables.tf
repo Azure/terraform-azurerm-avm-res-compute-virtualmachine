@@ -204,6 +204,12 @@ variable "allow_extension_operations" {
   description = "(Optional) Should Extension Operations be allowed on this Virtual Machine? Defaults to `true`."
 }
 
+variable "automatic_updates_enabled" {
+  type        = bool
+  default     = null
+  description = "(Optional) Specifies if Automatic Updates are Enabled for the Windows Virtual Machine. Changing this forces a new resource to be created. Defaults to `true` when neither this input nor the deprecated `enable_automatic_updates` input is set."
+}
+
 variable "availability_set_resource_id" {
   type        = string
   default     = null
@@ -512,12 +518,6 @@ variable "edge_zone" {
   type        = string
   default     = null
   description = "(Optional) Specifies the Edge Zone within the Azure Region where this Virtual Machine should exist. Changing this forces a new Virtual Machine to be created."
-}
-
-variable "enable_automatic_updates" {
-  type        = bool
-  default     = true
-  description = "(Optional) Specifies if Automatic Updates are Enabled for the Windows Virtual Machine. Changing this forces a new resource to be created. Defaults to `true`."
 }
 
 variable "enable_telemetry" {
