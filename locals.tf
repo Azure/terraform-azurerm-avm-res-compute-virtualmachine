@@ -1,4 +1,8 @@
 locals {
+  #if automatic updates are set in multiple places, prefer the var.automatic_updates_enabled value.
+  #both inputs default to null/true respectively, so an unset configuration resolves to `true`.
+  #after deprecation, set automatic_updates_enabled to var.automatic_updates_enabled
+  automatic_updates_enabled = var.automatic_updates_enabled != null ? var.automatic_updates_enabled : var.enable_automatic_updates
   #flatten the role assignments for the disks
   disks_role_assignments = { for ra in flatten([
     for dk, dv in var.data_disk_managed_disks : [
