@@ -126,6 +126,9 @@ locals {
   # because os_managed_disk_id is typically a computed resource attribute (unknown at plan time),
   # which would make count expressions that depend on this local undeterminable during planning.
   os_disk_is_imported = var.os_disk_attach_mode
+  #the OS disk is an inline block on the vm resource rather than a separate managed disk, so its resource id is read
+  #back off the created virtual machine.
+  os_disk_resource_id = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].os_disk[0].id : azurerm_linux_virtual_machine.this[0].os_disk[0].id
   #concat the input variable with the simple list going forward - this is a placeholder so that we can continue to reference the local source image reference value when it includes the simpleOS option.
   source_image_reference = var.source_image_reference
   #get the first system managed identity id if it is provisioned and depending on whether the vm type is linux or windows
