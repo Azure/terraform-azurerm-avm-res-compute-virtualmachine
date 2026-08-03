@@ -11,7 +11,7 @@ resource "azurerm_windows_virtual_machine" "this" {
   admin_password = local.os_disk_is_imported ? null : local.admin_password_windows
   admin_username = local.admin_username
   #optional properties
-  allow_extension_operations                             = var.allow_extension_operations
+  allow_extension_operations                             = local.os_disk_is_imported ? null : var.allow_extension_operations
   automatic_updates_enabled                              = local.os_disk_is_imported ? null : local.automatic_updates_enabled
   availability_set_id                                    = var.availability_set_resource_id
   bypass_platform_safety_checks_on_user_schedule_enabled = local.os_disk_is_imported ? null : var.bypass_platform_safety_checks_on_user_schedule_enabled
