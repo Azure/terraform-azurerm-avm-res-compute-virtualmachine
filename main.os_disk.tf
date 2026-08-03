@@ -1,0 +1,40 @@
+locals {
+  #the azurerm os_disk block doesn't expose the disk network access settings, so they are patched onto the
+  #os disk created by the virtual machine resource once it exists.
+  os_disk_network_access_body = {
+    properties = merge(
+      var.os_disk.public_network_access_enabled == null ? {} : {
+        publicNetworkAccess = var.os_disk.public_network_access_enabled ? "Enabled" : "Disabled"
+      },
+      var.os_disk.network_access_policy == null ? {} : {
+        networkAccessPolicy = var.os_disk.network_access_policy
+      },
+      var.os_disk.disk_access_resource_id == null ? {} : {
+        diskAccessId = var.os_disk.disk_access_resource_id
+      }
+    )
+  }
+  #evaluated from variables only so that the count below is known at plan time.
+  os_disk_network_access_configured = anytrue([
+    var.os_disk.public_network_access_enabled != null,
+    var.os_disk.network_access_policy != null,
+    var.os_disk.disk_access_resource_id != null
+  ])
+  os_disk_resource_id = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].os_disk[0].id : azurerm_linux_virtual_machine.this[0].os_disk[0].id
+}
+
+resource "azapi_update_resource" "this_os_disk_network_access" {
+  count = local.os_disk_network_access_configured ? 1 : 0
+
+  resource_id            = local.os_disk_resource_id
+  type                   = "Microsoft.Compute/disks@2024-03-02"
+  body                   = local.os_disk_network_access_body
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  response_export_values = ["properties.publicNetworkAccess", "properties.networkAccessPolicy", "properties.diskAccessId"]
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  depends_on = [
+    azurerm_virtual_machine_data_disk_attachment.this_linux,
+    azurerm_virtual_machine_data_disk_attachment.this_windows
+  ]
+}
