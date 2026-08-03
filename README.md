@@ -29,6 +29,7 @@ The following resources are used by this module:
 
 - [azapi_resource.this_backup_intent](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_maintenance_configuration_assignment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_update_resource.this_os_disk_network_access](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azurerm_dev_test_global_vm_shutdown_schedule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule) (resource)
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
@@ -1118,15 +1119,20 @@ Description: Required configuration values for the OS disk on the virtual machin
 
 - `caching`                          = (Required) - The type of caching which should be used for the internal OS disk.  Possible values are `None`, `ReadOnly`, and `ReadWrite`.
 - `storage_account_type`             = (Required) - The Type of Storage Account which should back this the Internal OS Disk. Possible values are `Standard_LRS`, `Premium_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and `Premium_ZRS`. Changing this forces a new resource to be created
+- `disk_access_resource_id`          = (Optional) - The Azure Resource ID of the Disk Access resource to use for private endpoint connectivity to this OS Disk. Only supported when `network_access_policy` is set to `AllowPrivate`. Applied to the OS Disk after the virtual machine has been created.
 - `disk_encryption_set_id`           = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. Conflicts with secure\_vm\_disk\_encryption\_set\_id. The Disk Encryption Set must have the Reader Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault
 - `disk_size_gb`                     = (Optional) - The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from.
 - `name`                             = (Optional) - The name which should be used for the Internal OS Disk. Changing this forces a new resource to be created.
+- `network_access_policy`            = (Optional) - Policy for accessing the OS Disk via network. Possible values are `AllowAll`, `AllowPrivate`, and `DenyAll`. Leave unset to keep the Azure default (`AllowAll`). Applied to the OS Disk after the virtual machine has been created.
+- `public_network_access_enabled`    = (Optional) - Should it be allowed to access the OS Disk via the public network? Leave unset to keep the Azure default (`true`). Set to `false` to disable public network access on the OS Disk. Applied to the OS Disk after the virtual machine has been created.
 - `secure_vm_disk_encryption_set_id` = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk when the Virtual Machine is a Confidential VM. Conflicts with disk\_encryption\_set\_id. Changing this forces a new resource to be created.
 - `security_encryption_type`         = (Optional) - Encryption Type when the Virtual Machine is a Confidential VM. Possible values are `VMGuestStateOnly` and `DiskWithVMGuestState`. Changing this forces a new resource to be created. `vtpm_enabled` must be set to true when security\_encryption\_type is specified. encryption\_at\_host\_enabled cannot be set to `true` when security\_encryption\_type is set to `DiskWithVMGuestState`
 - `write_accelerator_enabled`        = (Optional) - Should Write Accelerator be Enabled for this OS Disk? Defaults to `false`. This requires that the storage\_account\_type is set to `Premium_LRS` and that caching is set to `None`
 - `diff_disk_settings` - An optional object defining the diff disk settings
   - `option`    = (Required) - Specifies the Ephemeral Disk Settings for the OS Disk. At this time the only possible value is `Local`. Changing this forces a new resource to be created.
   - `placement` = (Optional) - Specifies where to store the Ephemeral Disk. Possible values are CacheDisk and ResourceDisk. Defaults to CacheDisk. Changing this forces a new resource to be created.
+
+> Note: The `azurerm` provider's `os_disk` block does not expose the disk network access settings, so `public_network_access_enabled`, `network_access_policy`, and `disk_access_resource_id` are applied to the OS Disk with an `azapi_update_resource` after the virtual machine has been created. Removing these values from the configuration later removes the update resource from state but does not revert the settings on the disk in Azure - set them back to their previous values explicitly instead.
 
 Example Inputs:
 
@@ -1145,6 +1151,23 @@ os_disk = {
   disk_size_gb              = 128
   write_accelerator_enabled = true
 }
+
+#disable public network access on the OS disk
+os_disk = {
+  caching                       = "ReadWrite"
+  storage_account_type          = "Premium_LRS"
+  public_network_access_enabled = false
+  network_access_policy         = "DenyAll"
+}
+
+#restrict the OS disk to private access via a disk access resource
+os_disk = {
+  caching                       = "ReadWrite"
+  storage_account_type          = "Premium_LRS"
+  public_network_access_enabled = false
+  network_access_policy         = "AllowPrivate"
+  disk_access_resource_id       = azurerm_disk_access.this.id
+}
 ```
 
 Type:
@@ -1153,9 +1176,12 @@ Type:
 object({
     caching                          = string
     storage_account_type             = string
+    disk_access_resource_id          = optional(string)
     disk_encryption_set_id           = optional(string)
     disk_size_gb                     = optional(number)
     name                             = optional(string)
+    network_access_policy            = optional(string)
+    public_network_access_enabled    = optional(bool)
     secure_vm_disk_encryption_set_id = optional(string)
     security_encryption_type         = optional(string)
     write_accelerator_enabled        = optional(bool, false)
