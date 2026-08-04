@@ -119,6 +119,26 @@ resource "azurerm_management_lock" "this_disk" {
   ]
 }
 
+#configure a resource lock on the OS Disk if the lock values are set. The OS Disk is an inline block on the virtual
+#machine resource, so the lock is scoped to the disk id read back off the created virtual machine. The dependencies
+#ensure the disk is fully provisioned before a lock is applied, since a ReadOnly lock blocks subsequent writes.
+resource "azurerm_management_lock" "this_os_disk" {
+  count = var.os_disk.lock_level != null ? 1 : 0
+
+  lock_level = var.os_disk.lock_level
+  name       = coalesce(var.os_disk.lock_name, "${var.name}-os-disk-lock")
+  scope      = local.os_disk_resource_id
+  notes      = var.os_disk.lock_level == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+
+  depends_on = [
+    azurerm_virtual_machine_data_disk_attachment.this_linux,
+    azurerm_virtual_machine_data_disk_attachment.this_windows,
+    azurerm_windows_virtual_machine.this,
+    azurerm_linux_virtual_machine.this,
+    module.extension
+  ]
+}
+
 #assign permissions to the virtual machine if enabled and role assignments included
 resource "azurerm_role_assignment" "disks" {
   for_each = local.disks_role_assignments

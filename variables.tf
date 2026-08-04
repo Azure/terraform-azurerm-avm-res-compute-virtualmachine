@@ -968,6 +968,8 @@ variable "os_disk" {
     disk_access_resource_id          = optional(string)
     disk_encryption_set_id           = optional(string)
     disk_size_gb                     = optional(number)
+    lock_level                       = optional(string, null)
+    lock_name                        = optional(string, null)
     name                             = optional(string)
     network_access_policy            = optional(string)
     public_network_access_enabled    = optional(bool)
@@ -991,6 +993,8 @@ Required configuration values for the OS disk on the virtual machine.
 - `disk_access_resource_id`          = (Optional) - The Azure Resource ID of the Disk Access resource to use for private endpoint connectivity to this OS Disk. Only supported when `network_access_policy` is set to `AllowPrivate`. Applied to the OS Disk after the virtual machine has been created.
 - `disk_encryption_set_id`           = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. Conflicts with secure_vm_disk_encryption_set_id. The Disk Encryption Set must have the Reader Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault
 - `disk_size_gb`                     = (Optional) - The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from.
+- `lock_level`                       = (Optional) - Set this value to apply a resource lock to the OS Disk. Possible values are `CanNotDelete` and `ReadOnly`. Unlike the resource level `lock` variable, this value is not inherited and must be set explicitly. Note that a `CanNotDelete` lock on the OS Disk will block deletion of the virtual machine, and a `ReadOnly` lock will additionally block operations such as resizing the disk, until the lock is removed.
+- `lock_name`                        = (Optional) - The name for the lock on the OS Disk. If not specified, a name is generated from the virtual machine name.
 - `name`                             = (Optional) - The name which should be used for the Internal OS Disk. Changing this forces a new resource to be created.
 - `network_access_policy`            = (Optional) - Policy for accessing the OS Disk via network. Possible values are `AllowAll`, `AllowPrivate`, and `DenyAll`. Leave unset to keep the Azure default (`AllowAll`). Applied to the OS Disk after the virtual machine has been created.
 - `public_network_access_enabled`    = (Optional) - Should it be allowed to access the OS Disk via the public network? Leave unset to keep the Azure default (`true`). Set to `false` to disable public network access on the OS Disk. Applied to the OS Disk after the virtual machine has been created.
@@ -1037,6 +1041,13 @@ os_disk = {
   network_access_policy         = "AllowPrivate"
   disk_access_resource_id       = azurerm_disk_access.this.id
 }
+
+#protect the os disk from deletion with a resource lock
+os_disk = {
+  caching              = "ReadWrite"
+  storage_account_type = "Premium_LRS"
+  lock_level           = "CanNotDelete"
+}
 ```
 OS_DISK
   nullable    = false
@@ -1048,6 +1059,14 @@ OS_DISK
   validation {
     condition     = var.os_disk.disk_access_resource_id == null ? true : var.os_disk.network_access_policy == "AllowPrivate"
     error_message = "The os_disk disk_access_resource_id can only be set when the os_disk network_access_policy is set to `AllowPrivate`."
+  }
+  validation {
+    condition     = var.os_disk.lock_level == null ? true : contains(["CanNotDelete", "ReadOnly"], var.os_disk.lock_level)
+    error_message = "The os_disk lock_level must be either `CanNotDelete` or `ReadOnly`."
+  }
+  validation {
+    condition     = var.os_disk.lock_name == null ? true : var.os_disk.lock_level != null
+    error_message = "The os_disk lock_name can only be set when the os_disk lock_level is also set."
   }
 }
 
