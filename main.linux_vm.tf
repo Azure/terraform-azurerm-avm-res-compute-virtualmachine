@@ -11,7 +11,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   admin_password = local.os_disk_is_imported ? null : (local.password_authentication_disabled ? null : local.admin_password_linux)
   #required properties (admin_username is null when using os_managed_disk_id per Provider ExactlyOneOf constraint)
   admin_username                                         = local.admin_username
-  allow_extension_operations                             = var.allow_extension_operations
+  allow_extension_operations                             = local.os_disk_is_imported ? null : var.allow_extension_operations
   availability_set_id                                    = var.availability_set_resource_id
   bypass_platform_safety_checks_on_user_schedule_enabled = local.os_disk_is_imported ? null : var.bypass_platform_safety_checks_on_user_schedule_enabled
   capacity_reservation_group_id                          = var.capacity_reservation_group_resource_id
@@ -19,7 +19,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   custom_data                                            = local.os_disk_is_imported ? null : var.custom_data
   dedicated_host_group_id                                = var.dedicated_host_group_resource_id
   dedicated_host_id                                      = var.dedicated_host_resource_id
-  disable_password_authentication                        = local.password_authentication_disabled
+  disable_password_authentication                        = local.os_disk_is_imported ? null : local.password_authentication_disabled
   disk_controller_type                                   = var.disk_controller_type
   edge_zone                                              = var.edge_zone
   encryption_at_host_enabled                             = var.encryption_at_host_enabled
