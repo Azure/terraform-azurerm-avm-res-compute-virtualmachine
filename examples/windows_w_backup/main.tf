@@ -140,6 +140,7 @@ resource "azurerm_public_ip" "bastionpip" {
   name                = "${module.naming.public_ip.name_unique}-bastion"
   resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
+  zones               = module.regions.regions_by_name[local.deployment_region].zones
 }
 
 resource "azurerm_bastion_host" "bastion" {
