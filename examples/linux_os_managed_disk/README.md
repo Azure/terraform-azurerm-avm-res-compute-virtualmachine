@@ -64,6 +64,11 @@ locals {
   tags = {
     scenario = "linux_os_managed_disk"
   }
+  # The OS disk is created from a SCSI only platform image, so the VM size has to support the SCSI
+  # disk controller. avm-utl-sku-finder exposes no disk controller filter and can return NVMe only
+  # sizes such as Standard_L2aos_v4, which fail to boot this disk, so the size is pinned instead of
+  # discovered.
+  vm_sku_size = "Standard_D2s_v3"
 }
 
 resource "random_integer" "region_index" {
@@ -80,24 +85,6 @@ resource "azurerm_resource_group" "this_rg" {
   location = local.deployment_region
   name     = module.naming.resource_group.name_unique
   tags     = local.tags
-}
-
-module "vm_sku" {
-  source  = "Azure/avm-utl-sku-finder/azapi"
-  version = "0.3.0"
-
-  location      = azurerm_resource_group.this_rg.location
-  cache_results = true
-  vm_filters = {
-    min_vcpus                      = 2
-    max_vcpus                      = 2
-    encryption_at_host_supported   = true
-    accelerated_networking_enabled = true
-    premium_io_supported           = true
-    location_zone                  = random_integer.zone_index.result
-  }
-
-  depends_on = [random_integer.zone_index]
 }
 
 module "natgateway" {
@@ -182,7 +169,7 @@ module "testvm" {
   os_disk_attach_mode = true
   os_managed_disk_id  = azurerm_managed_disk.os_disk.id
   os_type             = "Linux"
-  sku_size            = module.vm_sku.sku
+  sku_size            = local.vm_sku_size
   tags                = local.tags
 }
 ```
@@ -262,12 +249,6 @@ Version: 0.5.0
 Source: ../../
 
 Version:
-
-### <a name="module_vm_sku"></a> [vm\_sku](#module\_vm\_sku)
-
-Source: Azure/avm-utl-sku-finder/azapi
-
-Version: 0.3.0
 
 ### <a name="module_vnet"></a> [vnet](#module\_vnet)
 
