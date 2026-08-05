@@ -221,9 +221,9 @@ resource "azapi_resource" "test_vault" {
       publicNetworkAccess = "Enabled"
       securitySettings = {
         softDeleteSettings = {
-          enhancedSecurityState           = "Disabled"
-          softDeleteRetentionPeriodInDays = 0
-          softDeleteState                 = "Disabled"
+          enhancedSecurityState           = "Enabled"
+          softDeleteRetentionPeriodInDays = 14
+          softDeleteState                 = "Enabled"
         }
       }
       restoreSettings = {
