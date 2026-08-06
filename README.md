@@ -686,6 +686,8 @@ Description: This map of objects is used to create additional `azurerm_virtual_m
   - `tags` (Optional) - A mapping of tags to assign to the extension resource.
   - `timeouts` (Optional): Timeouts for the extension resource.
 
+> Note: AzureRM versions 4.25 through 4.30 could return `MismatchingNestedResourceSegments` when updating the identity of a Linux VM that already had extensions installed. This provider regression was fixed in AzureRM 4.31 by [hashicorp/terraform-provider-azurerm#29717](https://github.com/hashicorp/terraform-provider-azurerm/pull/29717). This module requires AzureRM 4.42 or later and therefore includes the fix.
+
 Example Inputs:
 
 ```hcl
