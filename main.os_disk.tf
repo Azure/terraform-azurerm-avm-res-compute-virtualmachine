@@ -20,7 +20,6 @@ locals {
     var.os_disk.network_access_policy != null,
     var.os_disk.disk_access_resource_id != null
   ])
-  os_disk_resource_id = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].os_disk[0].id : azurerm_linux_virtual_machine.this[0].os_disk[0].id
 }
 
 resource "azapi_update_resource" "this_os_disk_network_access" {
