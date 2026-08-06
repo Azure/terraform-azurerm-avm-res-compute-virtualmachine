@@ -6,6 +6,17 @@
 
 This is the virtual machine resource module for the Azure Verified Modules library.  This module deploys a Windows and/or Linux virtual machine along with common associated resources.  It leverages the AzureRM provider and sets a number of initial defaults to minimize the overall inputs for simple configurations.
 
+## Azure Backup lifecycle
+
+The module manages each configured Azure VM backup protected item through its full lifecycle:
+
+- A missing protected item is created.
+- An existing active or `ProtectionStopped` item is adopted and updated.
+- A soft-deleted item is automatically rehydrated before its backup configuration is applied.
+- Existing protected items managed by earlier module versions are adopted without deleting their recovery points.
+
+By default, removing a backup configuration or destroying the module deletes the protected item, matching the module's previous behavior. Set `retain_backup_data_on_destroy = true` on an `azure_backup_configurations` entry to stop protection while retaining its recovery points. This mode is intended for immutable vaults and other scenarios where backup data must outlive the virtual machine. Retained recovery points can continue to incur charges until they expire or are deleted.
+
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 
@@ -13,7 +24,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.10, < 2.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.9)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.42, < 5.0)
 
@@ -27,8 +38,10 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azapi_resource.this_backup_intent](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_maintenance_configuration_assignment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource_action.backup_destroy](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
+- [azapi_resource_action.backup_ensure_active](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
+- [azapi_update_resource.backup_protection](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azapi_update_resource.this_os_disk_network_access](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azurerm_dev_test_global_vm_shutdown_schedule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule) (resource)
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
@@ -64,6 +77,7 @@ The following resources are used by this module:
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [tls_private_key.this](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) (resource)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_resource.backup_item](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
 - [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -285,35 +299,38 @@ Default: `null`
 
 Description: This object describes the backup configuration to use for this VM instance. Provide the backup details for configuring the backup. It defaults to null.
 
-- `<map_key>` - An arbitrary map key to avoid terraform issues with know before apply challenges
-  - `recovery_vault_resource_id - (Required) - The Azure Resource ID of the recovery services vault where the backup will be stored.
-  - `resource\_group\_name` - (Optional) - This value is deprecated and will be removed in future versions as the VM resource group name will be used.
-  - `recovery\_vault\_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV information will be pulled from the RSV resource id. The name of the recovery services vault where the backup will be stored.
-  - `backup\_policy\_resource\_id` - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
-  - `exclude\_disk\_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection. Only one of `exclude\_disk\_luns` or `include\_disk\_luns` can be set. If both are set then only the `exclude\_disk\_luns` value will be used.
-  - `include\_disk\_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection. Only one of `exclude\_disk\_luns` or `include\_disk\_luns` can be set. If both are set then only the `exclude\_disk\_luns` value will be used.
+- `<map_key>` - An arbitrary map key to avoid Terraform issues with values that must be known before apply.
+  - `recovery_vault_resource_id` - (Required) - The Azure Resource ID of the recovery services vault where the backup will be stored. Changing the vault causes the old protected item to follow the configured destroy behavior: it is deleted by default or retained when `retain_backup_data_on_destroy` is `true`.
+  - `resource_group_name` - (Optional) - This value is deprecated and will be removed in future versions as the VM resource group name will be used.
+  - `recovery_vault_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV information will be pulled from the RSV resource id. The name of the recovery services vault where the backup will be stored.
+  - `backup_policy_resource_id` - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
+  - `exclude_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection. Only one of `exclude_disk_luns` or `include_disk_luns` can be set. If both are set then only the `exclude_disk_luns` value will be used.
+  - `include_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection. Only one of `exclude_disk_luns` or `include_disk_luns` can be set. If both are set then only the `exclude_disk_luns` value will be used.
+  - `retain_backup_data_on_destroy` - (Optional) - When `true`, destroying the module stops protection and retains the existing recovery points instead of deleting the protected item. Use this for immutable vaults or whenever backup data must outlive the VM. Retained backup data can continue to incur charges. Defaults to `false`.
 
-Example Input:  
-azure_backup_configurations = {  
-  arbitrary_key = {  
-    recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id  
-    backup_policy_resource_id    = azurerm_backup_policy_vm.test_policy.id  
-    exclude_disk_luns   = [0,1]
+Example Input:
+```hcl
+azure_backup_configurations = {
+  arbitrary_key = {
+    recovery_vault_resource_id    = azurerm_recovery_services_vault.test_vault.id
+    backup_policy_resource_id     = azurerm_backup_policy_vm.test_policy.id
+    exclude_disk_luns             = [0, 1]
+    retain_backup_data_on_destroy = true
   }
 }
-`
+```
 
 Type:
 
 ```hcl
 map(object({
-    resource_group_name        = optional(string, null)
-    recovery_vault_name        = optional(string, null)
-    recovery_vault_resource_id = string
-    backup_policy_resource_id  = optional(string, null)
-    exclude_disk_luns          = optional(list(number), null)
-    include_disk_luns          = optional(list(number), null)
-
+    resource_group_name           = optional(string, null)
+    recovery_vault_name           = optional(string, null)
+    recovery_vault_resource_id    = string
+    backup_policy_resource_id     = optional(string, null)
+    exclude_disk_luns             = optional(list(number), null)
+    include_disk_luns             = optional(list(number), null)
+    retain_backup_data_on_destroy = optional(bool, false)
   }))
 ```
 

@@ -162,6 +162,7 @@ resource "azurerm_public_ip" "bastionpip" {
   name                = "${module.naming.public_ip.name_unique}-bastion"
   resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
+  zones               = module.regions.regions_by_name[local.deployment_region].zones
 }
 
 resource "azurerm_bastion_host" "bastion" {
@@ -220,9 +221,9 @@ resource "azapi_resource" "test_vault" {
       publicNetworkAccess = "Enabled"
       securitySettings = {
         softDeleteSettings = {
-          enhancedSecurityState           = "Disabled"
-          softDeleteRetentionPeriodInDays = 0
-          softDeleteState                 = "Disabled"
+          enhancedSecurityState           = "Enabled"
+          softDeleteRetentionPeriodInDays = 14
+          softDeleteState                 = "Enabled"
         }
       }
       restoreSettings = {
