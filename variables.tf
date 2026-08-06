@@ -599,6 +599,20 @@ This map of objects is used to create additional `azurerm_virtual_machine_extens
 Example Inputs:
 
 ```hcl
+# Microsoft Entra SSH login extension for Linux
+managed_identities = {
+  system_assigned = true
+}
+extensions = {
+  aad_ssh_login = {
+    name                       = "AADSSHLoginForLinux"
+    publisher                  = "Microsoft.Azure.ActiveDirectory"
+    type                       = "AADSSHLoginForLinux"
+    type_handler_version       = "1.0"
+    auto_upgrade_minor_version = true
+  }
+}
+
 #custom script extension example - linux
 extensions = {
   custom_script_extension_linux = {
@@ -649,6 +663,19 @@ EXTENSIONS
       for e in var.extensions : e.type
     ]))
     error_message = "`type` in `vm_extensions` must be unique."
+  }
+
+  validation {
+    condition = !anytrue([
+      for extension in nonsensitive(var.extensions) :
+      lower(extension.type) == "aadsshloginforlinux"
+      ]) || (
+      lower(var.os_type) == "linux" &&
+      var.managed_identities.system_assigned &&
+      var.provision_vm_agent &&
+      var.allow_extension_operations
+    )
+    error_message = "AADSSHLoginForLinux requires os_type = \"Linux\", managed_identities.system_assigned = true, provision_vm_agent = true, and allow_extension_operations = true."
   }
 }
 
@@ -750,7 +777,7 @@ variable "managed_identities" {
   })
   default     = {}
   description = <<IDENTITY
-An object that sets the managed identity configuration for the virtual machine being deployed. Be aware that capabilities such as the Azure Monitor Agent and Role Assignments require that a managed identity has been configured.
+An object that sets the managed identity configuration for the virtual machine being deployed. Be aware that capabilities such as the Azure Monitor Agent and Role Assignments require that a managed identity has been configured. The `AADSSHLoginForLinux` extension requires `system_assigned = true`.
 
 - `system_assigned`            = (Optional) Specifies whether the System Assigned Managed Identity should be enabled.  Defaults to false.
 - `user_assigned_resource_ids` = (Optional) Specifies a set of User Assigned Managed Identity IDs to be assigned to this Virtual Machine.
