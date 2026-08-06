@@ -218,35 +218,39 @@ variable "availability_set_resource_id" {
 
 variable "azure_backup_configurations" {
   type = map(object({
-    resource_group_name        = optional(string, null)
-    recovery_vault_name        = optional(string, null)
-    recovery_vault_resource_id = string
-    backup_policy_resource_id  = optional(string, null)
-    exclude_disk_luns          = optional(list(number), null)
-    include_disk_luns          = optional(list(number), null)
-
+    resource_group_name           = optional(string, null)
+    recovery_vault_name           = optional(string, null)
+    recovery_vault_resource_id    = string
+    backup_policy_resource_id     = optional(string, null)
+    exclude_disk_luns             = optional(list(number), null)
+    include_disk_luns             = optional(list(number), null)
+    retain_backup_data_on_destroy = optional(bool, false)
   }))
   default     = {}
   description = <<DESCRIPTION
 This object describes the backup configuration to use for this VM instance. Provide the backup details for configuring the backup. It defaults to null.
 
-- `<map_key>` - An arbitrary map key to avoid terraform issues with know before apply challenges
-  - `recovery_vault_resource_id - (Required) - The Azure Resource ID of the recovery services vault where the backup will be stored.
+- `<map_key>` - An arbitrary map key to avoid Terraform issues with values that must be known before apply.
+  - `recovery_vault_resource_id` - (Required) - The Azure Resource ID of the recovery services vault where the backup will be stored. Changing the vault causes the old protected item to follow the configured destroy behavior: it is deleted by default or retained when `retain_backup_data_on_destroy` is `true`.
   - `resource_group_name` - (Optional) - This value is deprecated and will be removed in future versions as the VM resource group name will be used.
   - `recovery_vault_name` - (Optional) - This value is deprecated and will be removed in future versions as the RSV information will be pulled from the RSV resource id. The name of the recovery services vault where the backup will be stored.
   - `backup_policy_resource_id` - (Optional) - Required during creation, but can be optional when the protection state is not `ProtectionStopped`.
   - `exclude_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be excluded from VM Protection. Only one of `exclude_disk_luns` or `include_disk_luns` can be set. If both are set then only the `exclude_disk_luns` value will be used.
   - `include_disk_luns`   - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection. Only one of `exclude_disk_luns` or `include_disk_luns` can be set. If both are set then only the `exclude_disk_luns` value will be used.
+  - `retain_backup_data_on_destroy` - (Optional) - When `true`, destroying the module stops protection and retains the existing recovery points instead of deleting the protected item. Use this for immutable vaults or whenever backup data must outlive the VM. Retained backup data can continue to incur charges. Defaults to `false`.
 
 
 Example Input:
+```hcl
 azure_backup_configurations = {
   arbitrary_key = {
-    recovery_vault_resource_id = azurerm_recovery_services_vault.test_vault.id
-    backup_policy_resource_id    = azurerm_backup_policy_vm.test_policy.id
-    exclude_disk_luns   = [0,1]
+    recovery_vault_resource_id    = azurerm_recovery_services_vault.test_vault.id
+    backup_policy_resource_id     = azurerm_backup_policy_vm.test_policy.id
+    exclude_disk_luns             = [0, 1]
+    retain_backup_data_on_destroy = true
   }
 }
+```
 DESCRIPTION
 }
 
