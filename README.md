@@ -1003,6 +1003,8 @@ Description: A map of objects representing each network virtual machine network 
       - `principal_type`                             = (Optional) - The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
   - `tags`                           = (Optional) - A mapping of tags to assign to the resource.
 
+> Note: There is no per network interface `delete_option` input because the `azurerm` provider does not expose `networkProfile.networkInterfaces[].deleteOption`; `network_interface_ids` on the virtual machine resource is a plain list of IDs. This module creates each network interface as its own `azurerm_network_interface` resource, so `terraform destroy` deletes them along with the virtual machine and they are not orphaned. That setting only affects deletions performed outside Terraform.
+
 Example Inputs:
 
 ```hcl
@@ -1154,6 +1156,8 @@ Description: Required configuration values for the OS disk on the virtual machin
 
 > Note: The `azurerm` provider's `os_disk` block does not expose the disk network access settings, so `public_network_access_enabled`, `network_access_policy`, and `disk_access_resource_id` are applied to the OS Disk with an `azapi_update_resource` after the virtual machine has been created. Removing these values from the configuration later removes the update resource from state but does not revert the settings on the disk in Azure - set them back to their previous values explicitly instead.
 
+> Note: There is no `delete_option` input because the `azurerm` provider does not expose `storageProfile.osDisk.deleteOption` on `azurerm_linux_virtual_machine` or `azurerm_windows_virtual_machine`. The OS Disk is created implicitly by the virtual machine resource, so it is not tracked separately in state and Azure leaves it behind when the virtual machine is deleted. Deleting it with the virtual machine is controlled by the `delete_os_disk_on_deletion` setting in the provider `features` block rather than by this module, and that setting defaults to `false`. Data disks, network interfaces, and public IP addresses are managed as their own resources by this module and are destroyed normally, so they are not affected by it.
+
 Example Inputs:
 
 ```hcl
@@ -1194,6 +1198,16 @@ os_disk = {
   caching              = "ReadWrite"
   storage_account_type = "Premium_LRS"
   lock_level           = "CanNotDelete"
+}
+
+#delete the os disk when the virtual machine is destroyed. This is a provider
+#level setting rather than an os_disk value, and it defaults to false.
+provider "azurerm" {
+  features {
+    virtual_machine {
+      delete_os_disk_on_deletion = true
+    }
+  }
 }
 ```
 
