@@ -747,9 +747,25 @@ Description: This map of objects is used to create additional `azurerm_virtual_m
   - `tags` (Optional) - A mapping of tags to assign to the extension resource.
   - `timeouts` (Optional): Timeouts for the extension resource.
 
+> Note: AzureRM versions 4.25 through 4.30 could return `MismatchingNestedResourceSegments` when updating the identity of a Linux VM that already had extensions installed. This provider regression was fixed in AzureRM 4.31 by [hashicorp/terraform-provider-azurerm#29717](https://github.com/hashicorp/terraform-provider-azurerm/pull/29717). This module requires AzureRM 4.42 or later and therefore includes the fix.
+
 Example Inputs:
 
 ```hcl
+# Microsoft Entra SSH login extension for Linux
+managed_identities = {
+  system_assigned = true
+}
+extensions = {
+  aad_ssh_login = {
+    name                       = "AADSSHLoginForLinux"
+    publisher                  = "Microsoft.Azure.ActiveDirectory"
+    type                       = "AADSSHLoginForLinux"
+    type_handler_version       = "1.0"
+    auto_upgrade_minor_version = true
+  }
+}
+
 #custom script extension example - linux
 extensions = {
   custom_script_extension_linux = {
@@ -959,7 +975,7 @@ Default: `{}`
 
 ### <a name="input_managed_identities"></a> [managed\_identities](#input\_managed\_identities)
 
-Description: An object that sets the managed identity configuration for the virtual machine being deployed. Be aware that capabilities such as the Azure Monitor Agent and Role Assignments require that a managed identity has been configured.
+Description: An object that sets the managed identity configuration for the virtual machine being deployed. Be aware that capabilities such as the Azure Monitor Agent and Role Assignments require that a managed identity has been configured. The `AADSSHLoginForLinux` extension requires `system_assigned = true`.
 
 - `system_assigned`            = (Optional) Specifies whether the System Assigned Managed Identity should be enabled.  Defaults to false.
 - `user_assigned_resource_ids` = (Optional) Specifies a set of User Assigned Managed Identity IDs to be assigned to this Virtual Machine.
