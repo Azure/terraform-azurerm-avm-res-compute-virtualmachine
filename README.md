@@ -17,6 +17,67 @@ The module manages each configured Azure VM backup protected item through its fu
 
 By default, removing a backup configuration or destroying the module deletes the protected item, matching the module's previous behavior. Set `retain_backup_data_on_destroy = true` on an `azure_backup_configurations` entry to stop protection while retaining its recovery points. This mode is intended for immutable vaults and other scenarios where backup data must outlive the virtual machine. Retained recovery points can continue to incur charges until they expire or are deleted.
 
+## Cross-subscription Application Gateway backend pools
+
+An IP configuration can join an Application Gateway backend pool in another subscription by passing the pool's full Azure resource ID to `app_gateway_backend_pool_resource_id`. The association is written to the VM's network interface, so this module continues to use the `azurerm` provider configured for the VM subscription. A provider alias is only needed in the root configuration that reads or creates the Application Gateway.
+
+The identity running this deployment must have the permissions Azure requires to update the NIC and reference the backend pool across subscriptions. The Application Gateway and backend networks must also have supported connectivity, such as cross-subscription VNet peering.
+
+```hcl
+provider "azurerm" {
+  features {}
+
+  subscription_id = var.vm_subscription_id
+}
+
+provider "azurerm" {
+  alias = "application_gateway"
+
+  features {}
+
+  subscription_id = var.application_gateway_subscription_id
+}
+
+data "azurerm_application_gateway" "shared" {
+  provider = azurerm.application_gateway
+
+  name                = var.application_gateway_name
+  resource_group_name = var.application_gateway_resource_group_name
+}
+
+locals {
+  application_gateway_backend_pool_id = one([
+    for pool in data.azurerm_application_gateway.shared.backend_address_pool : pool.id
+    if pool.name == var.application_gateway_backend_pool_name
+  ])
+}
+
+module "virtual_machine" {
+  source  = "Azure/avm-res-compute-virtualmachine/azurerm"
+  version = "<version>"
+
+  # Other required VM inputs omitted for brevity.
+  network_interfaces = {
+    primary = {
+      name = "nic-vm"
+      ip_configurations = {
+        primary = {
+          name                          = "ipconfig1"
+          private_ip_subnet_resource_id = var.vm_subnet_resource_id
+          app_gateway_backend_pools = {
+            shared = {
+              app_gateway_backend_pool_resource_id = local.application_gateway_backend_pool_id
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+If no single deployment identity can establish the cross-subscription resource reference, configure the Application Gateway backend pool from the gateway subscription using private IP addresses or FQDNs instead of a NIC association.
+
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 
@@ -950,7 +1011,7 @@ Description: A map of objects representing each network virtual machine network 
       - `name`                                                        = (Required) - A name used for this IP Configuration.
       - `app_gateway_backend_pools`                                   = (Optional) - A map defining app gateway backend pool(s) this IP configuration should be associated to.
         - `<map key>` - Use a custom map key to define each app gateway backend pool association.  This is done to handle issues with certain details not being known until after apply.
-          - `app_gateway_backend_pool_resource_id`                    = (Required) - An application gateway backend pool Azure Resource ID can be entered to join this ip configuration to the backend pool of an Application Gateway.
+          - `app_gateway_backend_pool_resource_id`                    = (Required) - The full Azure resource ID of an Application Gateway backend pool to associate with this IP configuration. The backend pool can be in another subscription; the deployment identity must have the cross-subscription permissions required by Azure, and the gateway and backend networks must have supported connectivity. A provider alias used to read or create the Application Gateway remains in the root configuration and is not passed to this module.
       - `create_public_ip_address`                                    = (Optional) - Select true here to have the module create the public IP address for this IP Configuration
       - `gateway_load_balancer_frontend_ip_configuration_resource_id` = (Optional) - The Frontend IP Configuration Azure Resource ID of a Gateway SKU Load Balancer.)
       - `is_primary_ipconfiguration`                                  = (Optional) - Is this the Primary IP Configuration? Must be true for the first ip\_configuration when multiple are specified.
