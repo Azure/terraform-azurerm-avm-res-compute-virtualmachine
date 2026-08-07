@@ -1886,6 +1886,10 @@ Default:
 
 Description: The Azure resource ID of the source image used to create the VM. Either `source_image_resource_id` or `source_image_reference` must be set and both can not be null at the same time. Not used when `os_managed_disk_id` is set.
 
+> Note: This must be a generalized image. Specialized images are not supported here, because the `azurerm` provider always sends an `OSProfile` alongside a source image and Azure rejects that with `InvalidParameter: Parameter OSProfile is not allowed with a specialized image`. See [hashicorp/terraform-provider-azurerm#7772](https://github.com/hashicorp/terraform-provider-azurerm/issues/7772).
+>
+> To deploy from a specialized image, create a managed disk from the image version with `azurerm_managed_disk` (`create_option = "FromImage"` and `gallery_image_reference_id`), then attach it using `os_managed_disk_id` and `os_disk_attach_mode = true`. A working example can be found in the [`./examples/linux_specialized_gallery_image`](https://github.com/Azure/terraform-azurerm-avm-res-compute-virtualmachine/tree/main/examples/linux_specialized_gallery_image) directory within the GitHub Repository.
+
 Type: `string`
 
 Default: `null`
