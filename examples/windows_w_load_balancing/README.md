@@ -31,7 +31,7 @@ terraform {
     }
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 4.42, < 5.0"
+      version = ">= 4.42, < 5.1"
     }
     random = {
       source  = "hashicorp/random"
@@ -54,12 +54,12 @@ provider "azurerm" {
 
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.2"
+  version = "0.4.3"
 }
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.5.0"
+  version = "0.12.0"
 
   availability_zones_filter = true
 }
@@ -108,7 +108,7 @@ module "vm_sku" {
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.1"
+  version = "0.3.2"
 
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.nat_gateway.name_unique
@@ -123,7 +123,7 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.15.0"
+  version = "0.20.0"
 
   location      = azurerm_resource_group.this_rg.location
   parent_id     = azurerm_resource_group.this_rg.id
@@ -190,7 +190,7 @@ resource "azurerm_bastion_host" "bastion" {
 
 module "loadbalancer" {
   source  = "Azure/avm-res-network-loadbalancer/azurerm"
-  version = "0.3.2"
+  version = "0.5.0"
 
   # Frontend IP Configuration
   frontend_ip_configurations = {
@@ -299,7 +299,7 @@ data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.10.0"
+  version = "0.10.2"
 
   location                    = azurerm_resource_group.this_rg.location
   name                        = "${module.naming.key_vault.name_unique}-win-alb"
@@ -325,7 +325,7 @@ module "avm_res_keyvault_vault" {
 
 module "testnsg" {
   source  = "Azure/avm-res-network-networksecuritygroup/azurerm"
-  version = "0.1.1"
+  version = "0.5.1"
 
   location = azurerm_resource_group.this_rg.location
   name     = module.naming.network_security_group.name_unique
@@ -439,7 +439,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.42, < 5.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.42, < 5.1)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
@@ -487,37 +487,37 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: =0.10.0
+Version: 0.10.2
 
 ### <a name="module_loadbalancer"></a> [loadbalancer](#module\_loadbalancer)
 
 Source: Azure/avm-res-network-loadbalancer/azurerm
 
-Version: 0.3.2
+Version: 0.5.0
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
 Source: Azure/naming/azurerm
 
-Version: 0.4.2
+Version: 0.4.3
 
 ### <a name="module_natgateway"></a> [natgateway](#module\_natgateway)
 
 Source: Azure/avm-res-network-natgateway/azurerm
 
-Version: 0.2.1
+Version: 0.3.2
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: 0.5.0
+Version: 0.12.0
 
 ### <a name="module_testnsg"></a> [testnsg](#module\_testnsg)
 
 Source: Azure/avm-res-network-networksecuritygroup/azurerm
 
-Version: 0.1.1
+Version: 0.5.1
 
 ### <a name="module_testvm"></a> [testvm](#module\_testvm)
 
@@ -535,7 +535,7 @@ Version: 0.3.0
 
 Source: Azure/avm-res-network-virtualnetwork/azurerm
 
-Version: =0.15.0
+Version: 0.20.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
