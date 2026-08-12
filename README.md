@@ -100,9 +100,6 @@ The following requirements are needed by this module:
 The following resources are used by this module:
 
 - [azapi_resource.this_maintenance_configuration_assignment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azapi_resource_action.backup_destroy](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
-- [azapi_resource_action.backup_ensure_active](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
-- [azapi_update_resource.backup_protection](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azapi_update_resource.this_os_disk_network_access](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azurerm_dev_test_global_vm_shutdown_schedule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule) (resource)
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
@@ -138,7 +135,6 @@ The following resources are used by this module:
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [tls_private_key.this](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) (resource)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
-- [azapi_resource.backup_item](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
 - [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -2129,6 +2125,12 @@ Description:     The default attributes exported by the azurerm provider.  These
 ## Modules
 
 The following Modules are called:
+
+### <a name="module_backup"></a> [backup](#module\_backup)
+
+Source: ./modules/backup
+
+Version:
 
 ### <a name="module_extension"></a> [extension](#module\_extension)
 
