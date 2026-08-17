@@ -48,13 +48,41 @@ resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
   }
 }
 
+moved {
+  from = azurerm_management_lock.this_public_ip
+  to   = azapi_resource.this_public_ip_lock
+}
+
 #configure locks on each public IP that has been created if lock values are set.
-resource "azurerm_management_lock" "this_public_ip" {
+resource "azapi_resource" "this_public_ip_lock" {
   for_each = { for key, values in local.nics_ip_configs : key => values if((values.ipconfig.create_public_ip_address == true) && (var.public_ip_configuration_details.lock_level != null)) }
 
-  lock_level = var.public_ip_configuration_details.lock_level
-  name       = coalesce(each.value.ipconfig.public_ip_address_lock_name, "${each.key}-lock")
-  scope      = azurerm_public_ip.virtualmachine_public_ips[each.key].id
+  name      = coalesce(each.value.ipconfig.public_ip_address_lock_name, "${each.key}-lock")
+  parent_id = azurerm_public_ip.virtualmachine_public_ips[each.key].id
+  type      = var.resource_types.authorization_locks
+  body = {
+    properties = {
+      level = var.public_ip_configuration_details.lock_level
+    }
+  }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = []
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 
   depends_on = [
     azurerm_network_interface.virtualmachine_network_interfaces,
@@ -62,15 +90,43 @@ resource "azurerm_management_lock" "this_public_ip" {
     azurerm_linux_virtual_machine.this,
     azurerm_windows_virtual_machine.this
   ]
+}
+
+moved {
+  from = azurerm_management_lock.this_nic
+  to   = azapi_resource.this_nic_lock
 }
 
 #configure resource locks on each NIC if the lock values are set
-resource "azurerm_management_lock" "this_nic" {
+resource "azapi_resource" "this_nic_lock" {
   for_each = { for nic, nicvalues in var.network_interfaces : nic => nicvalues if nicvalues.lock_level != null }
 
-  lock_level = each.value.lock_level
-  name       = coalesce(each.value.lock_name, "${each.key}-lock")
-  scope      = azurerm_network_interface.virtualmachine_network_interfaces[each.key].id
+  name      = coalesce(each.value.lock_name, "${each.key}-lock")
+  parent_id = azurerm_network_interface.virtualmachine_network_interfaces[each.key].id
+  type      = var.resource_types.authorization_locks
+  body = {
+    properties = {
+      level = each.value.lock_level
+    }
+  }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = []
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 
   depends_on = [
     azurerm_network_interface.virtualmachine_network_interfaces,
@@ -80,52 +136,69 @@ resource "azurerm_management_lock" "this_nic" {
   ]
 }
 
-#assign permissions to the network interface and/or public ip if enabled and role assignments included
-resource "azurerm_role_assignment" "this_network_interface" {
-  for_each = local.nics_role_assignments
-
-  principal_id                           = each.value.role_assignment.principal_id
-  scope                                  = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
-  condition                              = each.value.role_assignment.condition
-  condition_version                      = each.value.role_assignment.condition_version
-  delegated_managed_identity_resource_id = each.value.role_assignment.delegated_managed_identity_resource_id
-  principal_type                         = each.value.role_assignment.principal_type
-  role_definition_id                     = (length(split("/", each.value.role_assignment.role_definition_id_or_name))) > 3 ? each.value.role_assignment.role_definition_id_or_name : null
-  role_definition_name                   = (length(split("/", each.value.role_assignment.role_definition_id_or_name))) > 3 ? null : each.value.role_assignment.role_definition_id_or_name
-  skip_service_principal_aad_check       = each.value.role_assignment.skip_service_principal_aad_check
+moved {
+  from = azurerm_role_assignment.this_network_interface
+  to   = azapi_resource.this_network_interface_role_assignments
 }
 
-resource "azurerm_monitor_diagnostic_setting" "this_nic_diags" {
+#assign permissions to the network interface and/or public ip if enabled and role assignments included
+resource "azapi_resource" "this_network_interface_role_assignments" {
+  for_each = local.nics_role_assignments
+
+  name                   = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].name
+  parent_id              = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  type                   = var.resource_types.authorization_role_assignments
+  body                   = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].body
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_null_property   = true
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = []
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+}
+
+moved {
+  from = azurerm_monitor_diagnostic_setting.this_nic_diags
+  to   = azapi_resource.this_nic_diags
+}
+
+resource "azapi_resource" "this_nic_diags" {
   for_each = local.nics_diag_settings
 
-  name                           = each.value.diagnostic_setting.name
-  target_resource_id             = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
-  eventhub_authorization_rule_id = each.value.diagnostic_setting.event_hub_authorization_rule_resource_id
-  log_analytics_destination_type = each.value.diagnostic_setting.log_analytics_destination_type
-  log_analytics_workspace_id     = each.value.diagnostic_setting.workspace_resource_id
-  partner_solution_id            = each.value.diagnostic_setting.marketplace_partner_resource_id
-  storage_account_id             = each.value.diagnostic_setting.storage_account_resource_id
+  name                   = each.value.diagnostic_setting.name
+  parent_id              = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  type                   = var.resource_types.insights_diagnostic_settings
+  body                   = local.interface_diagnostic_settings_nic[each.key]
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_null_property   = true
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = []
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
-  dynamic "enabled_log" {
-    for_each = each.value.diagnostic_setting.log_categories
-
-    content {
-      category = enabled_log.value
-    }
-  }
-  dynamic "enabled_log" {
-    for_each = each.value.diagnostic_setting.log_groups
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
-      category_group = enabled_log.value
-    }
-  }
-
-  dynamic "metric" {
-    for_each = each.value.diagnostic_setting.metric_categories
-
-    content {
-      category = metric.value
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
     }
   }
 }

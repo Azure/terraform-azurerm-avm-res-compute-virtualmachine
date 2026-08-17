@@ -66,34 +66,70 @@ resource "azurerm_key_vault_secret" "admin_ssh_key" {
   }
 }
 
+moved {
+  from = azurerm_role_assignment.system_managed_identity
+  to   = azapi_resource.system_managed_identity_role_assignments
+}
+
 #assign permissions to the managed identity if enabled and role assignments included
-resource "azurerm_role_assignment" "system_managed_identity" {
+resource "azapi_resource" "system_managed_identity_role_assignments" {
   for_each = var.role_assignments_system_managed_identity
 
-  principal_id                           = local.system_managed_identity_id
-  scope                                  = each.value.scope_resource_id
-  condition                              = each.value.condition
-  condition_version                      = each.value.condition_version
-  delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id
-  description                            = each.value.description
-  principal_type                         = each.value.principal_type
-  role_definition_id                     = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? each.value.role_definition_id_or_name : null
-  role_definition_name                   = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? null : each.value.role_definition_id_or_name
-  skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
+  name                   = module.avm_utl_interfaces.role_assignments_azapi["smi-${each.key}"].name
+  parent_id              = each.value.scope_resource_id
+  type                   = var.resource_types.authorization_role_assignments
+  body                   = module.avm_utl_interfaces.role_assignments_azapi["smi-${each.key}"].body
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_null_property   = true
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = []
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+}
+
+moved {
+  from = azurerm_role_assignment.this_virtual_machine
+  to   = azapi_resource.this_virtual_machine_role_assignments
 }
 
 #assign permissions to the virtual machine if enabled and role assignments included
-resource "azurerm_role_assignment" "this_virtual_machine" {
+resource "azapi_resource" "this_virtual_machine_role_assignments" {
   for_each = var.role_assignments
 
-  principal_id                           = each.value.principal_id
-  scope                                  = local.virtualmachine_resource_id
-  condition                              = each.value.condition
-  condition_version                      = each.value.condition_version
-  delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id
-  description                            = each.value.description
-  principal_type                         = each.value.principal_type
-  role_definition_id                     = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? each.value.role_definition_id_or_name : null
-  role_definition_name                   = (length(split("/", each.value.role_definition_id_or_name))) > 3 ? null : each.value.role_definition_id_or_name
-  skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
+  name                   = module.avm_utl_interfaces.role_assignments_azapi["vm-${each.key}"].name
+  parent_id              = local.virtualmachine_resource_id
+  type                   = var.resource_types.authorization_role_assignments
+  body                   = module.avm_utl_interfaces.role_assignments_azapi["vm-${each.key}"].body
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_null_property   = true
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = []
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }

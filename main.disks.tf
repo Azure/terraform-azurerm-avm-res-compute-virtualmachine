@@ -103,13 +103,41 @@ moved {
   to   = azurerm_management_lock.this_disk
 }
 
+moved {
+  from = azurerm_management_lock.this_disk
+  to   = azapi_resource.this_disk_lock
+}
+
 #configure resource locks on each Data Disk if the lock values are set. Set explicit dependencies on the attachments and vm's to ensure provisioning is complete prior to setting resource locks
-resource "azurerm_management_lock" "this_disk" {
+resource "azapi_resource" "this_disk_lock" {
   for_each = { for disk, diskvalues in var.data_disk_managed_disks : disk => diskvalues if diskvalues.lock_level != null }
 
-  lock_level = each.value.lock_level
-  name       = coalesce(each.value.lock_name, "${each.key}-lock")
-  scope      = azurerm_managed_disk.this[each.key].id
+  name      = coalesce(each.value.lock_name, "${each.key}-lock")
+  parent_id = azurerm_managed_disk.this[each.key].id
+  type      = var.resource_types.authorization_locks
+  body = {
+    properties = {
+      level = each.value.lock_level
+    }
+  }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = []
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 
   depends_on = [
     azurerm_virtual_machine_data_disk_attachment.this_linux,
@@ -119,16 +147,44 @@ resource "azurerm_management_lock" "this_disk" {
   ]
 }
 
+moved {
+  from = azurerm_management_lock.this_os_disk
+  to   = azapi_resource.this_os_disk_lock
+}
+
 #configure a resource lock on the OS Disk if the lock values are set. The OS Disk is an inline block on the virtual
 #machine resource, so the lock is scoped to the disk id read back off the created virtual machine. The dependencies
 #ensure the disk is fully provisioned before a lock is applied, since a ReadOnly lock blocks subsequent writes.
-resource "azurerm_management_lock" "this_os_disk" {
+resource "azapi_resource" "this_os_disk_lock" {
   count = var.os_disk.lock_level != null ? 1 : 0
 
-  lock_level = var.os_disk.lock_level
-  name       = coalesce(var.os_disk.lock_name, "${var.name}-os-disk-lock")
-  scope      = local.os_disk_resource_id
-  notes      = var.os_disk.lock_level == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+  name      = coalesce(var.os_disk.lock_name, "${var.name}-os-disk-lock")
+  parent_id = local.os_disk_resource_id
+  type      = var.resource_types.authorization_locks
+  body = {
+    properties = {
+      level = var.os_disk.lock_level
+      notes = local.interface_lock_notes[var.os_disk.lock_level]
+    }
+  }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = []
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 
   depends_on = [
     azurerm_virtual_machine_data_disk_attachment.this_linux,
@@ -139,17 +195,36 @@ resource "azurerm_management_lock" "this_os_disk" {
   ]
 }
 
+moved {
+  from = azurerm_role_assignment.disks
+  to   = azapi_resource.disks_role_assignments
+}
+
 #assign permissions to the virtual machine if enabled and role assignments included
-resource "azurerm_role_assignment" "disks" {
+resource "azapi_resource" "disks_role_assignments" {
   for_each = local.disks_role_assignments
 
-  principal_id                           = each.value.role_assignment.principal_id
-  scope                                  = azurerm_managed_disk.this[each.value.disk_key].id
-  condition                              = each.value.role_assignment.condition
-  condition_version                      = each.value.role_assignment.condition_version
-  delegated_managed_identity_resource_id = each.value.role_assignment.delegated_managed_identity_resource_id
-  principal_type                         = each.value.role_assignment.principal_type
-  role_definition_id                     = (length(split("/", each.value.role_assignment.role_definition_id_or_name))) > 3 ? each.value.role_assignment.role_definition_id_or_name : null
-  role_definition_name                   = (length(split("/", each.value.role_assignment.role_definition_id_or_name))) > 3 ? null : each.value.role_assignment.role_definition_id_or_name
-  skip_service_principal_aad_check       = each.value.role_assignment.skip_service_principal_aad_check
+  name                   = module.avm_utl_interfaces.role_assignments_azapi["disk-${each.key}"].name
+  parent_id              = azurerm_managed_disk.this[each.value.disk_key].id
+  type                   = var.resource_types.authorization_role_assignments
+  body                   = module.avm_utl_interfaces.role_assignments_azapi["disk-${each.key}"].body
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_null_property   = true
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = []
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
