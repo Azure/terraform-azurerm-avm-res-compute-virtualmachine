@@ -8,6 +8,9 @@ mock_provider "azurerm" {
 
   mock_resource "azurerm_linux_virtual_machine" {
     defaults = {
+      # AzAPI validates parent_id at plan time, so the mocked machine needs a well-formed resource
+      # ID. The azurerm lock accepted the generated placeholder; azapi_resource does not.
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-os-disk-lock"
       os_disk = {
         id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/vm-os-disk-lock-osdisk"
       }
@@ -54,7 +57,7 @@ run "os_disk_lock_not_created_by_default" {
   command = apply
 
   assert {
-    condition     = length(azurerm_management_lock.this_os_disk) == 0
+    condition     = length(azapi_resource.this_os_disk_lock) == 0
     error_message = "The OS disk lock must not be created when os_disk lock_level is not supplied."
   }
 }
@@ -69,7 +72,7 @@ run "os_disk_lock_is_not_inherited_from_the_resource_level_lock" {
   }
 
   assert {
-    condition     = length(azurerm_management_lock.this_os_disk) == 0
+    condition     = length(azapi_resource.this_os_disk_lock) == 0
     error_message = "The OS disk lock must not be inherited from the resource level lock variable."
   }
 }
@@ -86,19 +89,19 @@ run "os_disk_lock_cannot_delete" {
   }
 
   assert {
-    condition     = length(azurerm_management_lock.this_os_disk) == 1
+    condition     = length(azapi_resource.this_os_disk_lock) == 1
     error_message = "The OS disk lock must be created when os_disk lock_level is supplied."
   }
   assert {
-    condition     = azurerm_management_lock.this_os_disk[0].lock_level == "CanNotDelete"
+    condition     = azapi_resource.this_os_disk_lock[0].body.properties.level == "CanNotDelete"
     error_message = "The OS disk lock must use the supplied lock_level."
   }
   assert {
-    condition     = azurerm_management_lock.this_os_disk[0].name == "vm-os-disk-lock-os-disk-lock"
+    condition     = azapi_resource.this_os_disk_lock[0].name == "vm-os-disk-lock-os-disk-lock"
     error_message = "The OS disk lock name must be generated from the virtual machine name when lock_name is not supplied."
   }
   assert {
-    condition     = azurerm_management_lock.this_os_disk[0].scope == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/vm-os-disk-lock-osdisk"
+    condition     = azapi_resource.this_os_disk_lock[0].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/vm-os-disk-lock-osdisk"
     error_message = "The OS disk lock must be scoped to the OS disk resource id, not the virtual machine."
   }
 }
@@ -116,11 +119,11 @@ run "os_disk_lock_read_only_with_custom_name" {
   }
 
   assert {
-    condition     = azurerm_management_lock.this_os_disk[0].lock_level == "ReadOnly"
+    condition     = azapi_resource.this_os_disk_lock[0].body.properties.level == "ReadOnly"
     error_message = "The OS disk lock must support a ReadOnly lock level."
   }
   assert {
-    condition     = azurerm_management_lock.this_os_disk[0].name == "custom-os-disk-lock"
+    condition     = azapi_resource.this_os_disk_lock[0].name == "custom-os-disk-lock"
     error_message = "The OS disk lock must use the supplied lock_name when one is provided."
   }
 }
