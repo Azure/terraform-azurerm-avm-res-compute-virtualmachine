@@ -99,21 +99,25 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.disks_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.system_managed_identity_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_disk_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_linux_virtualmachine_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_maintenance_configuration_assignment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_network_interface_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_nic_diags](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_nic_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_os_disk_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_public_ip_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_virtual_machine_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_vm_diags](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_windows_virtualmachine_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_update_resource.this_os_disk_network_access](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azurerm_dev_test_global_vm_shutdown_schedule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule) (resource)
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_linux_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine) (resource)
 - [azurerm_managed_disk.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/managed_disk) (resource)
-- [azurerm_management_lock.this_disk](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_management_lock.this_linux_virtualmachine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_management_lock.this_nic](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_management_lock.this_os_disk](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_management_lock.this_public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_management_lock.this_windows_virtualmachine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_monitor_diagnostic_setting.this_nic_diags](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
-- [azurerm_monitor_diagnostic_setting.this_vm_diags](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_network_interface.virtualmachine_network_interfaces](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface) (resource)
 - [azurerm_network_interface_application_gateway_backend_address_pool_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_application_gateway_backend_address_pool_association) (resource)
 - [azurerm_network_interface_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_application_security_group_association) (resource)
@@ -121,10 +125,6 @@ The following resources are used by this module:
 - [azurerm_network_interface_nat_rule_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_nat_rule_association) (resource)
 - [azurerm_network_interface_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_security_group_association) (resource)
 - [azurerm_public_ip.virtualmachine_public_ips](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
-- [azurerm_role_assignment.disks](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
-- [azurerm_role_assignment.system_managed_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
-- [azurerm_role_assignment.this_network_interface](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
-- [azurerm_role_assignment.this_virtual_machine](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux_existing](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_windows](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
@@ -920,34 +920,6 @@ Type: `bool`
 
 Default: `false`
 
-### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
-
-Description: Body-relative paths whose changes the AzAPI provider ignores, per resource. Paths use dot notation,  
-for example `properties.maintenanceConfigurationId`. Individual list items cannot be targeted;  
-ignore the whole list property instead.
-
-Configuration changes at an ignored path are not sent to Azure until that path is removed from the  
-list. Because the value is held in provider-private state, a change takes effect only after an  
-apply.
-
-- `maintenance_configuration_assignments` - Ignored body paths for the maintenance configuration assignments.
-- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
-- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
-
-Type:
-
-```hcl
-object({
-    maintenance_configuration_assignments = optional(list(string), [])
-
-    recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
-      recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
-    }), {})
-  })
-```
-
-Default: `{}`
-
 ### <a name="input_license_type"></a> [license\_type](#input\_license\_type)
 
 Description: (Optional) For Linux virtual machine specifies the BYOL Type for this Virtual Machine, possible values are `RHEL_BYOS` and `SLES_BYOS`. For Windows virtual machine specifies the type of on-premise license (also known as [Azure Hybrid Use Benefit](https://docs.microsoft.com/windows-server/get-started/azure-hybrid-benefit)) which should be used for this Virtual Machine, possible values are `None`, `Windows_Client` and `Windows_Server`.
@@ -1546,25 +1518,19 @@ Default: `null`
 
 ### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
 
-Description: Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key  
-defaults to a tested value; supply only the keys you want to override. Useful when targeting a  
-sovereign cloud with older API versions, or when opting into a newer preview API.
+Description: AzAPI resource types and API versions used by the module.
 
-- `maintenance_configuration_assignments` - Maintenance configuration assignments applied to the virtual machine.
-- `compute_disks` - The managed disk type used when updating the OS disk network access settings.
-- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
-- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
+- `authorization_locks` - Resource type and API version for management locks.
+- `authorization_role_assignments` - Resource type and API version for role assignments.
+- `insights_diagnostic_settings` - Resource type and API version for diagnostic settings.
 
 Type:
 
 ```hcl
 object({
-    maintenance_configuration_assignments = optional(string, "Microsoft.Maintenance/configurationAssignments@2023-04-01")
-    compute_disks                         = optional(string, "Microsoft.Compute/disks@2024-03-02")
-
-    recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
-      recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string)
-    }), {})
+    authorization_locks            = optional(string, "Microsoft.Authorization/locks@2020-05-01")
+    authorization_role_assignments = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
+    insights_diagnostic_settings   = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
   })
 ```
 
@@ -1572,22 +1538,23 @@ Default: `{}`
 
 ### <a name="input_retry"></a> [retry](#input\_retry)
 
-Description: Retry configuration applied to every AzAPI resource managed by the module and its submodules.  
-Defaults to `null` (no custom retry).
+Description: Retry configuration applied to the AzAPI resources managed by this module.
 
-- `error_message_regex` - (Optional) A list of regex patterns matching error messages that trigger a retry.
-- `interval_seconds` - (Optional) Initial interval between retries in seconds.
-- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
-
-See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource#retry> for full semantics.
+- `error_message_regex` - (Optional) A list of regular expressions matched against the error message. Retries occur only on a match.
+- `interval_seconds` - (Optional) The initial interval between retries.
+- `max_interval_seconds` - (Optional) The maximum interval between retries.
+- `multiplier` - (Optional) The multiplier applied to the interval after each retry.
+- `randomization_factor` - (Optional) The randomization applied to the interval to avoid synchronised retries.
 
 Type:
 
 ```hcl
 object({
-    error_message_regex  = optional(list(string))
-    interval_seconds     = optional(number)
-    max_interval_seconds = optional(number)
+    error_message_regex  = optional(list(string), ["ReferencedResourceNotProvisioned"])
+    interval_seconds     = optional(number, 10)
+    max_interval_seconds = optional(number, 180)
+    multiplier           = optional(number, 1.5)
+    randomization_factor = optional(number, 0.5)
   })
 ```
 
@@ -2004,61 +1971,57 @@ Default: `null`
 
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 
-Description: Default per-operation timeouts applied to every AzAPI resource managed by the module and its  
-submodules, and used as the fallback for the extension and run command resources. Defaults to
-`null` (provider defaults). Each value is a Go duration string, for example `30m` or `1h`.
+Description: A map of timeouts to apply to the creation and destruction of resources.  
+If using retry, the maximum elapsed retry time is governed by this value.
 
-Extensions and run commands resolve their timeouts in this order: the per-item `timeouts` on the  
-individual `extensions` or `run_commands` entry, then the deprecated
-`timeouts_by_resource_type` input, then this variable.
+The object has attributes for each resource type, with the following optional attributes:
 
-- `create` - (Optional) Timeout for create operations.
-- `read` - (Optional) Timeout for read operations.
-- `update` - (Optional) Timeout for update operations.
-- `delete` - (Optional) Timeout for delete operations.
+- `create` - (Optional) The timeout for creating the resource.
+- `delete` - (Optional) The timeout for deleting the resource.
+- `update` - (Optional) The timeout for updating the resource.
+- `read` - (Optional) The timeout for reading the resource.
 
-Type:
-
-```hcl
-object({
-    create = optional(string)
-    read   = optional(string)
-    update = optional(string)
-    delete = optional(string)
-  })
-```
-
-Default: `null`
-
-### <a name="input_timeouts_by_resource_type"></a> [timeouts\_by\_resource\_type](#input\_timeouts\_by\_resource\_type)
-
-Description: DEPRECATED: This input carries the per-resource-type timeouts that `timeouts` used to hold. The
-`timeouts` input now takes the flat AVM shape required by TFFR7, which applies to every AzAPI  
-resource in the module, so the per-resource-type form moved here. This input will be removed with  
-the release of version v1.0.0; prefer the per-item `timeouts` on an individual `extensions` or
-`run_commands` entry, or the module-wide `timeouts` input.
-
-Values here take precedence over `timeouts` and are overridden by a per-item `timeouts`.
-
-- `azurerm_virtual_machine_extension` - Timeouts applied to virtual machine extensions.
-- `azurerm_virtual_machine_run_command` - Timeouts applied to virtual machine run commands.
+Each time duration is parsed using this function: <https://pkg.go.dev/time#ParseDuration>.
 
 Type:
 
 ```hcl
 object({
     azurerm_virtual_machine_extension = optional(object({
-      create = optional(string)
-      delete = optional(string)
-      update = optional(string)
-      read   = optional(string)
-    }), {})
+      create = optional(string, "30m")
+      delete = optional(string, "30m")
+      update = optional(string, "30m")
+      read   = optional(string, "5m")
+      }), {}
+    )
     azurerm_virtual_machine_run_command = optional(object({
-      create = optional(string)
-      delete = optional(string)
-      update = optional(string)
-      read   = optional(string)
-    }), {})
+      create = optional(string, "30m")
+      delete = optional(string, "30m")
+      update = optional(string, "30m")
+      read   = optional(string, "5m")
+      }), {}
+    )
+    authorization_locks = optional(object({
+      create = optional(string, "30m")
+      delete = optional(string, "30m")
+      update = optional(string, "30m")
+      read   = optional(string, "5m")
+      }), {}
+    )
+    authorization_role_assignments = optional(object({
+      create = optional(string, "30m")
+      delete = optional(string, "30m")
+      update = optional(string, "30m")
+      read   = optional(string, "5m")
+      }), {}
+    )
+    insights_diagnostic_settings = optional(object({
+      create = optional(string, "30m")
+      delete = optional(string, "30m")
+      update = optional(string, "30m")
+      read   = optional(string, "5m")
+      }), {}
+    )
   })
 ```
 
@@ -2227,6 +2190,12 @@ Description:     The default attributes exported by the azurerm provider.  These
 ## Modules
 
 The following Modules are called:
+
+### <a name="module_avm_utl_interfaces"></a> [avm\_utl\_interfaces](#module\_avm\_utl\_interfaces)
+
+Source: Azure/avm-utl-interfaces/azure
+
+Version: 0.6.0
 
 ### <a name="module_backup"></a> [backup](#module\_backup)
 
