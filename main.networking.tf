@@ -145,15 +145,18 @@ moved {
 resource "azapi_resource" "this_network_interface_role_assignments" {
   for_each = local.nics_role_assignments
 
-  name                   = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].name
-  parent_id              = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
-  type                   = var.resource_types.authorization_role_assignments
-  body                   = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].body
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  ignore_null_property   = true
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  replace_triggers_refs  = []
+  name                 = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].name
+  parent_id            = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  type                 = var.resource_types.authorization_role_assignments
+  body                 = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].body
+  create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_null_property = true
+  read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  # Azure cannot change the principal or role definition of an existing role assignment, and the
+  # azurerm resource treated both as ForceNew. The generated name is stable across such a change, so
+  # without this the module would plan an in-place update that Azure rejects.
+  replace_triggers_refs  = ["properties.principalId", "properties.roleDefinitionId"]
   response_export_values = []
   retry                  = var.retry
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null

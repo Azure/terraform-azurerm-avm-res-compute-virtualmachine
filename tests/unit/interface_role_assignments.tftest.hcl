@@ -115,6 +115,13 @@ run "virtual_machine_role_assignment_is_scoped_to_the_machine" {
     condition     = azapi_resource.this_virtual_machine_role_assignments["vm_reader"].body.properties.principalType == "User"
     error_message = "The principal type must be carried into the body."
   }
+  # AzureRM treated principal and role definition as ForceNew. Under AzAPI they live in the body and
+  # the generated name is stable, so replacement has to be requested explicitly or the module plans
+  # an in-place update that Azure rejects.
+  assert {
+    condition     = contains(azapi_resource.this_virtual_machine_role_assignments["vm_reader"].replace_triggers_refs, "properties.principalId") && contains(azapi_resource.this_virtual_machine_role_assignments["vm_reader"].replace_triggers_refs, "properties.roleDefinitionId")
+    error_message = "Changing the principal or role definition must force replacement, matching the previous azurerm behaviour."
+  }
 }
 
 run "network_interface_role_assignment_is_scoped_to_the_interface" {

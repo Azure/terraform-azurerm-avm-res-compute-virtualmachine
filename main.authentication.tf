@@ -75,15 +75,18 @@ moved {
 resource "azapi_resource" "system_managed_identity_role_assignments" {
   for_each = var.role_assignments_system_managed_identity
 
-  name                   = module.avm_utl_interfaces.role_assignments_azapi["smi-${each.key}"].name
-  parent_id              = each.value.scope_resource_id
-  type                   = var.resource_types.authorization_role_assignments
-  body                   = module.avm_utl_interfaces.role_assignments_azapi["smi-${each.key}"].body
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  ignore_null_property   = true
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  replace_triggers_refs  = []
+  name                 = module.avm_utl_interfaces.role_assignments_azapi["smi-${each.key}"].name
+  parent_id            = each.value.scope_resource_id
+  type                 = var.resource_types.authorization_role_assignments
+  body                 = module.avm_utl_interfaces.role_assignments_azapi["smi-${each.key}"].body
+  create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_null_property = true
+  read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  # Azure cannot change the principal or role definition of an existing role assignment, and the
+  # azurerm resource treated both as ForceNew. The generated name is stable across such a change, so
+  # without this the module would plan an in-place update that Azure rejects.
+  replace_triggers_refs  = ["properties.principalId", "properties.roleDefinitionId"]
   response_export_values = []
   retry                  = var.retry
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
@@ -115,15 +118,18 @@ moved {
 resource "azapi_resource" "this_virtual_machine_role_assignments" {
   for_each = var.role_assignments
 
-  name                   = module.avm_utl_interfaces.role_assignments_azapi["vm-${each.key}"].name
-  parent_id              = local.virtualmachine_resource_id
-  type                   = var.resource_types.authorization_role_assignments
-  body                   = module.avm_utl_interfaces.role_assignments_azapi["vm-${each.key}"].body
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  ignore_null_property   = true
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  replace_triggers_refs  = []
+  name                 = module.avm_utl_interfaces.role_assignments_azapi["vm-${each.key}"].name
+  parent_id            = local.virtualmachine_resource_id
+  type                 = var.resource_types.authorization_role_assignments
+  body                 = module.avm_utl_interfaces.role_assignments_azapi["vm-${each.key}"].body
+  create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_null_property = true
+  read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  # Azure cannot change the principal or role definition of an existing role assignment, and the
+  # azurerm resource treated both as ForceNew. The generated name is stable across such a change, so
+  # without this the module would plan an in-place update that Azure rejects.
+  replace_triggers_refs  = ["properties.principalId", "properties.roleDefinitionId"]
   response_export_values = []
   retry                  = var.retry
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
