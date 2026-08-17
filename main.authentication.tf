@@ -75,10 +75,16 @@ moved {
 resource "azapi_resource" "system_managed_identity_role_assignments" {
   for_each = var.role_assignments_system_managed_identity
 
-  name                   = module.avm_utl_interfaces.role_assignments_azapi["smi-${each.key}"].name
-  parent_id              = each.value.scope_resource_id
-  type                   = var.resource_types.authorization_role_assignments
-  body                   = module.avm_utl_interfaces.role_assignments_azapi["smi-${each.key}"].body
+  name      = module.avm_utl_interfaces.role_assignments_azapi["smi-${each.key}"].name
+  parent_id = each.value.scope_resource_id
+  type      = var.resource_types.authorization_role_assignments
+  body      = module.avm_utl_interfaces.role_assignments_azapi["smi-${each.key}"].body
+
+  lifecycle {
+    # See the note on azapi_resource.disks_role_assignments: the generated GUID name would force a
+    # replacement, and deleting an assignment under a CanNotDelete lock fails with ScopeLocked.
+    ignore_changes = [name]
+  }
   create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_null_property   = true
@@ -109,10 +115,16 @@ moved {
 resource "azapi_resource" "this_virtual_machine_role_assignments" {
   for_each = var.role_assignments
 
-  name                   = module.avm_utl_interfaces.role_assignments_azapi["vm-${each.key}"].name
-  parent_id              = local.virtualmachine_resource_id
-  type                   = var.resource_types.authorization_role_assignments
-  body                   = module.avm_utl_interfaces.role_assignments_azapi["vm-${each.key}"].body
+  name      = module.avm_utl_interfaces.role_assignments_azapi["vm-${each.key}"].name
+  parent_id = local.virtualmachine_resource_id
+  type      = var.resource_types.authorization_role_assignments
+  body      = module.avm_utl_interfaces.role_assignments_azapi["vm-${each.key}"].body
+
+  lifecycle {
+    # See the note on azapi_resource.disks_role_assignments: the generated GUID name would force a
+    # replacement, and deleting an assignment under a CanNotDelete lock fails with ScopeLocked.
+    ignore_changes = [name]
+  }
   create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_null_property   = true

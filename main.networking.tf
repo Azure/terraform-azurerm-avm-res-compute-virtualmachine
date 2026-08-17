@@ -145,10 +145,16 @@ moved {
 resource "azapi_resource" "this_network_interface_role_assignments" {
   for_each = local.nics_role_assignments
 
-  name                   = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].name
-  parent_id              = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
-  type                   = var.resource_types.authorization_role_assignments
-  body                   = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].body
+  name      = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].name
+  parent_id = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  type      = var.resource_types.authorization_role_assignments
+  body      = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].body
+
+  lifecycle {
+    # See the note on azapi_resource.disks_role_assignments: the generated GUID name would force a
+    # replacement, and deleting an assignment under a CanNotDelete lock fails with ScopeLocked.
+    ignore_changes = [name]
+  }
   create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_null_property   = true

@@ -204,10 +204,19 @@ moved {
 resource "azapi_resource" "disks_role_assignments" {
   for_each = local.disks_role_assignments
 
-  name                   = module.avm_utl_interfaces.role_assignments_azapi["disk-${each.key}"].name
-  parent_id              = azurerm_managed_disk.this[each.value.disk_key].id
-  type                   = var.resource_types.authorization_role_assignments
-  body                   = module.avm_utl_interfaces.role_assignments_azapi["disk-${each.key}"].body
+  name      = module.avm_utl_interfaces.role_assignments_azapi["disk-${each.key}"].name
+  parent_id = azurerm_managed_disk.this[each.value.disk_key].id
+  type      = var.resource_types.authorization_role_assignments
+  body      = module.avm_utl_interfaces.role_assignments_azapi["disk-${each.key}"].body
+
+  lifecycle {
+    # ARM requires a GUID name. AzureRM generated a random one that configuration cannot observe, so
+    # a fresh GUID is computed here and would force replacement. Replacement is not merely a brief
+    # permissions gap: deleting a role assignment scoped to a resource that carries a CanNotDelete
+    # lock fails with ScopeLocked, which aborts the upgrade partway through. Keep whatever name the
+    # assignment already has; the value is an opaque identifier that no consumer should need to set.
+    ignore_changes = [name]
+  }
   create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_null_property   = true
