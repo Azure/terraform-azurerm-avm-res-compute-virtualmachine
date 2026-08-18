@@ -181,10 +181,10 @@ resource "azapi_resource" "this_network_interface_role_assignments" {
 
 moved {
   from = azurerm_monitor_diagnostic_setting.this_nic_diags
-  to   = azapi_resource.this_nic_diags
+  to   = azapi_resource.this_network_interface_diagnostic_settings
 }
 
-resource "azapi_resource" "this_nic_diags" {
+resource "azapi_resource" "this_network_interface_diagnostic_settings" {
   for_each = local.nics_diag_settings
 
   name                   = each.value.diagnostic_setting.name

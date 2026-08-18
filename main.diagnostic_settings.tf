@@ -1,9 +1,9 @@
 moved {
   from = azurerm_monitor_diagnostic_setting.this_vm_diags
-  to   = azapi_resource.this_vm_diags
+  to   = azapi_resource.this_virtual_machine_diagnostic_settings
 }
 
-resource "azapi_resource" "this_vm_diags" {
+resource "azapi_resource" "this_virtual_machine_diagnostic_settings" {
   for_each = var.diagnostic_settings
 
   name                   = each.value.name

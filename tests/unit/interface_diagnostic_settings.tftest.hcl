@@ -55,7 +55,7 @@ run "diagnostic_settings_not_created_by_default" {
   command = apply
 
   assert {
-    condition     = length(azapi_resource.this_vm_diags) == 0 && length(azapi_resource.this_nic_diags) == 0
+    condition     = length(azapi_resource.this_virtual_machine_diagnostic_settings) == 0 && length(azapi_resource.this_network_interface_diagnostic_settings) == 0
     error_message = "No diagnostic settings must be created when none are supplied."
   }
 }
@@ -76,31 +76,31 @@ run "virtual_machine_diagnostic_setting_body" {
   }
 
   assert {
-    condition     = azapi_resource.this_vm_diags["vm_diags"].name == "vm-diag"
+    condition     = azapi_resource.this_virtual_machine_diagnostic_settings["vm_diags"].name == "vm-diag"
     error_message = "The diagnostic setting must use the supplied name."
   }
   assert {
-    condition     = azapi_resource.this_vm_diags["vm_diags"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-diags"
+    condition     = azapi_resource.this_virtual_machine_diagnostic_settings["vm_diags"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-diags"
     error_message = "The virtual machine diagnostic setting must be parented to the virtual machine."
   }
   assert {
-    condition     = azapi_resource.this_vm_diags["vm_diags"].body.properties.workspaceId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.OperationalInsights/workspaces/law-test"
+    condition     = azapi_resource.this_virtual_machine_diagnostic_settings["vm_diags"].body.properties.workspaceId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.OperationalInsights/workspaces/law-test"
     error_message = "The workspace resource id must be mapped to workspaceId."
   }
   assert {
-    condition     = length(azapi_resource.this_vm_diags["vm_diags"].body.properties.metrics) == 1 && azapi_resource.this_vm_diags["vm_diags"].body.properties.metrics[0].category == "AllMetrics"
+    condition     = length(azapi_resource.this_virtual_machine_diagnostic_settings["vm_diags"].body.properties.metrics) == 1 && azapi_resource.this_virtual_machine_diagnostic_settings["vm_diags"].body.properties.metrics[0].category == "AllMetrics"
     error_message = "Metric categories must be expanded into discrete metric objects."
   }
   assert {
-    condition     = length(azapi_resource.this_vm_diags["vm_diags"].body.properties.logs) == 2
+    condition     = length(azapi_resource.this_virtual_machine_diagnostic_settings["vm_diags"].body.properties.logs) == 2
     error_message = "Log categories and log groups must both be expanded into the logs collection."
   }
   assert {
-    condition     = length([for l in azapi_resource.this_vm_diags["vm_diags"].body.properties.logs : l if l.category == "Audit" && l.categoryGroup == null]) == 1
+    condition     = length([for l in azapi_resource.this_virtual_machine_diagnostic_settings["vm_diags"].body.properties.logs : l if l.category == "Audit" && l.categoryGroup == null]) == 1
     error_message = "A log category must be emitted as category with a null categoryGroup."
   }
   assert {
-    condition     = length([for l in azapi_resource.this_vm_diags["vm_diags"].body.properties.logs : l if l.categoryGroup == "allLogs" && l.category == null]) == 1
+    condition     = length([for l in azapi_resource.this_virtual_machine_diagnostic_settings["vm_diags"].body.properties.logs : l if l.categoryGroup == "allLogs" && l.category == null]) == 1
     error_message = "A log group must be emitted as categoryGroup with a null category."
   }
 }
@@ -124,7 +124,7 @@ run "virtual_machine_dedicated_destination_type_is_sent_as_null" {
   }
 
   assert {
-    condition     = azapi_resource.this_vm_diags["vm_diags"].body.properties.logAnalyticsDestinationType == null
+    condition     = azapi_resource.this_virtual_machine_diagnostic_settings["vm_diags"].body.properties.logAnalyticsDestinationType == null
     error_message = "The virtual machine diagnostic setting must send a null destination type for Dedicated, preserving the previous azurerm behaviour."
   }
 }
@@ -143,7 +143,7 @@ run "virtual_machine_azure_diagnostics_destination_type_is_preserved" {
   }
 
   assert {
-    condition     = azapi_resource.this_vm_diags["vm_diags"].body.properties.logAnalyticsDestinationType == "AzureDiagnostics"
+    condition     = azapi_resource.this_virtual_machine_diagnostic_settings["vm_diags"].body.properties.logAnalyticsDestinationType == "AzureDiagnostics"
     error_message = "A destination type other than Dedicated must be passed through unchanged."
   }
 }
@@ -173,15 +173,15 @@ run "network_interface_diagnostic_setting_body" {
   }
 
   assert {
-    condition     = azapi_resource.this_nic_diags["network_interface_1-nic_diags"].name == "nic-diag"
+    condition     = azapi_resource.this_network_interface_diagnostic_settings["network_interface_1-nic_diags"].name == "nic-diag"
     error_message = "The interface diagnostic setting must use the supplied name."
   }
   assert {
-    condition     = azapi_resource.this_nic_diags["network_interface_1-nic_diags"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
+    condition     = azapi_resource.this_network_interface_diagnostic_settings["network_interface_1-nic_diags"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
     error_message = "The interface diagnostic setting must be parented to its network interface, not the virtual machine."
   }
   assert {
-    condition     = azapi_resource.this_nic_diags["network_interface_1-nic_diags"].body.properties.logAnalyticsDestinationType == null
+    condition     = azapi_resource.this_network_interface_diagnostic_settings["network_interface_1-nic_diags"].body.properties.logAnalyticsDestinationType == null
     error_message = "The interface diagnostic setting must pass the destination type through unchanged, which is null when unset."
   }
 }
