@@ -1,49 +1,89 @@
+moved {
+  from = azurerm_public_ip.virtualmachine_public_ips
+  to   = azapi_resource.virtualmachine_public_ips
+}
+
 #create public ip(s) - Assumes each ip configuration has a unique name
-resource "azurerm_public_ip" "virtualmachine_public_ips" {
+resource "azapi_resource" "virtualmachine_public_ips" {
   for_each = { for key, values in local.nics_ip_configs : key => values if values.ipconfig.create_public_ip_address == true }
 
-  allocation_method       = var.public_ip_configuration_details.allocation_method
-  location                = var.location
-  name                    = each.value.ipconfig.public_ip_address_name
-  resource_group_name     = var.resource_group_name
-  ddos_protection_mode    = var.public_ip_configuration_details.ddos_protection_mode
-  ddos_protection_plan_id = var.public_ip_configuration_details.ddos_protection_plan_id
-  domain_name_label       = var.public_ip_configuration_details.domain_name_label
-  edge_zone               = var.edge_zone #var.public_ip_configuration_details.edge_zone
-  idle_timeout_in_minutes = var.public_ip_configuration_details.idle_timeout_in_minutes
-  ip_version              = var.public_ip_configuration_details.ip_version
-  sku                     = var.public_ip_configuration_details.sku
-  sku_tier                = var.public_ip_configuration_details.sku_tier
-  tags                    = var.public_ip_configuration_details.tags != null && var.public_ip_configuration_details != {} ? var.public_ip_configuration_details.tags : local.tags
-  zones                   = var.public_ip_configuration_details.zones #var.zone != null ? [var.zone] : [] #
+  location               = var.location
+  name                   = each.value.ipconfig.public_ip_address_name
+  parent_id              = local.public_ip_parent_id
+  type                   = var.resource_types.network_public_ip_addresses
+  body                   = local.public_ip_body
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.network_public_ip_addresses) > 0 ? var.ignore_body_changes.network_public_ip_addresses : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = ["properties.ipAddress", "properties.dnsSettings"]
+  retry                  = var.retry
+  tags                   = var.public_ip_configuration_details.tags != null ? var.public_ip_configuration_details.tags : local.tags
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition     = local.public_ip_parent_id != null
+      error_message = "Unable to determine the subscription for the public IP address. Set `parent_id` to the resource group resource ID, or supply `private_ip_subnet_resource_id` on at least one IP configuration so the subscription can be derived from it."
+    }
+  }
+}
+
+moved {
+  from = azurerm_network_interface.virtualmachine_network_interfaces
+  to   = azapi_resource.virtualmachine_network_interfaces
 }
 
 #create the Nics
-resource "azurerm_network_interface" "virtualmachine_network_interfaces" {
+resource "azapi_resource" "virtualmachine_network_interfaces" {
   for_each = var.network_interfaces
 
-  location                       = var.location
-  name                           = each.value.name
-  resource_group_name            = coalesce(each.value.resource_group_name, var.resource_group_name)
-  accelerated_networking_enabled = each.value.accelerated_networking_enabled
-  dns_servers                    = each.value.dns_servers
-  edge_zone                      = var.edge_zone #each.value.edge_zone
-  internal_dns_name_label        = each.value.internal_dns_name_label
-  ip_forwarding_enabled          = each.value.ip_forwarding_enabled
-  tags                           = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
+  location               = var.location
+  name                   = each.value.name
+  parent_id              = local.nic_parent_ids[each.key]
+  type                   = var.resource_types.network_network_interfaces
+  body                   = local.nic_bodies[each.key]
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.network_network_interfaces) > 0 ? var.ignore_body_changes.network_network_interfaces : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = ["properties.ipConfigurations", "properties.macAddress", "properties.virtualMachine", "properties.dnsSettings"]
+  retry                  = var.retry
+  tags                   = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
-  dynamic "ip_configuration" {
-    for_each = each.value.ip_configurations
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
-      name                                               = ip_configuration.value.name
-      private_ip_address_allocation                      = ip_configuration.value.private_ip_address_allocation
-      gateway_load_balancer_frontend_ip_configuration_id = ip_configuration.value.gateway_load_balancer_frontend_ip_configuration_resource_id
-      primary                                            = ip_configuration.value.is_primary_ipconfiguration
-      private_ip_address                                 = ip_configuration.value.private_ip_address
-      private_ip_address_version                         = ip_configuration.value.private_ip_address_version
-      public_ip_address_id                               = ip_configuration.value.create_public_ip_address ? azurerm_public_ip.virtualmachine_public_ips["${each.key}-${ip_configuration.key}"].id : ip_configuration.value.public_ip_address_resource_id
-      subnet_id                                          = ip_configuration.value.private_ip_subnet_resource_id
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition     = local.nic_parent_ids[each.key] != null
+      error_message = "Unable to determine the subscription for network interface '${each.key}'. Set `parent_id` to the resource group resource ID, or supply `private_ip_subnet_resource_id` on at least one IP configuration so the subscription can be derived from it."
+    }
+    precondition {
+      condition     = length(each.value.network_security_groups) <= 1
+      error_message = "Network interface '${each.key}' declares ${length(each.value.network_security_groups)} network security groups. ARM attaches at most one network security group to an interface, so only a single entry is supported."
     }
   }
 }
@@ -58,7 +98,7 @@ resource "azapi_resource" "this_public_ip_lock" {
   for_each = { for key, values in local.nics_ip_configs : key => values if((values.ipconfig.create_public_ip_address == true) && (var.public_ip_configuration_details.lock_level != null)) }
 
   name      = coalesce(each.value.ipconfig.public_ip_address_lock_name, "${each.key}-lock")
-  parent_id = azurerm_public_ip.virtualmachine_public_ips[each.key].id
+  parent_id = azapi_resource.virtualmachine_public_ips[each.key].id
   type      = var.resource_types.authorization_locks
   body = {
     properties = {
@@ -86,8 +126,8 @@ resource "azapi_resource" "this_public_ip_lock" {
   }
 
   depends_on = [
-    azurerm_network_interface.virtualmachine_network_interfaces,
-    azurerm_public_ip.virtualmachine_public_ips,
+    azapi_resource.virtualmachine_network_interfaces,
+    azapi_resource.virtualmachine_public_ips,
     azurerm_linux_virtual_machine.this,
     azurerm_windows_virtual_machine.this
   ]
@@ -103,7 +143,7 @@ resource "azapi_resource" "this_nic_lock" {
   for_each = { for nic, nicvalues in var.network_interfaces : nic => nicvalues if nicvalues.lock_level != null }
 
   name      = coalesce(each.value.lock_name, "${each.key}-lock")
-  parent_id = azurerm_network_interface.virtualmachine_network_interfaces[each.key].id
+  parent_id = azapi_resource.virtualmachine_network_interfaces[each.key].id
   type      = var.resource_types.authorization_locks
   body = {
     properties = {
@@ -131,8 +171,8 @@ resource "azapi_resource" "this_nic_lock" {
   }
 
   depends_on = [
-    azurerm_network_interface.virtualmachine_network_interfaces,
-    azurerm_public_ip.virtualmachine_public_ips,
+    azapi_resource.virtualmachine_network_interfaces,
+    azapi_resource.virtualmachine_public_ips,
     azurerm_linux_virtual_machine.this,
     azurerm_windows_virtual_machine.this
   ]
@@ -148,7 +188,7 @@ resource "azapi_resource" "this_network_interface_role_assignments" {
   for_each = local.nics_role_assignments
 
   name                 = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].name
-  parent_id            = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  parent_id            = azapi_resource.virtualmachine_network_interfaces[each.value.nic_key].id
   type                 = var.resource_types.authorization_role_assignments
   body                 = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].body
   create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
@@ -191,7 +231,7 @@ resource "azapi_resource" "this_network_interface_diagnostic_settings" {
   for_each = local.nics_diag_settings
 
   name                   = each.value.diagnostic_setting.name
-  parent_id              = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  parent_id              = azapi_resource.virtualmachine_network_interfaces[each.value.nic_key].id
   type                   = var.resource_types.insights_diagnostic_settings
   body                   = local.interface_diagnostic_settings_nic[each.key]
   create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
@@ -216,64 +256,49 @@ resource "azapi_resource" "this_network_interface_diagnostic_settings" {
   }
 }
 
-#create the nic associations
-### NSG associations
-resource "azurerm_network_interface_security_group_association" "this" {
-  for_each = local.nics_nsgs
+# ARM has no standalone association resources. Every association below is a property of the network
+# interface (or of one of its IP configurations) and is now assembled into the interface body by
+# local.nic_bodies. Forget the previous state entries without issuing a remote delete: the interface
+# itself keeps its state through the `moved` block above, so the underlying Azure configuration is
+# unchanged and only Terraform's model of it differs.
+#
+# The map keys are user-defined, so keyed `moved` blocks cannot be generated for these addresses.
+removed {
+  from = azurerm_network_interface_security_group_association.this
 
-  network_interface_id      = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
-  network_security_group_id = each.value.network_security_groups.network_security_group_resource_id
-}
-
-### ASG Associations
-resource "azurerm_network_interface_application_security_group_association" "this" {
-  for_each = local.nics_asgs
-
-  application_security_group_id = each.value.application_security_groups.application_security_group_resource_id
-  network_interface_id          = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
-
-  depends_on = [azurerm_network_interface_security_group_association.this]
-}
-
-### LB Pool Association
-resource "azurerm_network_interface_backend_address_pool_association" "this" {
-  for_each = local.nics_ip_configs_lb_pools
-
-  backend_address_pool_id = each.value.lb_pools.load_balancer_backend_pool_resource_id
-  ip_configuration_name   = each.value.ipconfig_name
-  network_interface_id    = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
-
-  depends_on = [azurerm_network_interface_security_group_association.this,
-  azurerm_network_interface_application_security_group_association.this]
-}
-
-### App GW Assocation
-resource "azurerm_network_interface_application_gateway_backend_address_pool_association" "this" {
-  for_each = local.nics_ip_configs_app_gw_pools
-
-  backend_address_pool_id = each.value.ag_pools.app_gateway_backend_pool_resource_id
-  ip_configuration_name   = each.value.ipconfig_name
-  network_interface_id    = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
-
-  timeouts {
-    delete = "60m"
+  lifecycle {
+    destroy = false
   }
-
-  depends_on = [azurerm_network_interface_security_group_association.this,
-    azurerm_network_interface_application_security_group_association.this,
-  azurerm_network_interface_backend_address_pool_association.this]
 }
 
-### NAT Rule Assocation
-resource "azurerm_network_interface_nat_rule_association" "this" {
-  for_each = local.nics_ip_configs_lb_nat_rules
+removed {
+  from = azurerm_network_interface_application_security_group_association.this
 
-  ip_configuration_name = each.value.ipconfig_name
-  nat_rule_id           = each.value.lb_nat_rules.load_balancer_nat_rule_resource_id
-  network_interface_id  = azurerm_network_interface.virtualmachine_network_interfaces[each.value.nic_key].id
+  lifecycle {
+    destroy = false
+  }
+}
 
-  depends_on = [azurerm_network_interface_security_group_association.this,
-    azurerm_network_interface_application_security_group_association.this,
-    azurerm_network_interface_backend_address_pool_association.this,
-  azurerm_network_interface_application_gateway_backend_address_pool_association.this]
+removed {
+  from = azurerm_network_interface_backend_address_pool_association.this
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = azurerm_network_interface_application_gateway_backend_address_pool_association.this
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = azurerm_network_interface_nat_rule_association.this
+
+  lifecycle {
+    destroy = false
+  }
 }
