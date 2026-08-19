@@ -148,27 +148,26 @@ module "vnet" {
   }
 }
 
-/* #uncomment these resources to enable bastion
-resource "azurerm_public_ip" "bastionpip" {
-  allocation_method   = "Static"
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.public_ip.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  sku                 = "Standard"
-}
-
-resource "azurerm_bastion_host" "bastion" {
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.bastion_host.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-
-  ip_configuration {
-    name                 = "${module.naming.bastion_host.name_unique}-ipconf"
-    public_ip_address_id = azurerm_public_ip.bastionpip.id
-    subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
-  }
-}
-*/
+# #uncomment these resources to enable bastion
+# resource "azurerm_public_ip" "bastionpip" {
+#   allocation_method   = "Static"
+#   location            = azurerm_resource_group.this_rg.location
+#   name                = module.naming.public_ip.name_unique
+#   resource_group_name = azurerm_resource_group.this_rg.name
+#   sku                 = "Standard"
+# }
+#
+# resource "azurerm_bastion_host" "bastion" {
+#   location            = azurerm_resource_group.this_rg.location
+#   name                = module.naming.bastion_host.name_unique
+#   resource_group_name = azurerm_resource_group.this_rg.name
+#
+#   ip_configuration {
+#     name                 = "${module.naming.bastion_host.name_unique}-ipconf"
+#     public_ip_address_id = azurerm_public_ip.bastionpip.id
+#     subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
+#   }
+# }
 
 data "azurerm_client_config" "current" {}
 
