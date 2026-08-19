@@ -9,8 +9,12 @@ module "backup" {
   backup_policy_resource_id     = each.value.backup_policy_resource_id
   enable_telemetry              = var.enable_telemetry
   exclude_disk_luns             = each.value.exclude_disk_luns
+  ignore_body_changes           = var.ignore_body_changes.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems
   include_disk_luns             = each.value.include_disk_luns
+  resource_types                = var.resource_types.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems
   retain_backup_data_on_destroy = each.value.retain_backup_data_on_destroy
+  retry                         = var.retry
+  timeouts                      = var.timeouts
 
   depends_on = [
     azurerm_virtual_machine_data_disk_attachment.this_linux,

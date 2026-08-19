@@ -91,3 +91,34 @@ For simplicity this module provides the option to use an auto-generated admin us
 - `tags` - (Optional) - Specific tags to assign to this secret resource
 DESCRIPTION
 }
+
+variable "timeouts_by_resource_type" {
+  type = object({
+    azurerm_virtual_machine_extension = optional(object({
+      create = optional(string)
+      delete = optional(string)
+      update = optional(string)
+      read   = optional(string)
+    }), {})
+    azurerm_virtual_machine_run_command = optional(object({
+      create = optional(string)
+      delete = optional(string)
+      update = optional(string)
+      read   = optional(string)
+    }), {})
+  })
+  default     = {}
+  description = <<DESCRIPTION
+DEPRECATED: This input carries the per-resource-type timeouts that `timeouts` used to hold. The
+`timeouts` input now takes the flat AVM shape required by TFFR7, which applies to every AzAPI
+resource in the module, so the per-resource-type form moved here. This input will be removed with
+the release of version v1.0.0; prefer the per-item `timeouts` on an individual `extensions` or
+`run_commands` entry, or the module-wide `timeouts` input.
+
+Values here take precedence over `timeouts` and are overridden by a per-item `timeouts`.
+
+- `azurerm_virtual_machine_extension` - Timeouts applied to virtual machine extensions.
+- `azurerm_virtual_machine_run_command` - Timeouts applied to virtual machine run commands.
+DESCRIPTION
+  nullable    = false
+}

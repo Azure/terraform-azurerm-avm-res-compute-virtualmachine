@@ -920,6 +920,34 @@ Type: `bool`
 
 Default: `false`
 
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative paths whose changes the AzAPI provider ignores, per resource. Paths use dot notation,  
+for example `properties.maintenanceConfigurationId`. Individual list items cannot be targeted;  
+ignore the whole list property instead.
+
+Configuration changes at an ignored path are not sent to Azure until that path is removed from the  
+list. Because the value is held in provider-private state, a change takes effect only after an  
+apply.
+
+- `maintenance_configuration_assignments` - Ignored body paths for the maintenance configuration assignments.
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
+
+Type:
+
+```hcl
+object({
+    maintenance_configuration_assignments = optional(list(string), [])
+
+    recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
+      recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
+    }), {})
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_license_type"></a> [license\_type](#input\_license\_type)
 
 Description: (Optional) For Linux virtual machine specifies the BYOL Type for this Virtual Machine, possible values are `RHEL_BYOS` and `SLES_BYOS`. For Windows virtual machine specifies the type of on-premise license (also known as [Azure Hybrid Use Benefit](https://docs.microsoft.com/windows-server/get-started/azure-hybrid-benefit)) which should be used for this Virtual Machine, possible values are `None`, `Windows_Client` and `Windows_Server`.
@@ -1516,6 +1544,55 @@ Type: `string`
 
 Default: `null`
 
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key  
+defaults to a tested value; supply only the keys you want to override. Useful when targeting a  
+sovereign cloud with older API versions, or when opting into a newer preview API.
+
+- `maintenance_configuration_assignments` - Maintenance configuration assignments applied to the virtual machine.
+- `compute_disks` - The managed disk type used when updating the OS disk network access settings.
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
+
+Type:
+
+```hcl
+object({
+    maintenance_configuration_assignments = optional(string, "Microsoft.Maintenance/configurationAssignments@2023-04-01")
+    compute_disks                         = optional(string, "Microsoft.Compute/disks@2024-03-02")
+
+    recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
+      recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string)
+    }), {})
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to every AzAPI resource managed by the module and its submodules.  
+Defaults to `null` (no custom retry).
+
+- `error_message_regex` - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds` - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+
+See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource#retry> for full semantics.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
+
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
 Description: A map of role definitions and scopes to be assigned as part of this resources implementation.  Two forms are supported. Assignments against this virtual machine resource scope and assignments to external resource scopes using the system managed identity.
@@ -1927,36 +2004,61 @@ Default: `null`
 
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 
-Description: A map of timeouts to apply to the creation and destruction of resources.  
-If using retry, the maximum elapsed retry time is governed by this value.
+Description: Default per-operation timeouts applied to every AzAPI resource managed by the module and its  
+submodules, and used as the fallback for the extension and run command resources. Defaults to
+`null` (provider defaults). Each value is a Go duration string, for example `30m` or `1h`.
 
-The object has attributes for each resource type, with the following optional attributes:
+Extensions and run commands resolve their timeouts in this order: the per-item `timeouts` on the  
+individual `extensions` or `run_commands` entry, then the deprecated
+`timeouts_by_resource_type` input, then this variable.
 
-- `create` - (Optional) The timeout for creating the resource.
-- `delete` - (Optional) The timeout for deleting the resource.
-- `update` - (Optional) The timeout for updating the resource.
-- `read` - (Optional) The timeout for reading the resource.
+- `create` - (Optional) Timeout for create operations.
+- `read` - (Optional) Timeout for read operations.
+- `update` - (Optional) Timeout for update operations.
+- `delete` - (Optional) Timeout for delete operations.
 
-Each time duration is parsed using this function: <https://pkg.go.dev/time#ParseDuration>.
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+```
+
+Default: `null`
+
+### <a name="input_timeouts_by_resource_type"></a> [timeouts\_by\_resource\_type](#input\_timeouts\_by\_resource\_type)
+
+Description: DEPRECATED: This input carries the per-resource-type timeouts that `timeouts` used to hold. The
+`timeouts` input now takes the flat AVM shape required by TFFR7, which applies to every AzAPI  
+resource in the module, so the per-resource-type form moved here. This input will be removed with  
+the release of version v1.0.0; prefer the per-item `timeouts` on an individual `extensions` or
+`run_commands` entry, or the module-wide `timeouts` input.
+
+Values here take precedence over `timeouts` and are overridden by a per-item `timeouts`.
+
+- `azurerm_virtual_machine_extension` - Timeouts applied to virtual machine extensions.
+- `azurerm_virtual_machine_run_command` - Timeouts applied to virtual machine run commands.
 
 Type:
 
 ```hcl
 object({
     azurerm_virtual_machine_extension = optional(object({
-      create = optional(string, "30m")
-      delete = optional(string, "30m")
-      update = optional(string, "30m")
-      read   = optional(string, "5m")
-      }), {}
-    )
+      create = optional(string)
+      delete = optional(string)
+      update = optional(string)
+      read   = optional(string)
+    }), {})
     azurerm_virtual_machine_run_command = optional(object({
-      create = optional(string, "30m")
-      delete = optional(string, "30m")
-      update = optional(string, "30m")
-      read   = optional(string, "5m")
-      }), {}
-    )
+      create = optional(string)
+      delete = optional(string)
+      update = optional(string)
+      read   = optional(string)
+    }), {})
   })
 ```
 

@@ -26,11 +26,23 @@ resource "azapi_update_resource" "this_os_disk_network_access" {
   count = local.os_disk_network_access_configured ? 1 : 0
 
   resource_id            = local.os_disk_resource_id
-  type                   = "Microsoft.Compute/disks@2024-03-02"
+  type                   = var.resource_types.compute_disks
   body                   = local.os_disk_network_access_body
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = ["properties.publicNetworkAccess", "properties.networkAccessPolicy", "properties.diskAccessId"]
+  retry                  = var.retry
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 
   depends_on = [
     azurerm_virtual_machine_data_disk_attachment.this_linux,
