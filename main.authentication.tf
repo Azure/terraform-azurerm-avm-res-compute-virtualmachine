@@ -81,6 +81,7 @@ resource "azapi_resource" "system_managed_identity_role_assignments" {
   body                 = module.avm_utl_interfaces.role_assignments_azapi["smi-${each.key}"].body
   create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes  = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
   ignore_null_property = true
   read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   # Azure cannot change the principal or role definition of an existing role assignment, and the
@@ -124,6 +125,7 @@ resource "azapi_resource" "this_virtual_machine_role_assignments" {
   body                 = module.avm_utl_interfaces.role_assignments_azapi["vm-${each.key}"].body
   create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes  = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
   ignore_null_property = true
   read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   # Azure cannot change the principal or role definition of an existing role assignment, and the

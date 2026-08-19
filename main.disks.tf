@@ -122,6 +122,7 @@ resource "azapi_resource" "this_disk_lock" {
   }
   create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   replace_triggers_refs  = []
   response_export_values = []
@@ -169,6 +170,7 @@ resource "azapi_resource" "this_os_disk_lock" {
   }
   create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   replace_triggers_refs  = []
   response_export_values = []
@@ -210,6 +212,7 @@ resource "azapi_resource" "disks_role_assignments" {
   body                 = module.avm_utl_interfaces.role_assignments_azapi["disk-${each.key}"].body
   create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes  = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
   ignore_null_property = true
   read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   # Azure cannot change the principal or role definition of an existing role assignment, and the

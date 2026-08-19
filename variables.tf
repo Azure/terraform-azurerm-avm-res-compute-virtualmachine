@@ -726,6 +726,9 @@ variable "hotpatching_enabled" {
 variable "ignore_body_changes" {
   type = object({
     maintenance_configuration_assignments = optional(list(string), [])
+    authorization_locks                   = optional(list(string), [])
+    authorization_role_assignments        = optional(list(string), [])
+    insights_diagnostic_settings          = optional(list(string), [])
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
@@ -742,6 +745,9 @@ list. Because the value is held in provider-private state, a change takes effect
 apply.
 
 - `maintenance_configuration_assignments` - Ignored body paths for the maintenance configuration assignments.
+- `authorization_locks` - Ignored body paths for the management locks.
+- `authorization_role_assignments` - Ignored body paths for the role assignments.
+- `insights_diagnostic_settings` - Ignored body paths for the diagnostic settings.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
 DESCRIPTION

@@ -67,6 +67,7 @@ resource "azapi_resource" "this_public_ip_lock" {
   }
   create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   replace_triggers_refs  = []
   response_export_values = []
@@ -111,6 +112,7 @@ resource "azapi_resource" "this_nic_lock" {
   }
   create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   replace_triggers_refs  = []
   response_export_values = []
@@ -151,6 +153,7 @@ resource "azapi_resource" "this_network_interface_role_assignments" {
   body                 = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].body
   create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes  = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
   ignore_null_property = true
   read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   # Azure cannot change the principal or role definition of an existing role assignment, and the
@@ -193,6 +196,7 @@ resource "azapi_resource" "this_network_interface_diagnostic_settings" {
   body                   = local.interface_diagnostic_settings_nic[each.key]
   create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.insights_diagnostic_settings) > 0 ? var.ignore_body_changes.insights_diagnostic_settings : null
   ignore_null_property   = true
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   replace_triggers_refs  = []
