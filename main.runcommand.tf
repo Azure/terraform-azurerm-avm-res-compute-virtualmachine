@@ -16,10 +16,10 @@ module "run_command" {
   run_as_user                  = try(var.run_commands_secrets[each.key].run_as_user, null)
   tags                         = each.value.tags
   timeouts = {
-    create = coalesce(try(each.value.timeouts.create, null), var.timeouts.azurerm_virtual_machine_run_command.create)
-    delete = coalesce(try(each.value.timeouts.delete, null), var.timeouts.azurerm_virtual_machine_run_command.delete)
-    read   = coalesce(try(each.value.timeouts.read, null), var.timeouts.azurerm_virtual_machine_run_command.read)
-    update = coalesce(try(each.value.timeouts.update, null), var.timeouts.azurerm_virtual_machine_run_command.update)
+    create = coalesce(try(each.value.timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.create, try(var.timeouts.create, null), "30m")
+    delete = coalesce(try(each.value.timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.delete, try(var.timeouts.delete, null), "30m")
+    read   = coalesce(try(each.value.timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.read, try(var.timeouts.read, null), "5m")
+    update = coalesce(try(each.value.timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.update, try(var.timeouts.update, null), "30m")
   }
 
   depends_on = [
@@ -51,10 +51,10 @@ module "run_command_1" {
   run_as_user                  = try(var.run_commands_secrets[each.key].run_as_user, null)
   tags                         = each.value.tags
   timeouts = {
-    create = coalesce(try(each.value.timeouts.create, null), var.timeouts.azurerm_virtual_machine_run_command.create)
-    delete = coalesce(try(each.value.timeouts.delete, null), var.timeouts.azurerm_virtual_machine_run_command.delete)
-    read   = coalesce(try(each.value.timeouts.read, null), var.timeouts.azurerm_virtual_machine_run_command.read)
-    update = coalesce(try(each.value.timeouts.update, null), var.timeouts.azurerm_virtual_machine_run_command.update)
+    create = coalesce(try(each.value.timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.create, try(var.timeouts.create, null), "30m")
+    delete = coalesce(try(each.value.timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.delete, try(var.timeouts.delete, null), "30m")
+    read   = coalesce(try(each.value.timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.read, try(var.timeouts.read, null), "5m")
+    update = coalesce(try(each.value.timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.update, try(var.timeouts.update, null), "30m")
   }
 
   depends_on = [
@@ -84,10 +84,10 @@ module "run_command_2" {
   run_as_user                  = try(var.run_commands_secrets[each.key].run_as_user, null)
   tags                         = each.value.tags
   timeouts = {
-    create = coalesce(try(each.value.timeouts.create, null), var.timeouts.azurerm_virtual_machine_run_command.create)
-    delete = coalesce(try(each.value.timeouts.delete, null), var.timeouts.azurerm_virtual_machine_run_command.delete)
-    read   = coalesce(try(each.value.timeouts.read, null), var.timeouts.azurerm_virtual_machine_run_command.read)
-    update = coalesce(try(each.value.timeouts.update, null), var.timeouts.azurerm_virtual_machine_run_command.update)
+    create = coalesce(try(each.value.timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.create, try(var.timeouts.create, null), "30m")
+    delete = coalesce(try(each.value.timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.delete, try(var.timeouts.delete, null), "30m")
+    read   = coalesce(try(each.value.timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.read, try(var.timeouts.read, null), "5m")
+    update = coalesce(try(each.value.timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.update, try(var.timeouts.update, null), "30m")
   }
 
   depends_on = [

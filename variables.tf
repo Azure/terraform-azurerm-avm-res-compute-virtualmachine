@@ -723,6 +723,31 @@ variable "hotpatching_enabled" {
   description = "(Optional) Should the VM be patched without requiring a reboot? Possible values are `true` or `false`. Defaults to `false`. For more information about hot patching please see the [product documentation](https://docs.microsoft.com/azure/automanage/automanage-hotpatch). Hotpatching can only be enabled if the `patch_mode` is set to `AutomaticByPlatform`, the `provision_vm_agent` is set to `true`, your `source_image_reference` references a hotpatching enabled image, and the VM's `size` is set to a [Azure generation 2](https://docs.microsoft.com/azure/virtual-machines/generation-2#generation-2-vm-sizes) VM. An example of how to correctly configure a Windows Virtual Machine to use the `hotpatching_enabled` field can be found in the [`./examples/virtual-machines/windows/hotpatching-enabled`](https://github.com/hashicorp/terraform-provider-azurerm/tree/main/examples/virtual-machines/windows/hotpatching-enabled) directory within the GitHub Repository."
 }
 
+variable "ignore_body_changes" {
+  type = object({
+    maintenance_configuration_assignments = optional(list(string), [])
+
+    recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
+      recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
+    }), {})
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Body-relative paths whose changes the AzAPI provider ignores, per resource. Paths use dot notation,
+for example `properties.maintenanceConfigurationId`. Individual list items cannot be targeted;
+ignore the whole list property instead.
+
+Configuration changes at an ignored path are not sent to Azure until that path is removed from the
+list. Because the value is held in provider-private state, a change takes effect only after an
+apply.
+
+- `maintenance_configuration_assignments` - Ignored body paths for the maintenance configuration assignments.
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
+DESCRIPTION
+  nullable    = false
+}
+
 variable "license_type" {
   type        = string
   default     = null
@@ -1306,6 +1331,48 @@ variable "reboot_setting" {
   description = "(Optional) Specifies the reboot setting for platform scheduled patching. Possible values are Always, IfRequired and Never. can only be set when patch_mode is set to AutomaticByPlatform"
 }
 
+variable "resource_types" {
+  type = object({
+    maintenance_configuration_assignments = optional(string, "Microsoft.Maintenance/configurationAssignments@2023-04-01")
+    compute_disks                         = optional(string, "Microsoft.Compute/disks@2024-03-02")
+
+    recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
+      recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string)
+    }), {})
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key
+defaults to a tested value; supply only the keys you want to override. Useful when targeting a
+sovereign cloud with older API versions, or when opting into a newer preview API.
+
+- `maintenance_configuration_assignments` - Maintenance configuration assignments applied to the virtual machine.
+- `compute_disks` - The managed disk type used when updating the OS disk network access settings.
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "retry" {
+  type = object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+  default     = null
+  description = <<DESCRIPTION
+Retry configuration applied to every AzAPI resource managed by the module and its submodules.
+Defaults to `null` (no custom retry).
+
+- `error_message_regex` - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds` - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+
+See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource#retry> for full semantics.
+DESCRIPTION
+}
+
 variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
@@ -1683,34 +1750,25 @@ TERMINATION_NOTIFICATION
 
 variable "timeouts" {
   type = object({
-    azurerm_virtual_machine_extension = optional(object({
-      create = optional(string, "30m")
-      delete = optional(string, "30m")
-      update = optional(string, "30m")
-      read   = optional(string, "5m")
-      }), {}
-    )
-    azurerm_virtual_machine_run_command = optional(object({
-      create = optional(string, "30m")
-      delete = optional(string, "30m")
-      update = optional(string, "30m")
-      read   = optional(string, "5m")
-      }), {}
-    )
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
   })
-  default     = {}
+  default     = null
   description = <<DESCRIPTION
-A map of timeouts to apply to the creation and destruction of resources.
-If using retry, the maximum elapsed retry time is governed by this value.
+Default per-operation timeouts applied to every AzAPI resource managed by the module and its
+submodules, and used as the fallback for the extension and run command resources. Defaults to
+`null` (provider defaults). Each value is a Go duration string, for example `30m` or `1h`.
 
-The object has attributes for each resource type, with the following optional attributes:
+Extensions and run commands resolve their timeouts in this order: the per-item `timeouts` on the
+individual `extensions` or `run_commands` entry, then the deprecated
+`timeouts_by_resource_type` input, then this variable.
 
-- `create` - (Optional) The timeout for creating the resource.
-- `delete` - (Optional) The timeout for deleting the resource.
-- `update` - (Optional) The timeout for updating the resource.
-- `read` - (Optional) The timeout for reading the resource.
-
-Each time duration is parsed using this function: <https://pkg.go.dev/time#ParseDuration>.
+- `create` - (Optional) Timeout for create operations.
+- `read` - (Optional) Timeout for read operations.
+- `update` - (Optional) Timeout for update operations.
+- `delete` - (Optional) Timeout for delete operations.
 DESCRIPTION
 }
 

@@ -124,6 +124,28 @@ Type: `list(number)`
 
 Default: `null`
 
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative paths whose changes the AzAPI provider ignores, per resource. Paths use dot notation.  
+Configuration changes at an ignored path are not sent to Azure until that path is removed from the  
+list, and a change takes effect only after an apply.
+
+This submodule manages the protected item through `azapi_resource_action` and
+`azapi_update_resource`, neither of which supports `ignore_body_changes`, so the variable is  
+declared for interface consistency but is not currently applied to a resource.
+
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_include_disk_luns"></a> [include\_disk\_luns](#input\_include\_disk\_luns)
 
 Description: `include_disk_luns` - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection. Only one of `exclude_disk_luns` or `include_disk_luns` can be set. If both are set then only the `exclude_disk_luns` value will be used.
@@ -132,6 +154,23 @@ Type: `list(number)`
 
 Default: `null`
 
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key  
+defaults to a tested value; supply only the keys you want to override.
+
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01")
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_retain_backup_data_on_destroy"></a> [retain\_backup\_data\_on\_destroy](#input\_retain\_backup\_data\_on\_destroy)
 
 Description: `retain_backup_data_on_destroy` - (Optional) - When `true`, destroying the module stops protection and retains the existing recovery points instead of deleting the protected item. Use this for immutable vaults or whenever backup data must outlive the VM. Retained backup data can continue to incur charges. Defaults to `false`.
@@ -139,6 +178,50 @@ Description: `retain_backup_data_on_destroy` - (Optional) - When `true`, destroy
 Type: `bool`
 
 Default: `false`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to every AzAPI resource managed by the module. Defaults to `null` (no  
+custom retry).
+
+- `error_message_regex` - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds` - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
+
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Default per-operation timeouts applied to every AzAPI resource managed by the module. Defaults to
+`null` (provider defaults). Each value is a Go duration string, for example `30m` or `1h`.
+
+- `create` - (Optional) Timeout for create operations.
+- `read` - (Optional) Timeout for read operations.
+- `update` - (Optional) Timeout for update operations.
+- `delete` - (Optional) Timeout for delete operations.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+```
+
+Default: `null`
 
 ## Outputs
 

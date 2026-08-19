@@ -2,7 +2,7 @@ locals {
   # The protection container and protected item names are derived from the virtual machine's
   # resource group and name. The recovery services vault may live in another subscription.
   backup_container_name               = "iaasvmcontainerv2;${var.resource_group_name};${var.virtual_machine_name}"
-  backup_protected_item_resource_type = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01"
+  backup_protected_item_resource_type = var.resource_types.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems
   backup_item_resource_id             = "${var.recovery_vault_resource_id}/backupFabrics/Azure/protectionContainers/iaasvmcontainer;${local.backup_container_name}/protectedItems/VM;${local.backup_container_name}"
   backup_body_extended_properties = try(length(var.exclude_disk_luns) > 0, false) ? {
     extendedProperties = {
@@ -56,6 +56,18 @@ resource "azapi_resource_action" "backup_ensure_active" {
   locks                  = [local.backup_item_resource_id]
   response_export_values = []
   when                   = "apply"
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
 # Manage the declared backup properties after the create/resume/rehydrate operation. Unlike
@@ -74,6 +86,18 @@ resource "azapi_update_resource" "backup_protection" {
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   depends_on = [azapi_resource_action.backup_ensure_active]
+  retry      = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
 # The Backup API uses PUT ProtectionStopped to retain recovery points and DELETE to remove them.
@@ -96,4 +120,16 @@ resource "azapi_resource_action" "backup_destroy" {
   when                   = "destroy"
 
   depends_on = [azapi_update_resource.backup_protection]
+  retry      = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }

@@ -73,3 +73,73 @@ variable "retain_backup_data_on_destroy" {
 DESCRIPTION
   nullable    = false
 }
+
+# tflint-ignore: terraform_unused_declarations
+variable "ignore_body_changes" {
+  type = object({
+    recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
+  })
+  default     = {}
+  nullable    = false
+  description = <<DESCRIPTION
+Body-relative paths whose changes the AzAPI provider ignores, per resource. Paths use dot notation.
+Configuration changes at an ignored path are not sent to Azure until that path is removed from the
+list, and a change takes effect only after an apply.
+
+This submodule manages the protected item through `azapi_resource_action` and
+`azapi_update_resource`, neither of which supports `ignore_body_changes`, so the variable is
+declared for interface consistency but is not currently applied to a resource.
+
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
+DESCRIPTION
+}
+
+variable "resource_types" {
+  type = object({
+    recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01")
+  })
+  default     = {}
+  nullable    = false
+  description = <<DESCRIPTION
+Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key
+defaults to a tested value; supply only the keys you want to override.
+
+- `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
+DESCRIPTION
+}
+
+variable "retry" {
+  type = object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+  default     = null
+  description = <<DESCRIPTION
+Retry configuration applied to every AzAPI resource managed by the module. Defaults to `null` (no
+custom retry).
+
+- `error_message_regex` - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds` - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+DESCRIPTION
+}
+
+variable "timeouts" {
+  type = object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+  default     = null
+  description = <<DESCRIPTION
+Default per-operation timeouts applied to every AzAPI resource managed by the module. Defaults to
+`null` (provider defaults). Each value is a Go duration string, for example `30m` or `1h`.
+
+- `create` - (Optional) Timeout for create operations.
+- `read` - (Optional) Timeout for read operations.
+- `update` - (Optional) Timeout for update operations.
+- `delete` - (Optional) Timeout for delete operations.
+DESCRIPTION
+}

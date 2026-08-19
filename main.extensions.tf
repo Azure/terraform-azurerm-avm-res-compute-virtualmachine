@@ -17,10 +17,10 @@ module "extension" {
   settings                          = var.extensions[each.key].settings
   tags                              = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
   timeouts = {
-    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts.azurerm_virtual_machine_extension.create)
-    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts.azurerm_virtual_machine_extension.delete)
-    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts.azurerm_virtual_machine_extension.read)
-    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts.azurerm_virtual_machine_extension.update)
+    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.create, try(var.timeouts.create, null), "30m")
+    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.delete, try(var.timeouts.delete, null), "30m")
+    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
+    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
 
   depends_on = [
@@ -52,10 +52,10 @@ module "extension_1" {
   settings                          = var.extensions[each.key].settings
   tags                              = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
   timeouts = {
-    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts.azurerm_virtual_machine_extension.create)
-    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts.azurerm_virtual_machine_extension.delete)
-    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts.azurerm_virtual_machine_extension.read)
-    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts.azurerm_virtual_machine_extension.update)
+    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.create, try(var.timeouts.create, null), "30m")
+    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.delete, try(var.timeouts.delete, null), "30m")
+    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
+    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
 
   depends_on = [
@@ -83,10 +83,10 @@ module "extension_2" {
   settings                          = var.extensions[each.key].settings
   tags                              = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
   timeouts = {
-    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts.azurerm_virtual_machine_extension.create)
-    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts.azurerm_virtual_machine_extension.delete)
-    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts.azurerm_virtual_machine_extension.read)
-    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts.azurerm_virtual_machine_extension.update)
+    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.create, try(var.timeouts.create, null), "30m")
+    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.delete, try(var.timeouts.delete, null), "30m")
+    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
+    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
 
   depends_on = [
@@ -115,10 +115,10 @@ module "extension_3" {
   settings                          = var.extensions[each.key].settings
   tags                              = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
   timeouts = {
-    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts.azurerm_virtual_machine_extension.create)
-    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts.azurerm_virtual_machine_extension.delete)
-    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts.azurerm_virtual_machine_extension.read)
-    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts.azurerm_virtual_machine_extension.update)
+    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.create, try(var.timeouts.create, null), "30m")
+    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.delete, try(var.timeouts.delete, null), "30m")
+    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
+    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
 
   depends_on = [
@@ -148,10 +148,10 @@ module "extension_4" {
   settings                          = var.extensions[each.key].settings
   tags                              = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
   timeouts = {
-    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts.azurerm_virtual_machine_extension.create)
-    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts.azurerm_virtual_machine_extension.delete)
-    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts.azurerm_virtual_machine_extension.read)
-    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts.azurerm_virtual_machine_extension.update)
+    create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.create, try(var.timeouts.create, null), "30m")
+    delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.delete, try(var.timeouts.delete, null), "30m")
+    read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
+    update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
 
   depends_on = [

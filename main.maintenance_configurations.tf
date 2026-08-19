@@ -19,16 +19,29 @@ resource "azapi_resource" "this_maintenance_configuration_assignment" {
   location  = var.location
   name      = "${var.name}-maintenance-configuration-${each.key}"
   parent_id = local.virtualmachine_resource_id
-  type      = "Microsoft.Maintenance/configurationAssignments@2023-04-01"
+  type      = var.resource_types.maintenance_configuration_assignments
   body = {
     properties = {
       maintenanceConfigurationId = lower(each.value)
     }
   }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  create_headers      = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers      = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes = length(var.ignore_body_changes.maintenance_configuration_assignments) > 0 ? var.ignore_body_changes.maintenance_configuration_assignments : null
+  read_headers        = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  retry               = var.retry
+  update_headers      = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
 moved {
