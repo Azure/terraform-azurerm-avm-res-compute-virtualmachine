@@ -31,7 +31,7 @@ terraform {
     }
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 4.42, < 5.0"
+      version = ">= 4.42, < 5.1"
     }
     random = {
       source  = "hashicorp/random"
@@ -58,12 +58,12 @@ provider "azurerm" {
 
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.2"
+  version = "0.4.3"
 }
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.5.0"
+  version = "0.12.0"
 
   availability_zones_filter = true
 }
@@ -112,7 +112,7 @@ module "vm_sku" {
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.1"
+  version = "0.3.2"
 
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.nat_gateway.name_unique
@@ -127,7 +127,7 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.8.1"
+  version = "0.20.0"
 
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this_rg.location
@@ -193,7 +193,7 @@ resource "azurerm_user_assigned_identity" "example_identity" {
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.10.0"
+  version = "0.10.2"
 
   location                    = azurerm_resource_group.this_rg.location
   name                        = "${module.naming.key_vault.name_unique}-linux-ssh"
@@ -397,7 +397,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.42, < 5.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.42, < 5.1)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
@@ -451,25 +451,25 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: =0.10.0
+Version: 0.10.2
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
 Source: Azure/naming/azurerm
 
-Version: 0.4.2
+Version: 0.4.3
 
 ### <a name="module_natgateway"></a> [natgateway](#module\_natgateway)
 
 Source: Azure/avm-res-network-natgateway/azurerm
 
-Version: 0.2.1
+Version: 0.3.2
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: 0.5.0
+Version: 0.12.0
 
 ### <a name="module_testvm"></a> [testvm](#module\_testvm)
 
@@ -487,7 +487,7 @@ Version: 0.3.0
 
 Source: Azure/avm-res-network-virtualnetwork/azurerm
 
-Version: =0.8.1
+Version: 0.20.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
