@@ -183,25 +183,54 @@ moved {
   to   = azurerm_management_lock.this_linux_virtualmachine
 }
 
+moved {
+  from = azurerm_management_lock.this_linux_virtualmachine
+  to   = azapi_resource.this_linux_virtualmachine_lock
+}
+
 #set explicit dependencies on all the child resources to ensure that they have finished update and modification prior to locking the vm
-resource "azurerm_management_lock" "this_linux_virtualmachine" {
+resource "azapi_resource" "this_linux_virtualmachine_lock" {
   count = (var.lock != null) && !(lower(var.os_type) == "windows") ? 1 : 0
 
-  lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
-  scope      = azurerm_linux_virtual_machine.this[0].id
-  notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+  name      = coalesce(var.lock.name, "lock-${var.lock.kind}")
+  parent_id = azurerm_linux_virtual_machine.this[0].id
+  type      = var.resource_types.authorization_locks
+  body = {
+    properties = {
+      level = var.lock.kind
+      notes = local.interface_lock_notes[var.lock.kind]
+    }
+  }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = []
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 
   depends_on = [
     azurerm_managed_disk.this,
     azurerm_network_interface.virtualmachine_network_interfaces,
     azurerm_public_ip.virtualmachine_public_ips,
-    azurerm_role_assignment.system_managed_identity,
+    azapi_resource.system_managed_identity_role_assignments,
     azurerm_virtual_machine_data_disk_attachment.this_linux,
     azurerm_virtual_machine_data_disk_attachment.this_windows,
     azurerm_linux_virtual_machine.this,
-    azurerm_monitor_diagnostic_setting.this_nic_diags,
-    azurerm_monitor_diagnostic_setting.this_vm_diags,
+    azapi_resource.this_network_interface_diagnostic_settings,
+    azapi_resource.this_virtual_machine_diagnostic_settings,
     module.extension,
     module.extension_1,
     module.extension_2,

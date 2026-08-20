@@ -25,8 +25,8 @@ module "run_command" {
   depends_on = [
     azurerm_windows_virtual_machine.this,
     azurerm_linux_virtual_machine.this,
-    azurerm_role_assignment.this_virtual_machine,
-    azurerm_role_assignment.system_managed_identity,
+    azapi_resource.this_virtual_machine_role_assignments,
+    azapi_resource.system_managed_identity_role_assignments,
     module.run_command_1,
     module.run_command_2,
     module.extension
@@ -60,8 +60,8 @@ module "run_command_1" {
   depends_on = [
     azurerm_windows_virtual_machine.this,
     azurerm_linux_virtual_machine.this,
-    azurerm_role_assignment.this_virtual_machine,
-    azurerm_role_assignment.system_managed_identity,
+    azapi_resource.this_virtual_machine_role_assignments,
+    azapi_resource.system_managed_identity_role_assignments,
     module.extension
   ]
 }
@@ -93,8 +93,8 @@ module "run_command_2" {
   depends_on = [
     azurerm_windows_virtual_machine.this,
     azurerm_linux_virtual_machine.this,
-    azurerm_role_assignment.this_virtual_machine,
-    azurerm_role_assignment.system_managed_identity,
+    azapi_resource.this_virtual_machine_role_assignments,
+    azapi_resource.system_managed_identity_role_assignments,
     module.run_command_1,
     module.extension
   ]
