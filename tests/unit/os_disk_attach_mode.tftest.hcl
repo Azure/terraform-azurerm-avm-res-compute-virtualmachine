@@ -4,7 +4,16 @@
 # the module leaves them null. The defaults are therefore deliberately the opposite of the values
 # fed in through `variables`, so a value that leaks through the guard is distinguishable from a
 # value that was correctly nulled out.
-mock_provider "azapi" {}
+mock_provider "azapi" {
+  # The virtual machine is still an azurerm resource and parses each network_interface_ids entry as
+  # an ARM ID, so the mocked interface must carry a well-formed one rather than the generated
+  # placeholder.
+  mock_resource "azapi_resource" {
+    defaults = {
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
+    }
+  }
+}
 mock_provider "azurerm" {
   mock_resource "azurerm_network_interface" {
     defaults = {

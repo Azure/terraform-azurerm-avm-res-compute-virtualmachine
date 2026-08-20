@@ -1,4 +1,12 @@
 mock_provider "azapi" {
+  # The virtual machine is still an azurerm resource and parses each network_interface_ids entry as
+  # an ARM ID, so the mocked interface must carry a well-formed one rather than the generated
+  # placeholder.
+  mock_resource "azapi_resource" {
+    defaults = {
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
+    }
+  }
   # The interfaces utility resolves built-in role names to definition IDs through this data source.
   # Without a mock its output is unset and the lookup fails.
   mock_data "azapi_resource_list" {

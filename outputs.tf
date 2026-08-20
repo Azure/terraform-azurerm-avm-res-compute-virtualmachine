@@ -32,13 +32,23 @@ output "name" {
 }
 
 output "network_interfaces" {
-  description = "The full ARM object map associated with the deployed network interface(s). Exporting this in the event that a nic property not exposed as part of the azurerm vm export is required."
-  value       = azurerm_network_interface.virtualmachine_network_interfaces
+  description = "The map of deployed network interface(s), keyed as supplied to `network_interfaces`. The attribute names are preserved from the `azurerm` provider so existing expressions keep working after the AzAPI migration. Server-populated values such as `mac_address` and `private_ip_address` are only available after apply. For the unshaped ARM representation use `network_interfaces_azapi`."
+  value       = local.network_interfaces_output
+}
+
+output "network_interfaces_azapi" {
+  description = "The full AzAPI object map for the deployed network interface(s). Attribute names follow the ARM schema, and the interface associations appear as properties of the interface body. Use this when a property is required that `network_interfaces` does not expose."
+  value       = azapi_resource.virtualmachine_network_interfaces
 }
 
 output "public_ips" {
-  description = "The full ARM object map associated with any deployed public ip(s). Exporting this in the event that a public ip property not exposed as part of the azurerm vm export is required."
-  value       = azurerm_public_ip.virtualmachine_public_ips
+  description = "The map of deployed public ip(s), keyed by `<network interface key>-<ip configuration key>`. The attribute names are preserved from the `azurerm` provider so existing expressions keep working after the AzAPI migration. Server-populated values such as `ip_address` and `fqdn` are only available after apply. For the unshaped ARM representation use `public_ips_azapi`."
+  value       = local.public_ips_output
+}
+
+output "public_ips_azapi" {
+  description = "The full AzAPI object map for any deployed public ip(s). Attribute names follow the ARM schema. Use this when a property is required that `public_ips` does not expose."
+  value       = azapi_resource.virtualmachine_public_ips
 }
 
 output "resource" {

@@ -729,6 +729,8 @@ variable "ignore_body_changes" {
     authorization_locks                   = optional(list(string), [])
     authorization_role_assignments        = optional(list(string), [])
     insights_diagnostic_settings          = optional(list(string), [])
+    network_network_interfaces            = optional(list(string), [])
+    network_public_ip_addresses           = optional(list(string), [])
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
@@ -748,6 +750,8 @@ apply.
 - `authorization_locks` - Ignored body paths for the management locks.
 - `authorization_role_assignments` - Ignored body paths for the role assignments.
 - `insights_diagnostic_settings` - Ignored body paths for the diagnostic settings.
+- `network_network_interfaces` - Ignored body paths for the network interfaces.
+- `network_public_ip_addresses` - Ignored body paths for the public IP addresses.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
 DESCRIPTION
@@ -989,7 +993,7 @@ A map of objects representing each network virtual machine network interface
       - `principal_type`                             = (Optional) - The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
   - `tags`                           = (Optional) - A mapping of tags to assign to the resource.
 
-> Note: There is no per network interface `delete_option` input because the `azurerm` provider does not expose `networkProfile.networkInterfaces[].deleteOption`; `network_interface_ids` on the virtual machine resource is a plain list of IDs. This module creates each network interface as its own `azurerm_network_interface` resource, so `terraform destroy` deletes them along with the virtual machine and they are not orphaned. That setting only affects deletions performed outside Terraform.
+> Note: There is no per network interface `delete_option` input because the `azurerm` provider does not expose `networkProfile.networkInterfaces[].deleteOption`; `network_interface_ids` on the virtual machine resource is a plain list of IDs. This module creates each network interface as its own `azapi_resource` resource, so `terraform destroy` deletes them along with the virtual machine and they are not orphaned. That setting only affects deletions performed outside Terraform.
 
 Example Inputs:
 
@@ -1211,6 +1215,34 @@ variable "os_type" {
   }
 }
 
+variable "parent_id" {
+  type        = string
+  default     = null
+  description = <<DESCRIPTION
+The fully-qualified ARM resource ID of the resource group the network interfaces and public IP
+addresses are deployed into, for example
+`/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}`.
+
+When omitted, the subscription is derived from the first `private_ip_subnet_resource_id` supplied
+on any IP configuration. Azure requires a network interface and its subnet to share a subscription,
+so the derived value is correct wherever a subnet is supplied. The resource group name continues to
+come from `resource_group_name`, or from a network interface's own `resource_group_name`.
+
+This value **must be known at plan time**. An unknown value causes AzAPI to replace the resource
+rather than update it in place, which for an existing network interface means a destroy and
+recreate. Deriving from the subnet is only unknown while that subnet is itself being created or
+replaced. Set this input explicitly if you ever replace the subnet underneath an existing virtual
+machine, so the interface is not dragged into the replacement.
+
+At least one of `parent_id` or a `private_ip_subnet_resource_id` must be supplied.
+DESCRIPTION
+
+  validation {
+    condition     = var.parent_id == null || can(regex("^/subscriptions/[^/]+/resourceGroups/[^/]+$", var.parent_id))
+    error_message = "The parent_id must be a resource group resource ID (e.g. /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName})."
+  }
+}
+
 variable "patch_assessment_mode" {
   type        = string
   default     = "ImageDefault"
@@ -1344,6 +1376,8 @@ variable "resource_types" {
     authorization_locks                   = optional(string, "Microsoft.Authorization/locks@2020-05-01")
     authorization_role_assignments        = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
     insights_diagnostic_settings          = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
+    network_network_interfaces            = optional(string, "Microsoft.Network/networkInterfaces@2024-10-01")
+    network_public_ip_addresses           = optional(string, "Microsoft.Network/publicIPAddresses@2024-10-01")
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string)
@@ -1360,6 +1394,8 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 - `authorization_locks` - Management locks applied to the virtual machine and its child resources.
 - `authorization_role_assignments` - Role assignments applied to the virtual machine and its child resources.
 - `insights_diagnostic_settings` - Diagnostic settings applied to the virtual machine and its OS disk.
+- `network_network_interfaces` - The network interfaces created for the virtual machine.
+- `network_public_ip_addresses` - The public IP addresses created for the virtual machine's IP configurations.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
 DESCRIPTION

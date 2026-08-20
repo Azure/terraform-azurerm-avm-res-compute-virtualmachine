@@ -112,19 +112,14 @@ The following resources are used by this module:
 - [azapi_resource.this_virtual_machine_diagnostic_settings](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_virtual_machine_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_windows_virtualmachine_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.virtualmachine_network_interfaces](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.virtualmachine_public_ips](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_update_resource.this_os_disk_network_access](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azurerm_dev_test_global_vm_shutdown_schedule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule) (resource)
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_linux_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine) (resource)
 - [azurerm_managed_disk.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/managed_disk) (resource)
-- [azurerm_network_interface.virtualmachine_network_interfaces](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface) (resource)
-- [azurerm_network_interface_application_gateway_backend_address_pool_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_application_gateway_backend_address_pool_association) (resource)
-- [azurerm_network_interface_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_application_security_group_association) (resource)
-- [azurerm_network_interface_backend_address_pool_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_backend_address_pool_association) (resource)
-- [azurerm_network_interface_nat_rule_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_nat_rule_association) (resource)
-- [azurerm_network_interface_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_security_group_association) (resource)
-- [azurerm_public_ip.virtualmachine_public_ips](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux_existing](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_windows](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
@@ -934,6 +929,8 @@ apply.
 - `authorization_locks` - Ignored body paths for the management locks.
 - `authorization_role_assignments` - Ignored body paths for the role assignments.
 - `insights_diagnostic_settings` - Ignored body paths for the diagnostic settings.
+- `network_network_interfaces` - Ignored body paths for the network interfaces.
+- `network_public_ip_addresses` - Ignored body paths for the public IP addresses.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
 
@@ -945,6 +942,8 @@ object({
     authorization_locks                   = optional(list(string), [])
     authorization_role_assignments        = optional(list(string), [])
     insights_diagnostic_settings          = optional(list(string), [])
+    network_network_interfaces            = optional(list(string), [])
+    network_public_ip_addresses           = optional(list(string), [])
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
@@ -1110,7 +1109,7 @@ Description: A map of objects representing each network virtual machine network 
       - `principal_type`                             = (Optional) - The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
   - `tags`                           = (Optional) - A mapping of tags to assign to the resource.
 
-> Note: There is no per network interface `delete_option` input because the `azurerm` provider does not expose `networkProfile.networkInterfaces[].deleteOption`; `network_interface_ids` on the virtual machine resource is a plain list of IDs. This module creates each network interface as its own `azurerm_network_interface` resource, so `terraform destroy` deletes them along with the virtual machine and they are not orphaned. That setting only affects deletions performed outside Terraform.
+> Note: There is no per network interface `delete_option` input because the `azurerm` provider does not expose `networkProfile.networkInterfaces[].deleteOption`; `network_interface_ids` on the virtual machine resource is a plain list of IDs. This module creates each network interface as its own `azapi_resource` resource, so `terraform destroy` deletes them along with the virtual machine and they are not orphaned. That setting only affects deletions performed outside Terraform.
 
 Example Inputs:
 
@@ -1401,6 +1400,29 @@ Type: `string`
 
 Default: `"Windows"`
 
+### <a name="input_parent_id"></a> [parent\_id](#input\_parent\_id)
+
+Description: The fully-qualified ARM resource ID of the resource group the network interfaces and public IP  
+addresses are deployed into, for example
+`/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}`.
+
+When omitted, the subscription is derived from the first `private_ip_subnet_resource_id` supplied  
+on any IP configuration. Azure requires a network interface and its subnet to share a subscription,  
+so the derived value is correct wherever a subnet is supplied. The resource group name continues to  
+come from `resource_group_name`, or from a network interface's own `resource_group_name`.
+
+This value **must be known at plan time**. An unknown value causes AzAPI to replace the resource  
+rather than update it in place, which for an existing network interface means a destroy and  
+recreate. Deriving from the subnet is only unknown while that subnet is itself being created or  
+replaced. Set this input explicitly if you ever replace the subnet underneath an existing virtual  
+machine, so the interface is not dragged into the replacement.
+
+At least one of `parent_id` or a `private_ip_subnet_resource_id` must be supplied.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_patch_assessment_mode"></a> [patch\_assessment\_mode](#input\_patch\_assessment\_mode)
 
 Description: (Optional) Specifies the mode of VM Guest Patching for the Virtual Machine. Possible values are `AutomaticByPlatform` or `ImageDefault`. Defaults to `ImageDefault`.
@@ -1561,6 +1583,8 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 - `authorization_locks` - Management locks applied to the virtual machine and its child resources.
 - `authorization_role_assignments` - Role assignments applied to the virtual machine and its child resources.
 - `insights_diagnostic_settings` - Diagnostic settings applied to the virtual machine and its OS disk.
+- `network_network_interfaces` - The network interfaces created for the virtual machine.
+- `network_public_ip_addresses` - The public IP addresses created for the virtual machine's IP configurations.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
 
@@ -1573,6 +1597,8 @@ object({
     authorization_locks                   = optional(string, "Microsoft.Authorization/locks@2020-05-01")
     authorization_role_assignments        = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
     insights_diagnostic_settings          = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
+    network_network_interfaces            = optional(string, "Microsoft.Network/networkInterfaces@2024-10-01")
+    network_public_ip_addresses           = optional(string, "Microsoft.Network/publicIPAddresses@2024-10-01")
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string)
@@ -2200,11 +2226,19 @@ Description: The name used for the virtual machines name.
 
 ### <a name="output_network_interfaces"></a> [network\_interfaces](#output\_network\_interfaces)
 
-Description: The full ARM object map associated with the deployed network interface(s). Exporting this in the event that a nic property not exposed as part of the azurerm vm export is required.
+Description: The map of deployed network interface(s), keyed as supplied to `network_interfaces`. The attribute names are preserved from the `azurerm` provider so existing expressions keep working after the AzAPI migration. Server-populated values such as `mac_address` and `private_ip_address` are only available after apply. For the unshaped ARM representation use `network_interfaces_azapi`.
+
+### <a name="output_network_interfaces_azapi"></a> [network\_interfaces\_azapi](#output\_network\_interfaces\_azapi)
+
+Description: The full AzAPI object map for the deployed network interface(s). Attribute names follow the ARM schema, and the interface associations appear as properties of the interface body. Use this when a property is required that `network_interfaces` does not expose.
 
 ### <a name="output_public_ips"></a> [public\_ips](#output\_public\_ips)
 
-Description: The full ARM object map associated with any deployed public ip(s). Exporting this in the event that a public ip property not exposed as part of the azurerm vm export is required.
+Description: The map of deployed public ip(s), keyed by `<network interface key>-<ip configuration key>`. The attribute names are preserved from the `azurerm` provider so existing expressions keep working after the AzAPI migration. Server-populated values such as `ip_address` and `fqdn` are only available after apply. For the unshaped ARM representation use `public_ips_azapi`.
+
+### <a name="output_public_ips_azapi"></a> [public\_ips\_azapi](#output\_public\_ips\_azapi)
+
+Description: The full AzAPI object map for any deployed public ip(s). Attribute names follow the ARM schema. Use this when a property is required that `public_ips` does not expose.
 
 ### <a name="output_resource"></a> [resource](#output\_resource)
 
