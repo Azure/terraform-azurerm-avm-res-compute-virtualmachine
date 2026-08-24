@@ -101,6 +101,7 @@ The following resources are used by this module:
 
 - [azapi_resource.disks_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.system_managed_identity_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_data_disk](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_disk_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_linux_virtualmachine_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_maintenance_configuration_assignment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
@@ -119,7 +120,6 @@ The following resources are used by this module:
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_linux_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine) (resource)
-- [azurerm_managed_disk.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/managed_disk) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux_existing](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_windows](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
@@ -931,6 +931,7 @@ apply.
 - `insights_diagnostic_settings` - Ignored body paths for the diagnostic settings.
 - `network_network_interfaces` - Ignored body paths for the network interfaces.
 - `network_public_ip_addresses` - Ignored body paths for the public IP addresses.
+- `compute_disks` - Ignored body paths for the data disks.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
 
@@ -944,6 +945,7 @@ object({
     insights_diagnostic_settings          = optional(list(string), [])
     network_network_interfaces            = optional(list(string), [])
     network_public_ip_addresses           = optional(list(string), [])
+    compute_disks                         = optional(list(string), [])
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
@@ -2218,7 +2220,11 @@ Description: The admin username used when creating this virtual machine.
 
 ### <a name="output_data_disks"></a> [data\_disks](#output\_data\_disks)
 
-Description: The full ARM object map associated with any deployed data disk(s). Exporting this in the event that a disk property not exposed as part of the azurerm vm export is required.
+Description: The map of deployed data disk(s), keyed as supplied to `data_disk_managed_disks`. The attribute names are preserved from the `azurerm` provider so existing expressions keep working after the AzAPI migration. Server-populated values such as `disk_size_bytes` and `unique_id` are only available after apply. For the unshaped ARM representation use `data_disks_azapi`.
+
+### <a name="output_data_disks_azapi"></a> [data\_disks\_azapi](#output\_data\_disks\_azapi)
+
+Description: The full AzAPI object map for any deployed data disk(s). Attribute names follow the ARM schema. Use this when a property is required that `data_disks` does not expose.
 
 ### <a name="output_name"></a> [name](#output\_name)
 
