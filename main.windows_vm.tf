@@ -213,7 +213,6 @@ resource "azapi_resource" "this_windows_virtualmachine_lock" {
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  replace_triggers_refs  = []
   response_export_values = []
   retry                  = var.retry
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null

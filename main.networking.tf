@@ -16,7 +16,6 @@ resource "azapi_resource" "virtualmachine_public_ips" {
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.network_public_ip_addresses) > 0 ? var.ignore_body_changes.network_public_ip_addresses : null
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  replace_triggers_refs  = []
   response_export_values = ["properties.ipAddress", "properties.dnsSettings"]
   retry                  = var.retry
   tags                   = var.public_ip_configuration_details.tags != null ? var.public_ip_configuration_details.tags : local.tags
@@ -59,7 +58,6 @@ resource "azapi_resource" "virtualmachine_network_interfaces" {
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.network_network_interfaces) > 0 ? var.ignore_body_changes.network_network_interfaces : null
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  replace_triggers_refs  = []
   response_export_values = ["properties.ipConfigurations", "properties.macAddress", "properties.virtualMachine", "properties.dnsSettings"]
   retry                  = var.retry
   tags                   = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
@@ -109,7 +107,6 @@ resource "azapi_resource" "this_public_ip_lock" {
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  replace_triggers_refs  = []
   response_export_values = []
   retry                  = var.retry
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
@@ -154,7 +151,6 @@ resource "azapi_resource" "this_nic_lock" {
   delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  replace_triggers_refs  = []
   response_export_values = []
   retry                  = var.retry
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
@@ -239,7 +235,6 @@ resource "azapi_resource" "this_network_interface_diagnostic_settings" {
   ignore_body_changes    = length(var.ignore_body_changes.insights_diagnostic_settings) > 0 ? var.ignore_body_changes.insights_diagnostic_settings : null
   ignore_null_property   = true
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  replace_triggers_refs  = []
   response_export_values = []
   retry                  = var.retry
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
