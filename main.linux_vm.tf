@@ -3,8 +3,8 @@ resource "azurerm_linux_virtual_machine" "this" {
 
   location = var.location
   name     = var.name
-  #network_interface_ids = [for interface in azurerm_network_interface.virtualmachine_network_interfaces : interface.id]
-  network_interface_ids = [for interface in local.ordered_network_interface_keys : azurerm_network_interface.virtualmachine_network_interfaces[interface].id]
+  #network_interface_ids = [for interface in azapi_resource.virtualmachine_network_interfaces : interface.id]
+  network_interface_ids = [for interface in local.ordered_network_interface_keys : azapi_resource.virtualmachine_network_interfaces[interface].id]
   resource_group_name   = var.resource_group_name
   size                  = var.sku_size
   #optional properties
@@ -168,13 +168,8 @@ resource "azurerm_linux_virtual_machine" "this" {
       error_message = "The os_managed_disk_id and os_disk.diff_disk_settings are mutually exclusive. Ephemeral OS disks cannot be used when attaching an existing managed disk."
     }
   }
-  depends_on = [ #set explicit depends on for each association to address delete order issues.
-    azurerm_network_interface.virtualmachine_network_interfaces,
-    azurerm_network_interface_security_group_association.this,
-    azurerm_network_interface_application_security_group_association.this,
-    azurerm_network_interface_backend_address_pool_association.this,
-    azurerm_network_interface_application_gateway_backend_address_pool_association.this,
-    azurerm_network_interface_nat_rule_association.this
+  depends_on = [ #the associations are now properties of the interface body, so the interface alone is enough.
+    azapi_resource.virtualmachine_network_interfaces
   ]
 }
 
@@ -223,8 +218,8 @@ resource "azapi_resource" "this_linux_virtualmachine_lock" {
 
   depends_on = [
     azurerm_managed_disk.this,
-    azurerm_network_interface.virtualmachine_network_interfaces,
-    azurerm_public_ip.virtualmachine_public_ips,
+    azapi_resource.virtualmachine_network_interfaces,
+    azapi_resource.virtualmachine_public_ips,
     azapi_resource.system_managed_identity_role_assignments,
     azurerm_virtual_machine_data_disk_attachment.this_linux,
     azurerm_virtual_machine_data_disk_attachment.this_windows,

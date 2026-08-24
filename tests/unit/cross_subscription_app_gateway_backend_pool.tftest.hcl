@@ -1,4 +1,13 @@
-mock_provider "azapi" {}
+mock_provider "azapi" {
+  # The virtual machine is still an azurerm resource and parses each network_interface_ids entry as
+  # an ARM ID, so the mocked interface must carry a well-formed one rather than the generated
+  # placeholder.
+  mock_resource "azapi_resource" {
+    defaults = {
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
+    }
+  }
+}
 mock_provider "azurerm" {
   mock_resource "azurerm_network_interface" {
     defaults = {
@@ -65,11 +74,11 @@ run "application_gateway_backend_pool_can_use_another_subscription" {
   command = apply
 
   assert {
-    condition     = azurerm_network_interface_application_gateway_backend_address_pool_association.this["primary-primary-shared"].network_interface_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-vm/providers/Microsoft.Network/networkInterfaces/nic-vm"
-    error_message = "The association must update the NIC in the VM subscription."
+    condition     = azapi_resource.virtualmachine_network_interfaces["primary"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-vm"
+    error_message = "The interface must be created in the VM subscription, derived from its subnet."
   }
   assert {
-    condition     = azurerm_network_interface_application_gateway_backend_address_pool_association.this["primary-primary-shared"].backend_address_pool_id == "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/rg-gateway/providers/Microsoft.Network/applicationGateways/agw-shared/backendAddressPools/pool-shared"
-    error_message = "The association must preserve the full backend pool resource ID from the Application Gateway subscription."
+    condition     = one(local.nic_bodies["primary"].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools).id == "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/rg-gateway/providers/Microsoft.Network/applicationGateways/agw-shared/backendAddressPools/pool-shared"
+    error_message = "The interface body must preserve the full backend pool resource ID from the Application Gateway subscription."
   }
 }
