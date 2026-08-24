@@ -27,3 +27,10 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    with:
+      # Pinned for the duration of the azurerm -> azapi migration. The reusable workflow installs
+      # the latest Avm.Authoring when this is unset, and 0.10.1 introduced rules that the module
+      # cannot satisfy until the migration completes - most notably provider_azurerm_disallowed,
+      # which fires on every resource the migration has not reached yet. Remove this pin once the
+      # migration removes the azurerm provider.
+      avm-authoring-version: '0.9.5'
