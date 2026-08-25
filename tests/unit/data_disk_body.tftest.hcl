@@ -126,6 +126,35 @@ run "a_zone_redundant_disk_omits_zones" {
   }
 }
 
+# The zones key is present even when no zone is configured, so the body's shape does not depend on
+# var.zone. That matters because `body` is a single dynamic attribute: if the shape depended on a
+# value the caller computes, the whole body would be unknown at plan time and policy checks could
+# not read any of it. An empty list is equivalent to omitting the key, verified against Azure.
+run "a_regional_disk_sends_an_empty_zone_list" {
+  command = apply
+
+  variables {
+    zone = null
+    data_disk_managed_disks = {
+      disk1 = {
+        caching              = "ReadWrite"
+        lun                  = 0
+        name                 = "disk-test"
+        storage_account_type = "Premium_LRS"
+      }
+    }
+  }
+
+  assert {
+    condition     = length(local.data_disk_bodies["disk1"].zones) == 0
+    error_message = "A disk with no configured zone must send an empty zones list rather than omitting the key."
+  }
+  assert {
+    condition     = local.data_disk_bodies["disk1"].sku.name == "Premium_LRS"
+    error_message = "The rest of the body must stay readable when no zone is configured."
+  }
+}
+
 run "omitted_optional_properties_are_absent_from_the_body" {
   command = apply
 

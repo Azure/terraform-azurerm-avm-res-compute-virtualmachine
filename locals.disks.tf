@@ -98,8 +98,12 @@ locals {
         )
       },
       # A zonal disk cannot be requested for a zone-redundant storage type, matching the previous
-      # implementation's behaviour.
-      strcontains(dv.storage_account_type, "ZRS") || var.zone == null ? {} : { zones = [tostring(var.zone)] },
+      # implementation's behaviour. The storage type is always known at plan time, so this
+      # condition decides the body's shape without depending on var.zone. Keeping var.zone out of
+      # the condition matters: `body` is a single dynamic attribute, so an unknown *condition*
+      # makes the whole body unknown at plan time and hides every other field from plan-time
+      # policy checks. An unknown zone value alone leaves the rest of the body readable.
+      strcontains(dv.storage_account_type, "ZRS") ? {} : { zones = var.zone == null ? [] : [tostring(var.zone)] },
       var.edge_zone == null ? {} : { extendedLocation = { name = var.edge_zone, type = "EdgeZone" } },
     )
   }
