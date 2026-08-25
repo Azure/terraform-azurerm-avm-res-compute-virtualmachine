@@ -69,7 +69,7 @@ resource "azurerm_virtual_machine_data_disk_attachment" "this_linux" {
   caching                   = each.value.caching
   lun                       = each.value.lun
   managed_disk_id           = azapi_resource.this_data_disk[each.key].id
-  virtual_machine_id        = azurerm_linux_virtual_machine.this[0].id
+  virtual_machine_id        = azapi_resource.this_linux_virtual_machine[0].id
   create_option             = each.value.disk_attachment_create_option
   write_accelerator_enabled = each.value.write_accelerator_enabled
 }
@@ -92,7 +92,7 @@ resource "azurerm_virtual_machine_data_disk_attachment" "this_linux_existing" {
   caching                   = each.value.caching
   lun                       = each.value.lun
   managed_disk_id           = each.value.managed_disk_resource_id
-  virtual_machine_id        = azurerm_linux_virtual_machine.this[0].id
+  virtual_machine_id        = azapi_resource.this_linux_virtual_machine[0].id
   create_option             = each.value.disk_attachment_create_option
   write_accelerator_enabled = each.value.write_accelerator_enabled
 }
@@ -153,7 +153,7 @@ resource "azapi_resource" "this_disk_lock" {
     azurerm_virtual_machine_data_disk_attachment.this_linux,
     azurerm_virtual_machine_data_disk_attachment.this_windows,
     azurerm_windows_virtual_machine.this,
-    azurerm_linux_virtual_machine.this
+    azapi_resource.this_linux_virtual_machine
   ]
 }
 
@@ -200,7 +200,7 @@ resource "azapi_resource" "this_os_disk_lock" {
     azurerm_virtual_machine_data_disk_attachment.this_linux,
     azurerm_virtual_machine_data_disk_attachment.this_windows,
     azurerm_windows_virtual_machine.this,
-    azurerm_linux_virtual_machine.this,
+    azapi_resource.this_linux_virtual_machine,
     module.extension
   ]
 }

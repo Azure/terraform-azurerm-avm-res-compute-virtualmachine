@@ -14,13 +14,15 @@ locals {
     ]
   ]) : "${ra.disk_key}-${ra.ra_key}" => ra }
   linux_virtual_machine_output_map = (lower(var.os_type) == "linux") ? {
-    id                   = azurerm_linux_virtual_machine.this[0].id
-    identity             = azurerm_linux_virtual_machine.this[0].identity
-    private_ip_address   = azurerm_linux_virtual_machine.this[0].private_ip_address
-    private_ip_addresses = azurerm_linux_virtual_machine.this[0].private_ip_addresses
-    public_ip_address    = azurerm_linux_virtual_machine.this[0].public_ip_address
-    public_ip_addresses  = azurerm_linux_virtual_machine.this[0].public_ip_addresses
-    virtual_machine_id   = azurerm_linux_virtual_machine.this[0].virtual_machine_id
+    id = azapi_resource.this_linux_virtual_machine[0].id
+    # ARM returns the identity block directly. The azurerm provider exposed it as a single-element
+    # list, so the shape is preserved here.
+    identity             = local.linux_vm_identity_output
+    private_ip_address   = local.virtual_machine_private_ip_address
+    private_ip_addresses = local.virtual_machine_private_ip_addresses
+    public_ip_address    = local.virtual_machine_public_ip_address
+    public_ip_addresses  = local.virtual_machine_public_ip_addresses
+    virtual_machine_id   = try(azapi_resource.this_linux_virtual_machine[0].output.properties.vmId, null)
   } : null
   #set the type value for the managed identity that is used by azurerm
   managed_identity_type = var.managed_identities.system_assigned ? ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "SystemAssigned, UserAssigned" : "SystemAssigned") : ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "UserAssigned" : null)
@@ -66,16 +68,16 @@ locals {
   os_disk_is_imported = var.os_disk_attach_mode
   #the OS disk is an inline block on the vm resource rather than a separate managed disk, so its resource id is read
   #back off the created virtual machine.
-  os_disk_resource_id = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].os_disk[0].id : azurerm_linux_virtual_machine.this[0].os_disk[0].id
+  os_disk_resource_id = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].os_disk[0].id : try(azapi_resource.this_linux_virtual_machine[0].output.properties.storageProfile.osDisk.managedDisk.id, null)
   #concat the input variable with the simple list going forward - this is a placeholder so that we can continue to reference the local source image reference value when it includes the simpleOS option.
   source_image_reference = var.source_image_reference
   #get the first system managed identity id if it is provisioned and depending on whether the vm type is linux or windows
-  system_managed_identity_id = var.managed_identities.system_assigned ? ((lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : azurerm_linux_virtual_machine.this[0].identity[0].principal_id) : null
+  system_managed_identity_id = var.managed_identities.system_assigned ? ((lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : try(azapi_resource.this_linux_virtual_machine[0].output.identity.principalId, null)) : null
   #merge the resource group tags if tag inheritance is on.  Add this back in if agreed, passing through the resource tags for now.
   #tags = var.inherit_tags ? merge(data.azurerm_resource_group.virtualmachine_deployment.tags, var.tags) : var.tags
   tags = var.tags
   #get the vm id value depending on whether the vm is linux or windows
-  virtualmachine_resource_id = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azurerm_linux_virtual_machine.this[0].id
+  virtualmachine_resource_id = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azapi_resource.this_linux_virtual_machine[0].id
   windows_virtual_machine_output_map = (lower(var.os_type) == "windows") ? {
     id                   = azurerm_windows_virtual_machine.this[0].id
     identity             = azurerm_windows_virtual_machine.this[0].identity

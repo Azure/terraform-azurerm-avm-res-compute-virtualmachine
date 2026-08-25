@@ -27,6 +27,33 @@ mock_provider "modtm" {}
 mock_provider "random" {}
 mock_provider "tls" {}
 
+# The blanket azapi_resource mock gives every azapi resource the same id, which the still-azurerm
+# resources reject when they parse it as a virtual machine ID. The virtual machine also has to
+# expose an output, because the OS disk lock and network access updater read its managed disk id
+# back off the created machine.
+override_resource {
+  target = azapi_resource.this_linux_virtual_machine
+  values = {
+    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-test"
+    output = {
+      identity = {
+        principalId = "11111111-1111-1111-1111-111111111111"
+        tenantId    = "22222222-2222-2222-2222-222222222222"
+      }
+      properties = {
+        vmId = "33333333-3333-3333-3333-333333333333"
+        storageProfile = {
+          osDisk = {
+            managedDisk = {
+              id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/vm-test-osdisk"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 variables {
   location            = "eastus"
   name                = "vm-os-disk-net-access"

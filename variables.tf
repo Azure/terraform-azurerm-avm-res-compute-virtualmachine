@@ -732,6 +732,7 @@ variable "ignore_body_changes" {
     network_network_interfaces            = optional(list(string), [])
     network_public_ip_addresses           = optional(list(string), [])
     compute_disks                         = optional(list(string), [])
+    compute_virtual_machines              = optional(list(string), [])
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
@@ -754,6 +755,7 @@ apply.
 - `network_network_interfaces` - Ignored body paths for the network interfaces.
 - `network_public_ip_addresses` - Ignored body paths for the public IP addresses.
 - `compute_disks` - Ignored body paths for the data disks.
+- `compute_virtual_machines` - Ignored body paths for the virtual machine.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
 DESCRIPTION
@@ -1375,6 +1377,7 @@ variable "resource_types" {
   type = object({
     maintenance_configuration_assignments = optional(string, "Microsoft.Maintenance/configurationAssignments@2023-04-01")
     compute_disks                         = optional(string, "Microsoft.Compute/disks@2024-03-02")
+    compute_virtual_machines              = optional(string, "Microsoft.Compute/virtualMachines@2024-11-01")
     authorization_locks                   = optional(string, "Microsoft.Authorization/locks@2020-05-01")
     authorization_role_assignments        = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
     insights_diagnostic_settings          = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
@@ -1393,6 +1396,7 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 
 - `maintenance_configuration_assignments` - Maintenance configuration assignments applied to the virtual machine.
 - `compute_disks` - The managed disk type used when updating the OS disk network access settings.
+- `compute_virtual_machines` - The virtual machine.
 - `authorization_locks` - Management locks applied to the virtual machine and its child resources.
 - `authorization_role_assignments` - Role assignments applied to the virtual machine and its child resources.
 - `insights_diagnostic_settings` - Diagnostic settings applied to the virtual machine and its OS disk.

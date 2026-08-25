@@ -125,7 +125,7 @@ resource "azapi_resource" "this_public_ip_lock" {
   depends_on = [
     azapi_resource.virtualmachine_network_interfaces,
     azapi_resource.virtualmachine_public_ips,
-    azurerm_linux_virtual_machine.this,
+    azapi_resource.this_linux_virtual_machine,
     azurerm_windows_virtual_machine.this
   ]
 }
@@ -169,7 +169,7 @@ resource "azapi_resource" "this_nic_lock" {
   depends_on = [
     azapi_resource.virtualmachine_network_interfaces,
     azapi_resource.virtualmachine_public_ips,
-    azurerm_linux_virtual_machine.this,
+    azapi_resource.this_linux_virtual_machine,
     azurerm_windows_virtual_machine.this
   ]
 }

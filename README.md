@@ -103,6 +103,7 @@ The following resources are used by this module:
 - [azapi_resource.system_managed_identity_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_data_disk](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_disk_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_linux_virtual_machine](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_linux_virtualmachine_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_maintenance_configuration_assignment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_network_interface_diagnostic_settings](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
@@ -119,7 +120,6 @@ The following resources are used by this module:
 - [azurerm_dev_test_global_vm_shutdown_schedule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule) (resource)
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
-- [azurerm_linux_virtual_machine.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_linux_existing](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
 - [azurerm_virtual_machine_data_disk_attachment.this_windows](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
@@ -932,6 +932,7 @@ apply.
 - `network_network_interfaces` - Ignored body paths for the network interfaces.
 - `network_public_ip_addresses` - Ignored body paths for the public IP addresses.
 - `compute_disks` - Ignored body paths for the data disks.
+- `compute_virtual_machines` - Ignored body paths for the virtual machine.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
 
@@ -946,6 +947,7 @@ object({
     network_network_interfaces            = optional(list(string), [])
     network_public_ip_addresses           = optional(list(string), [])
     compute_disks                         = optional(list(string), [])
+    compute_virtual_machines              = optional(list(string), [])
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
@@ -1582,6 +1584,7 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 
 - `maintenance_configuration_assignments` - Maintenance configuration assignments applied to the virtual machine.
 - `compute_disks` - The managed disk type used when updating the OS disk network access settings.
+- `compute_virtual_machines` - The virtual machine.
 - `authorization_locks` - Management locks applied to the virtual machine and its child resources.
 - `authorization_role_assignments` - Role assignments applied to the virtual machine and its child resources.
 - `insights_diagnostic_settings` - Diagnostic settings applied to the virtual machine and its OS disk.
@@ -1596,6 +1599,7 @@ Type:
 object({
     maintenance_configuration_assignments = optional(string, "Microsoft.Maintenance/configurationAssignments@2023-04-01")
     compute_disks                         = optional(string, "Microsoft.Compute/disks@2024-03-02")
+    compute_virtual_machines              = optional(string, "Microsoft.Compute/virtualMachines@2024-11-01")
     authorization_locks                   = optional(string, "Microsoft.Authorization/locks@2020-05-01")
     authorization_role_assignments        = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
     insights_diagnostic_settings          = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
