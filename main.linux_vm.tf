@@ -20,6 +20,12 @@ resource "azapi_resource" "this_linux_virtual_machine" {
     # changed in place by ARM. They live in sensitive_body, which is write-only and therefore
     # invisible to the plan, so a hash stands in for them here. See locals.linux_vm.tf.
     local.linux_vm_secret_fingerprint,
+    # Azure names the OS disk and assigns its resource id when the machine is built from an image,
+    # so those values are present in the body adopted by the moved block but absent from the body
+    # this module sends. Watching the body paths would read that as an immutable change and
+    # replace an adopted machine, so the inputs behind them are watched instead.
+    var.os_disk.name,
+    var.os_managed_disk_id,
   ]
   replace_triggers_refs = [
     # Every path the azurerm provider marked ForceNew. Under AzAPI these are ordinary body
@@ -31,9 +37,7 @@ resource "azapi_resource" "this_linux_virtual_machine" {
     "properties.osProfile.linuxConfiguration.provisionVMAgent",
     "properties.osProfile.linuxConfiguration.ssh",
     "properties.storageProfile.imageReference",
-    "properties.storageProfile.osDisk.name",
     "properties.storageProfile.osDisk.diffDiskSettings",
-    "properties.storageProfile.osDisk.managedDisk.id",
     "properties.storageProfile.osDisk.managedDisk.storageAccountType",
     "properties.storageProfile.osDisk.managedDisk.securityProfile",
     "properties.securityProfile.uefiSettings",

@@ -360,6 +360,39 @@ run "immutable_properties_force_replacement" {
   }
 }
 
+# Azure fills in the OS disk name and its resource id, so both are present in the body a moved
+# block adopts but absent from the body this module sends. Watching the body paths would read that
+# as an immutable change and replace an adopted machine.
+run "server_assigned_os_disk_values_do_not_force_replacement" {
+  command = apply
+
+  assert {
+    condition     = !contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.storageProfile.osDisk.name")
+    error_message = "Azure names the OS disk when the input is null, so the body path must not be a replacement trigger."
+  }
+  assert {
+    condition     = !contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.storageProfile.osDisk.managedDisk.id")
+    error_message = "Azure assigns the OS disk id for an image build, so the body path must not be a replacement trigger."
+  }
+}
+
+run "the_os_disk_inputs_behind_them_still_force_replacement" {
+  command = apply
+
+  variables {
+    os_disk = {
+      caching              = "ReadWrite"
+      storage_account_type = "Premium_LRS"
+      name                 = "osdisk-explicit"
+    }
+  }
+
+  assert {
+    condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_external_values, "osdisk-explicit")
+    error_message = "os_disk.name is ForceNew under azurerm, so changing it must still replace the machine."
+  }
+}
+
 run "the_virtual_machine_azurerm_output_keeps_its_shape" {
   command = apply
 
