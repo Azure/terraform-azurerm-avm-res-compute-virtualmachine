@@ -215,6 +215,43 @@ run "a_password_and_custom_data_both_survive" {
   }
 }
 
+run "guest_patching_maps_to_the_patch_settings" {
+  command = apply
+
+  variables {
+    patch_mode            = "AutomaticByPlatform"
+    patch_assessment_mode = "AutomaticByPlatform"
+    reboot_setting        = "IfRequired"
+  }
+
+  assert {
+    condition     = local.linux_vm_body.properties.osProfile.linuxConfiguration.patchSettings.patchMode == "AutomaticByPlatform"
+    error_message = "patch_mode must map to linuxConfiguration.patchSettings.patchMode."
+  }
+  assert {
+    condition     = local.linux_vm_body.properties.osProfile.linuxConfiguration.patchSettings.assessmentMode == "AutomaticByPlatform"
+    error_message = "patch_assessment_mode must map to linuxConfiguration.patchSettings.assessmentMode."
+  }
+  assert {
+    condition     = local.linux_vm_body.properties.osProfile.linuxConfiguration.patchSettings.automaticByPlatformSettings.rebootSetting == "IfRequired"
+    error_message = "reboot_setting must map to the automatic by platform settings."
+  }
+}
+
+run "the_automatic_by_platform_settings_are_omitted_for_other_patch_modes" {
+  command = apply
+
+  variables {
+    patch_mode     = "ImageDefault"
+    reboot_setting = "IfRequired"
+  }
+
+  assert {
+    condition     = !can(local.linux_vm_body.properties.osProfile.linuxConfiguration.patchSettings.automaticByPlatformSettings)
+    error_message = "ARM rejects the automatic by platform settings unless the patch mode is AutomaticByPlatform."
+  }
+}
+
 run "optional_profiles_are_absent_when_unconfigured" {
   command = apply
 

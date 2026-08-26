@@ -39,8 +39,10 @@ locals {
     length(local.linux_vm_os_disk_managed_disk) == 0 ? {} : { managedDisk = local.linux_vm_os_disk_managed_disk },
   )
 
-  # ARM groups the guest patching inputs under linuxConfiguration.patchSettings.
-  linux_vm_patch_settings = var.os_disk_attach_mode ? null : merge(
+  # ARM groups the guest patching inputs under linuxConfiguration.patchSettings. It is only read
+  # from inside linuxConfiguration, which is itself dropped in attach mode, so there is no null
+  # case here: a null would have to be unified with the object type and break the merge.
+  linux_vm_patch_settings = merge(
     var.patch_mode == null ? {} : { patchMode = var.patch_mode },
     var.patch_assessment_mode == null ? {} : { assessmentMode = var.patch_assessment_mode },
     var.patch_mode != "AutomaticByPlatform" ? {} : {
@@ -68,7 +70,7 @@ locals {
     length(local.linux_vm_ssh_public_keys) == 0 ? {} : {
       ssh = { publicKeys = local.linux_vm_ssh_public_keys }
     },
-    local.linux_vm_patch_settings == null || length(coalesce(local.linux_vm_patch_settings, {})) == 0 ? {} : {
+    length(local.linux_vm_patch_settings) == 0 ? {} : {
       patchSettings = local.linux_vm_patch_settings
     },
   )
