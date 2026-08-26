@@ -229,7 +229,7 @@ resource "azapi_resource" "this_windows_virtualmachine_lock" {
   }
 
   depends_on = [
-    azurerm_managed_disk.this,
+    azapi_resource.this_data_disk,
     azapi_resource.virtualmachine_network_interfaces,
     azapi_resource.virtualmachine_public_ips,
     azapi_resource.system_managed_identity_role_assignments,

@@ -1,31 +1,13 @@
 locals {
-  # D1 (G15): parent_id MUST be known at plan time. Composing it from a data source makes it
-  # "(known after apply)", which forces replacement of an existing interface — a destructive
-  # migration. The subscription is therefore taken from var.parent_id when supplied, and otherwise
-  # derived from a subnet resource ID the caller already passed in. Azure requires a network
-  # interface and its subnet to live in the same subscription, so the derived value is correct by
-  # construction rather than by assumption.
-  nic_subnet_resource_ids = flatten([
-    for nk, nv in var.network_interfaces : [
-      for ipck, ipcv in nv.ip_configurations :
-      ipcv.private_ip_subnet_resource_id if ipcv.private_ip_subnet_resource_id != null
-    ]
-  ])
-  derived_subscription_id = length(local.nic_subnet_resource_ids) > 0 ? split("/", local.nic_subnet_resource_ids[0])[2] : null
-  subscription_id         = var.parent_id != null ? split("/", var.parent_id)[2] : local.derived_subscription_id
-  # Resolved defensively: when the subscription cannot be established the value stays null so the
-  # resource preconditions report the problem instead of a template interpolation error.
+  # ARM parents the interface and its public IP to a resource group. The subscription is resolved
+  # once in locals.parent.tf; see the comment there for why a data source is never used.
   nic_parent_ids = {
     for nk, nv in var.network_interfaces :
     nk => nv.resource_group_name == null && var.parent_id != null ? var.parent_id : (
-      local.subscription_id == null ? null :
-      "/subscriptions/${local.subscription_id}/resourceGroups/${coalesce(nv.resource_group_name, var.resource_group_name)}"
+      local.parent_id_for_resource_group[coalesce(nv.resource_group_name, var.resource_group_name)]
     )
   }
-  public_ip_parent_id = var.parent_id != null ? var.parent_id : (
-    local.subscription_id == null ? null :
-    "/subscriptions/${local.subscription_id}/resourceGroups/${var.resource_group_name}"
-  )
+  public_ip_parent_id = var.parent_id != null ? var.parent_id : local.parent_id_for_resource_group[var.resource_group_name]
 
   # D4: ARM models the network security group as a single reference on the interface, not a
   # collection, so at most one entry of the map can ever apply. A precondition rejects more than

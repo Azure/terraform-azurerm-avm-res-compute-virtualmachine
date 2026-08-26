@@ -22,8 +22,13 @@ output "admin_username" {
 }
 
 output "data_disks" {
-  description = "The full ARM object map associated with any deployed data disk(s). Exporting this in the event that a disk property not exposed as part of the azurerm vm export is required."
-  value       = azurerm_managed_disk.this
+  description = "The map of deployed data disk(s), keyed as supplied to `data_disk_managed_disks`. The attribute names are preserved from the `azurerm` provider so existing expressions keep working after the AzAPI migration. Server-populated values such as `disk_size_bytes` and `unique_id` are only available after apply. For the unshaped ARM representation use `data_disks_azapi`."
+  value       = local.data_disks_output
+}
+
+output "data_disks_azapi" {
+  description = "The full AzAPI object map for any deployed data disk(s). Attribute names follow the ARM schema. Use this when a property is required that `data_disks` does not expose."
+  value       = azapi_resource.this_data_disk
 }
 
 output "name" {

@@ -731,6 +731,7 @@ variable "ignore_body_changes" {
     insights_diagnostic_settings          = optional(list(string), [])
     network_network_interfaces            = optional(list(string), [])
     network_public_ip_addresses           = optional(list(string), [])
+    compute_disks                         = optional(list(string), [])
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
@@ -752,6 +753,7 @@ apply.
 - `insights_diagnostic_settings` - Ignored body paths for the diagnostic settings.
 - `network_network_interfaces` - Ignored body paths for the network interfaces.
 - `network_public_ip_addresses` - Ignored body paths for the public IP addresses.
+- `compute_disks` - Ignored body paths for the data disks.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
 DESCRIPTION

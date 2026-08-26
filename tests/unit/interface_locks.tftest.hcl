@@ -34,6 +34,15 @@ mock_provider "modtm" {}
 mock_provider "random" {}
 mock_provider "tls" {}
 
+# A single mock_resource default applies to every azapi_resource in the module, so the data disk
+# would otherwise inherit the network interface's ID and fail the azurerm attachment's ManagedDisk
+# ID parser. Override the disk specifically.
+override_resource {
+  target = azapi_resource.this_data_disk
+  values = {
+    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/disk-test"
+  }
+}
 variables {
   location            = "eastus"
   name                = "vm-locks"
