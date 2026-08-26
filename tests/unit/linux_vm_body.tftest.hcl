@@ -372,6 +372,34 @@ run "resource_id_inputs_do_not_decide_the_shape_of_the_body" {
   }
 }
 
+# Linux has no certificate store: the certificate is written to a file, and the azurerm provider
+# did not expose the field on the Linux machine at all.
+run "key_vault_certificates_omit_the_certificate_store_on_linux" {
+  command = apply
+
+  variables {
+    secrets = [
+      {
+        key_vault_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.KeyVault/vaults/kv-test"
+        certificate = [
+          {
+            url = "https://kv-test.vault.azure.net/secrets/cert/0000"
+          }
+        ]
+      }
+    ]
+  }
+
+  assert {
+    condition     = !can(local.linux_vm_body.properties.osProfile.secrets[0].vaultCertificates[0].certificateStore)
+    error_message = "certificateStore is a Windows concept and must not be sent on Linux."
+  }
+  assert {
+    condition     = local.linux_vm_body.properties.osProfile.secrets[0].vaultCertificates[0].certificateUrl == "https://kv-test.vault.azure.net/secrets/cert/0000"
+    error_message = "The certificate url must still be carried on Linux."
+  }
+}
+
 run "immutable_properties_force_replacement" {
   command = apply
 

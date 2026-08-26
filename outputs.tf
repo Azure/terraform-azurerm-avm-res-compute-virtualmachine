@@ -59,23 +59,23 @@ output "public_ips_azapi" {
 output "resource" {
   description = "The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values"
   sensitive   = true
-  value       = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0] : azapi_resource.this_linux_virtual_machine[0]
+  value       = (lower(var.os_type) == "windows") ? azapi_resource.this_windows_virtual_machine[0] : azapi_resource.this_linux_virtual_machine[0]
 }
 
 output "resource_id" {
   description = "The Azure resource id for the deployed virtual machine"
-  value       = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].id : azapi_resource.this_linux_virtual_machine[0].id
+  value       = (lower(var.os_type) == "windows") ? azapi_resource.this_windows_virtual_machine[0].id : azapi_resource.this_linux_virtual_machine[0].id
 }
 
 output "system_assigned_mi_principal_id" {
   description = "The principal id of the system managed identity assigned to the virtual machine"
-  value       = var.managed_identities.system_assigned == true ? ((lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0].identity[0].principal_id : try(azapi_resource.this_linux_virtual_machine[0].output.identity.principalId, "")) : ""
+  value       = var.managed_identities.system_assigned == true ? ((lower(var.os_type) == "windows") ? try(azapi_resource.this_windows_virtual_machine[0].output.identity.principalId, null) : try(azapi_resource.this_linux_virtual_machine[0].output.identity.principalId, "")) : ""
 }
 
 output "virtual_machine" {
   description = "The full object for the deployed virtual machine.  This is marked sensitive as it contains specific sensitive values. This output has been duplicated to the resource output to comply with the spec and may be deprecated in the future."
   sensitive   = true
-  value       = (lower(var.os_type) == "windows") ? azurerm_windows_virtual_machine.this[0] : azapi_resource.this_linux_virtual_machine[0]
+  value       = (lower(var.os_type) == "windows") ? azapi_resource.this_windows_virtual_machine[0] : azapi_resource.this_linux_virtual_machine[0]
 }
 
 output "virtual_machine_azurerm" {

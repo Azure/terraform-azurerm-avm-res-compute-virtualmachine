@@ -1,190 +1,84 @@
-resource "azurerm_windows_virtual_machine" "this" {
+moved {
+  from = azurerm_windows_virtual_machine.this
+  to   = azapi_resource.this_windows_virtual_machine
+}
+
+resource "azapi_resource" "this_windows_virtual_machine" {
   count = (lower(var.os_type) == "windows") ? 1 : 0
 
-  location = var.location
-  name     = var.name
-  #network_interface_ids = [for interface in azapi_resource.virtualmachine_network_interfaces : interface.id]
-  network_interface_ids = [for interface in local.ordered_network_interface_keys : azapi_resource.virtualmachine_network_interfaces[interface].id]
-  resource_group_name   = var.resource_group_name
-  size                  = var.sku_size
-  #required properties (admin_password and admin_username are null when using os_managed_disk_id per Provider ExactlyOneOf/ConflictsWith constraints)
-  admin_password = local.os_disk_is_imported ? null : local.admin_password_windows
-  admin_username = local.admin_username
-  #optional properties
-  allow_extension_operations                             = local.os_disk_is_imported ? null : var.allow_extension_operations
-  automatic_updates_enabled                              = local.os_disk_is_imported ? null : local.automatic_updates_enabled
-  availability_set_id                                    = var.availability_set_resource_id
-  bypass_platform_safety_checks_on_user_schedule_enabled = local.os_disk_is_imported ? null : var.bypass_platform_safety_checks_on_user_schedule_enabled
-  capacity_reservation_group_id                          = var.capacity_reservation_group_resource_id
-  computer_name                                          = local.os_disk_is_imported ? null : coalesce(var.computer_name, var.name)
-  custom_data                                            = local.os_disk_is_imported ? null : var.custom_data
-  dedicated_host_group_id                                = var.dedicated_host_group_resource_id
-  dedicated_host_id                                      = var.dedicated_host_resource_id
-  disk_controller_type                                   = var.disk_controller_type
-  edge_zone                                              = var.edge_zone
-  encryption_at_host_enabled                             = var.encryption_at_host_enabled
-  eviction_policy                                        = var.eviction_policy
-  extensions_time_budget                                 = var.extensions_time_budget
-  hotpatching_enabled                                    = local.os_disk_is_imported ? null : var.hotpatching_enabled
-  license_type                                           = var.license_type
-  max_bid_price                                          = var.max_bid_price
-  os_managed_disk_id                                     = var.os_managed_disk_id
-  patch_assessment_mode                                  = local.os_disk_is_imported ? null : var.patch_assessment_mode
-  patch_mode                                             = local.os_disk_is_imported ? null : var.patch_mode
-  platform_fault_domain                                  = var.platform_fault_domain
-  priority                                               = var.priority
-  provision_vm_agent                                     = local.os_disk_is_imported ? null : var.provision_vm_agent
-  proximity_placement_group_id                           = var.proximity_placement_group_resource_id
-  reboot_setting                                         = local.os_disk_is_imported ? null : var.reboot_setting
-  secure_boot_enabled                                    = var.secure_boot_enabled
-  source_image_id                                        = local.os_disk_is_imported ? null : var.source_image_resource_id
-  tags                                                   = local.tags
-  timezone                                               = var.timezone
-  user_data                                              = var.user_data
-  virtual_machine_scale_set_id                           = var.virtual_machine_scale_set_resource_id
-  #vm_agent_platform_updates_enabled                      = var.vm_agent_platform_updates_enabled #uncomment this in the event that the field is corrected in ARM to not be readonly
-  vtpm_enabled = var.vtpm_enabled
-  zone         = var.zone
+  location            = var.location
+  name                = var.name
+  parent_id           = local.parent_id_for_resource_group[var.resource_group_name]
+  type                = var.resource_types.compute_virtual_machines
+  body                = local.windows_vm_body
+  create_headers      = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers      = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes = length(var.ignore_body_changes.compute_virtual_machines) > 0 ? var.ignore_body_changes.compute_virtual_machines : null
+  read_headers        = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_external_values = [
+    # The admin password, custom data and unattend content are ForceNew under the azurerm provider
+    # and cannot be changed in place by ARM. They live in sensitive_body, which is write-only and
+    # therefore invisible to the plan, so a hash stands in for them here.
+    local.windows_vm_secret_fingerprint,
+    # A body path may only be watched below when the module always sends a real value for it.
+    # Anything the module can omit, or send as null so that the shape of the body stays readable,
+    # differs from the body a moved block adopts from Azure and would replace the machine. The
+    # inputs behind those paths are watched here instead, and they still force replacement exactly
+    # as the azurerm provider did.
+    var.os_disk.name,
+    var.os_managed_disk_id,
+    var.os_disk.security_encryption_type,
+    var.os_disk.secure_vm_disk_encryption_set_id,
+    var.source_image_resource_id,
+    jsonencode(local.source_image_reference),
+    jsonencode(var.provision_vm_agent),
+    var.timezone,
+    jsonencode(local.windows_vm_additional_unattend_content),
+    jsonencode(local.windows_vm_winrm_listeners),
+  ]
+  replace_triggers_refs = [
+    # Every path the azurerm provider marked ForceNew that the module always sends a real value
+    # for. Under AzAPI these are ordinary body members, so without this an immutable edit would
+    # plan as an in-place update and then fail at apply. Lint requires the list to be statically
+    # known, so it cannot be lifted into a local.
+    "properties.osProfile.adminUsername",
+    "properties.osProfile.computerName",
+    "properties.storageProfile.osDisk.diffDiskSettings",
+    "properties.storageProfile.osDisk.managedDisk.storageAccountType",
+    "properties.securityProfile.uefiSettings",
+    "properties.availabilitySet",
+    "properties.platformFaultDomain",
+    "properties.priority",
+    "properties.evictionPolicy",
+    "plan",
+    "zones",
+    "extendedLocation",
+  ]
+  response_export_values = ["properties.vmId", "properties.storageProfile.osDisk.managedDisk.id", "identity"]
+  retry                  = var.retry
+  sensitive_body         = local.windows_vm_sensitive_body
+  tags                   = local.tags
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
-  os_disk {
-    caching                          = var.os_disk.caching
-    storage_account_type             = local.os_disk_is_imported ? null : var.os_disk.storage_account_type
-    disk_encryption_set_id           = var.os_disk.disk_encryption_set_id
-    disk_size_gb                     = var.os_disk.disk_size_gb
-    name                             = var.os_disk.name
-    secure_vm_disk_encryption_set_id = var.os_disk.secure_vm_disk_encryption_set_id
-    security_encryption_type         = var.os_disk.security_encryption_type
-    write_accelerator_enabled        = var.os_disk.write_accelerator_enabled
-
-    dynamic "diff_disk_settings" {
-      for_each = var.os_disk.diff_disk_settings == null ? [] : ["diff_disk_settings"]
-
-      content {
-        option    = var.os_disk.diff_disk_settings.option
-        placement = var.os_disk.diff_disk_settings.placement
-      }
-    }
-  }
-
-  dynamic "additional_capabilities" {
-    for_each = var.vm_additional_capabilities == null ? [] : ["additional_capabilities"]
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
-      hibernation_enabled = var.vm_additional_capabilities.hibernation_enabled
-      ultra_ssd_enabled   = var.vm_additional_capabilities.ultra_ssd_enabled
-    }
-  }
-
-  dynamic "additional_unattend_content" {
-    for_each = {
-      for content in var.additional_unattend_contents : sha256(content.content) => content
-    }
-
-    content {
-      content = additional_unattend_content.value.content
-      setting = additional_unattend_content.value.setting
-    }
-  }
-
-  dynamic "boot_diagnostics" {
-    for_each = var.boot_diagnostics ? ["boot_diagnostics"] : []
-
-    content {
-      storage_account_uri = var.boot_diagnostics_storage_account_uri
-    }
-  }
-
-  dynamic "gallery_application" {
-    for_each = { for app, app_details in var.gallery_applications : app => app_details }
-
-    content {
-      version_id             = gallery_application.value.version_id
-      configuration_blob_uri = gallery_application.value.configuration_blob_uri
-      order                  = gallery_application.value.order
-      tag                    = gallery_application.value.tag
-    }
-  }
-
-  dynamic "identity" {
-    for_each = local.managed_identity_type == null ? [] : ["identity"]
-
-    content {
-      type         = local.managed_identity_type
-      identity_ids = var.managed_identities.user_assigned_resource_ids
-    }
-  }
-
-  dynamic "plan" {
-    for_each = var.plan == null ? [] : ["plan"]
-
-    content {
-      name      = var.plan.name
-      product   = var.plan.product
-      publisher = var.plan.publisher
-    }
-  }
-
-  dynamic "secret" {
-    for_each = toset(var.secrets)
-
-    content {
-      key_vault_id = secret.value.key_vault_id
-
-      dynamic "certificate" {
-        for_each = secret.value.certificate
-
-        content {
-          store = certificate.value.store
-          url   = certificate.value.url
-        }
-      }
-    }
-  }
-
-  dynamic "source_image_reference" {
-    for_each = (var.source_image_resource_id == null && !local.os_disk_is_imported) ? ["source_image_reference"] : []
-
-    content {
-      offer     = local.source_image_reference.offer
-      publisher = local.source_image_reference.publisher
-      sku       = local.source_image_reference.sku
-      version   = local.source_image_reference.version
-    }
-  }
-
-  dynamic "termination_notification" {
-    for_each = var.termination_notification == null ? [] : [
-      "termination_notification"
-    ]
-
-    content {
-      enabled = var.termination_notification.enabled
-      timeout = var.termination_notification.timeout
-    }
-  }
-
-  dynamic "winrm_listener" {
-    for_each = var.winrm_listeners
-
-    content {
-      protocol        = winrm_listener.value.protocol
-      certificate_url = winrm_listener.value.certificate_url
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
     }
   }
 
   lifecycle {
-    ignore_changes = [
-      winrm_listener,                   # Once the certificate got rotated, it will trigger a destroy/recreate of the VM.
-      vm_agent_platform_updates_enabled # Added property to ignore_changes as it continues to detect change in state.
-    ]
-
     precondition {
       condition     = var.os_managed_disk_id == null || var.os_disk.diff_disk_settings == null
       error_message = "The os_managed_disk_id and os_disk.diff_disk_settings are mutually exclusive. Ephemeral OS disks cannot be used when attaching an existing managed disk."
     }
     precondition {
-      condition     = local.os_disk_is_imported || length(coalesce(var.computer_name, var.name)) <= 15
-      error_message = "For a Windows VM the OS computer name (hostname) must be 15 characters or fewer. It is taken from `computer_name` when set, otherwise it falls back to `name`. The effective computer name here exceeds 15 characters - set `computer_name` to a value of 15 characters or fewer. (The `name` / ARM resource name itself may be up to 64 characters.)"
+      condition     = local.parent_id_for_resource_group[var.resource_group_name] != null
+      error_message = "Unable to determine the subscription for the virtual machine. Set `parent_id` to the resource group resource ID, or supply `private_ip_subnet_resource_id` on at least one IP configuration so the subscription can be derived from it."
     }
   }
   depends_on = [ #the associations are now properties of the interface body, so the interface alone is enough.
@@ -201,7 +95,7 @@ resource "azapi_resource" "this_windows_virtualmachine_lock" {
   count = (var.lock != null) && (lower(var.os_type) == "windows") ? 1 : 0
 
   name      = coalesce(var.lock.name, "lock-${var.lock.kind}")
-  parent_id = azurerm_windows_virtual_machine.this[0].id
+  parent_id = azapi_resource.this_windows_virtual_machine[0].id
   type      = var.resource_types.authorization_locks
   body = {
     properties = {

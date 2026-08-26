@@ -42,4 +42,12 @@ locals {
       identity_ids = var.managed_identities.user_assigned_resource_ids
     }
   ]
+  windows_vm_identity_output = local.managed_identity_type == null ? [] : [
+    {
+      type         = local.managed_identity_type
+      principal_id = try(azapi_resource.this_windows_virtual_machine[0].output.identity.principalId, null)
+      tenant_id    = try(azapi_resource.this_windows_virtual_machine[0].output.identity.tenantId, null)
+      identity_ids = var.managed_identities.user_assigned_resource_ids
+    }
+  ]
 }
