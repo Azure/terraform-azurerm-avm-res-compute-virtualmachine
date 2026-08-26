@@ -128,6 +128,10 @@ run "linux_attach_mode_omits_os_profile_attributes" {
     error_message = "An imported OS disk must be attached rather than created from an image."
   }
   assert {
+    condition     = local.linux_vm_body.properties.storageProfile.osDisk.deleteOption == "Detach"
+    error_message = "A disk the caller attached belongs to them and must survive the machine."
+  }
+  assert {
     condition     = !can(local.linux_vm_body.properties.storageProfile.imageReference)
     error_message = "An imported OS disk must not also carry an image reference."
   }

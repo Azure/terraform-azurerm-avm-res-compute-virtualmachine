@@ -85,6 +85,10 @@ run "core_attributes_are_mapped_to_arm_names" {
     error_message = "A virtual machine built from an image must use the FromImage create option."
   }
   assert {
+    condition     = local.linux_vm_body.properties.storageProfile.osDisk.deleteOption == "Delete"
+    error_message = "azurerm deleted the OS disk on destroy through delete_os_disk_on_deletion, so ARM must be asked to do the same or the disk is orphaned and keeps billing."
+  }
+  assert {
     condition     = one(local.linux_vm_body.zones) == "1"
     error_message = "zone must map to the ARM zones list."
   }
