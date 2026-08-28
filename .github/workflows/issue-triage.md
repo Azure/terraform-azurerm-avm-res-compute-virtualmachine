@@ -29,6 +29,7 @@ network:
 # conclusion jobs and their failure reports. Discriminating by issue number
 # gives each dispatched run its own group. Stripped from the compiled lock.
 concurrency:
+  group: "gh-aw-${{ github.workflow }}-${{ github.event.inputs.issue_number || github.event.issue.number || github.run_id }}"
   job-discriminator: ${{ github.event.inputs.issue_number || github.event.issue.number || github.run_id }}
 # Read-only permissions for triage
 permissions:
@@ -136,15 +137,30 @@ steps:
     # Comparing the newest release tag against the default branch yields exactly
     # the commits that are merged but not yet released. Membership in that set is
     # the whole released/unreleased question, decided here rather than inferred.
+    #
+    # The newest release is picked by sorting on published_at rather than asking
+    # /releases/latest, which does not always agree: on
+    # terraform-azurerm-avm-res-netapp-netappaccount it answers 0.2.0 (May 2025)
+    # while v0.3.0 (Dec 2025) is the real newest. Comparing against a stale tag
+    # makes already-released fixes look unreleased, which is the wrong direction
+    # to be wrong in — it would label an issue as awaiting a release that exists.
     LATEST=$(mktemp)
-    if ! gh api "repos/${GH_AW_GITHUB_REPOSITORY}/releases/latest" > "${LATEST}" 2>/dev/null; then
-      printf '%s\n' '{"loaded":true,"has_release":false,"latest_tag":null,"latest_published_at":null,"ahead_by":0,"unreleased_shas":[],"unreleased_pr_numbers":[]}' > "${OUT}"
+    if ! gh api --paginate "repos/${GH_AW_GITHUB_REPOSITORY}/releases?per_page=100" > "${LATEST}" 2>/dev/null; then
+      printf '%s\n' '{"loaded":false,"has_release":null,"latest_tag":null,"latest_published_at":null,"ahead_by":0,"unreleased_shas":[],"unreleased_pr_numbers":[]}' > "${OUT}"
       rm -f "${LATEST}"
       exit 0
     fi
-    TAG=$(jq -r '.tag_name // empty' "${LATEST}" | tr -d '\r' | head -n 1)
-    PUB=$(jq -r '.published_at // empty' "${LATEST}" | tr -d '\r' | head -n 1)
+    # --paginate concatenates one array per page, so flatten before sorting.
+    NEWEST=$(jq -s -r '
+      [ .[][]? | select((.draft | not) and (.prerelease | not)) ]
+      | sort_by(.published_at)
+      | last
+      | if . == null then "" else "\(.tag_name)\t\(.published_at)" end
+    ' "${LATEST}" 2>/dev/null | tr -d '\r' | head -n 1)
     rm -f "${LATEST}"
+    TAG=${NEWEST%%$'\t'*}
+    PUB=${NEWEST#*$'\t'}
+    if [ "${PUB}" = "${TAG}" ]; then PUB=""; fi
     if [ -z "${TAG}" ]; then
       printf '%s\n' '{"loaded":true,"has_release":false,"latest_tag":null,"latest_published_at":null,"ahead_by":0,"unreleased_shas":[],"unreleased_pr_numbers":[]}' > "${OUT}"
       exit 0
@@ -1159,7 +1175,18 @@ Classify every issue as exactly one of these GitHub issue types and use the `set
 
 - **Bug** — Unexpected or incorrect behavior, regressions, errors, failed deployments, or behavior that does not match the documented contract.
 - **Feature** — Feature requests for new user-facing capabilities, resources, variables, outputs, integrations, or enhancements to existing behavior.
-- **Task** — Concrete maintenance, documentation, testing, CI, refactoring, investigation, or other actionable work that is neither a defect nor a feature request.
+- **Task** — Concrete maintenance, documentation, testing, CI, refactoring, investigation, or other actionable work that is neither a defect nor a feature request. **This is also where usage questions, feedback, and clarification requests go** — there is no `Question` issue type.
+
+**These three are the only values `set-issue-type` accepts.** Emitting anything else — `Question`, `Documentation`, `Security`, `Enhancement` — is rejected with *"Issue type X is not in the allowed list"* and the run fails with no type applied.
+
+The repository's **labels** are a richer taxonomy than the issue types, and they do not map one-to-one. A repo carries `Type: Question/Feedback :raising_hand:`, `Type: Documentation :page_facing_up:`, `Type: Security Bug :lock:` and more, but none of those is an issue type. Label such an issue with whichever `Type: …` label fits **and** give it the closest of the three issue types:
+
+| The issue is | Label | Issue type |
+|---|---|---|
+| a usage question or feedback | `Type: Question/Feedback` | **Task** |
+| a documentation gap | `Type: Documentation` | **Task** |
+| a security defect | `Type: Security Bug` | **Bug** |
+| a CI or workflow problem | `Type: CI` | **Task** |
 
 Choose the single best fit from the issue's primary intent. Do not create or use any other issue type.
 
@@ -1575,7 +1602,7 @@ Every issue safe output carries it, in every combination — never only the firs
 - If you **close the issue** because it is conclusively fixed: Use `add-comment` for the triage summary **first**, then use `close-issue` with `state_reason: completed` and a body naming the fixing PR. Do not set `duplicate_of` on this path.
 - If the **Human Reopen Override** is active: Never use `close-issue`, regardless of duplicate or fix confidence. Continue with any non-closing outputs and explain the veto in the triage comment.
 - If you find an unlinked **confirmed-fix PR**: Use `update-pull-request` with `pull_request_number`, `operation: append`, and a body of exactly `Fixes #<issue-number>`. Do not update likely or merely related candidates.
-- Use `set-issue-type` with `issue_number` and exactly one of `Bug`, `Feature`, or `Task` on **every** run. Emit it unconditionally — never skip it on the grounds that the type looks already correct.
+- Use `set-issue-type` with `issue_number` and exactly one of `Bug`, `Feature`, or `Task` on **every** run. Emit it unconditionally — never skip it on the grounds that the type looks already correct. Those three strings are the entire allowed list; a usage question is `Task`, not `Question`.
 - If you find a **possible duplicate** but are **not highly confident** it is the same root cause: do **NOT** use `close-issue`. Use `add-comment` to flag `Possible duplicate of #N` (with the link) and leave the issue open; apply labels with `add-labels` as usual (but not `duplicate`). Reserve `close-issue` for confirmed duplicates only.
 - If you **add labels AND post a comment** (most common case): Call **both** `add-labels` (to apply labels to the issue) AND `add-comment` (for the triage summary), and put `item_number` on **both** — the observed failure mode is a run that attaches the number to the comment and omits it from the labels, which loses the labels while the comment still publishes. ⚠️ Listing label names inside the comment body does NOT apply them — you MUST call `add-labels` as a separate action.
 - If you **only post a comment** (no labels to add, no close): Use `add-comment` alone. Do not also emit `add-labels` with an empty list to signal "nothing to add" — omit the call entirely. The unconditional rule above applies to `set-issue-type` only.
