@@ -20,9 +20,12 @@ locals {
           }
         },
       )
-      # Attaching an existing managed disk replaces the image-based create entirely.
-      id = var.os_managed_disk_id
     },
+    # Attaching an existing managed disk replaces the image-based create entirely. Azure assigns
+    # this id itself for an image build, so sending it as null there would leave AzAPI tracking a
+    # path the server always fills in, and every plan would report drift. os_disk_attach_mode is a
+    # plain input rather than a computed value, so keying the presence on it is known at plan time.
+    var.os_disk_attach_mode ? { id = var.os_managed_disk_id } : {},
   )
 
   linux_vm_os_disk = merge(
