@@ -243,7 +243,6 @@ module "testvm" {
         enabled         = true
         email           = "example@example.com;example2@example.com"
         time_in_minutes = "15"
-        webhook_url     = "https://example-webhook-url.example.com"
       }
     }
   }

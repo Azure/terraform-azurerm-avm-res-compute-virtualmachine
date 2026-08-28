@@ -1895,7 +1895,7 @@ Description: This map of objects describes an auto-shutdown schedule for the vir
     - `enabled` = (Required) Whether to enable pre-shutdown notifications.  Possible values are true or false.
     - `email` = (Optional) = Email address or multiple email addresses separated by a semi-colon where the notification emails will be sent.
     - `time_in_minutes` = (Optional) TIme in minutes between 15 and 120 before a shutdown event at which a notification will be sent.  Defaults to "30".
-    - `webhook_url` = (Optional) The webhook URL to which notifications will be sent.
+    - `webhook_url` = (Optional) The webhook URL to which notifications will be sent. Azure currently accepts this value and then discards it, so it is absent from every read and each plan will report it as a pending change. Leave it unset until the service honours it again.
   - `tags` = (Optional) - Tags to apply to the shutdown schedules resource.
   - `timezone` = (Required) - The time zone ID (e.g. Pacific Standard time).
 
@@ -1910,7 +1910,6 @@ Example Input:
         enabled         = true
         email           = "example@example.com;example2@example.com"
         time_in_minutes = "15"
-        webhook_url     = "https://example-webhook-url.example.com"
       }
     }
   }
