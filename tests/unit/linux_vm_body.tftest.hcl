@@ -343,6 +343,35 @@ run "the_body_shape_does_not_depend_on_a_computed_zone" {
   }
 }
 
+# A resource id the caller computes must not decide whether a key exists. A conditional keyed on an
+# unknown makes the whole merge unknown, and that hid every policy check on the machine behind an
+# unknown `properties` object until it was caught by the resiliency rules.
+run "resource_id_inputs_do_not_decide_the_shape_of_the_body" {
+  command = apply
+
+  assert {
+    condition     = local.linux_vm_body.properties.virtualMachineScaleSet == null
+    error_message = "virtual_machine_scale_set_resource_id is routinely computed, so the key must always exist and carry null when unset."
+  }
+  assert {
+    condition     = local.linux_vm_body.properties.proximityPlacementGroup == null
+    error_message = "proximity_placement_group_resource_id is routinely computed, so the key must always exist and carry null when unset."
+  }
+  assert {
+    condition     = local.linux_vm_body.properties.storageProfile.osDisk.managedDisk.diskEncryptionSet == null
+    error_message = "os_disk.disk_encryption_set_id is routinely computed, so the key must always exist and carry null when unset."
+  }
+  assert {
+    condition     = local.linux_vm_body.properties.storageProfile.osDisk.managedDisk.storageAccountType == "Premium_LRS"
+    error_message = "The storage account type must stay readable alongside the computed members, because the resiliency rules read it."
+  }
+  # Policy requires this one to be absent rather than null, so it is the deliberate exception.
+  assert {
+    condition     = !can(local.linux_vm_body.properties.availabilitySet)
+    error_message = "availabilitySet must be omitted entirely when unset, because the resiliency rule treats a null as defined."
+  }
+}
+
 run "immutable_properties_force_replacement" {
   command = apply
 

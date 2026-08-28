@@ -1,23 +1,28 @@
 locals {
   # ARM nests the managed disk settings of the OS disk under storageProfile.osDisk.managedDisk,
   # while the azurerm schema kept them flat on the os_disk block.
+  #
+  # Every member below is written as an always-present key whose value may be null, rather than as
+  # a conditional that decides whether the key exists. A conditional keyed on a value the caller
+  # computes is unknown at plan time, and a single unknown argument makes the whole merge unknown,
+  # which hides the entire body from policy checks. Only the leaves may be unknown.
   linux_vm_os_disk_managed_disk = merge(
     var.os_disk.storage_account_type == null || var.os_disk_attach_mode ? {} : {
       storageAccountType = var.os_disk.storage_account_type
     },
-    var.os_disk.disk_encryption_set_id == null ? {} : {
-      diskEncryptionSet = { id = var.os_disk.disk_encryption_set_id }
-    },
-    var.os_disk.secure_vm_disk_encryption_set_id == null && var.os_disk.security_encryption_type == null ? {} : {
-      securityProfile = merge(
+    {
+      diskEncryptionSet = var.os_disk.disk_encryption_set_id == null ? null : { id = var.os_disk.disk_encryption_set_id }
+      securityProfile = var.os_disk.secure_vm_disk_encryption_set_id == null && var.os_disk.security_encryption_type == null ? null : merge(
         var.os_disk.security_encryption_type == null ? {} : { securityEncryptionType = var.os_disk.security_encryption_type },
-        var.os_disk.secure_vm_disk_encryption_set_id == null ? {} : {
-          diskEncryptionSet = { id = var.os_disk.secure_vm_disk_encryption_set_id }
+        {
+          diskEncryptionSet = var.os_disk.secure_vm_disk_encryption_set_id == null ? null : {
+            id = var.os_disk.secure_vm_disk_encryption_set_id
+          }
         },
       )
+      # Attaching an existing managed disk replaces the image-based create entirely.
+      id = var.os_managed_disk_id
     },
-    # Attaching an existing managed disk replaces the image-based create entirely.
-    var.os_managed_disk_id == null ? {} : { id = var.os_managed_disk_id },
   )
 
   linux_vm_os_disk = merge(
@@ -40,7 +45,7 @@ locals {
         placement = var.os_disk.diff_disk_settings.placement
       }
     },
-    length(local.linux_vm_os_disk_managed_disk) == 0 ? {} : { managedDisk = local.linux_vm_os_disk_managed_disk },
+    { managedDisk = local.linux_vm_os_disk_managed_disk },
   )
 
   # ARM groups the guest patching inputs under linuxConfiguration.patchSettings. It is only read
@@ -135,8 +140,10 @@ locals {
 
   linux_vm_gallery_applications = [
     for key, application in var.gallery_applications : merge(
-      { packageReferenceId = application.version_id },
-      application.configuration_blob_uri == null ? {} : { configurationReference = application.configuration_blob_uri },
+      {
+        packageReferenceId     = application.version_id
+        configurationReference = application.configuration_blob_uri
+      },
       application.order == null ? {} : { order = application.order },
       application.tag == null ? {} : { tags = application.tag },
     )
@@ -149,7 +156,7 @@ locals {
           hardwareProfile = { vmSize = var.sku_size }
           storageProfile = merge(
             { osDisk = local.linux_vm_os_disk },
-            local.linux_vm_image_reference == null ? {} : { imageReference = local.linux_vm_image_reference },
+            { imageReference = local.linux_vm_image_reference },
             var.disk_controller_type == null ? {} : { diskControllerType = var.disk_controller_type },
           )
           networkProfile = { networkInterfaces = local.linux_vm_network_interfaces }
@@ -158,10 +165,10 @@ locals {
         length(local.linux_vm_security_profile) == 0 ? {} : { securityProfile = local.linux_vm_security_profile },
         var.boot_diagnostics ? {
           diagnosticsProfile = {
-            bootDiagnostics = merge(
-              { enabled = true },
-              var.boot_diagnostics_storage_account_uri == null ? {} : { storageUri = var.boot_diagnostics_storage_account_uri },
-            )
+            bootDiagnostics = {
+              enabled    = true
+              storageUri = var.boot_diagnostics_storage_account_uri
+            }
           }
         } : {},
         var.vm_additional_capabilities == null ? {} : {
@@ -170,21 +177,28 @@ locals {
             var.vm_additional_capabilities.ultra_ssd_enabled == null ? {} : { ultraSSDEnabled = var.vm_additional_capabilities.ultra_ssd_enabled },
           )
         },
-        var.availability_set_resource_id == null ? {} : { availabilitySet = { id = var.availability_set_resource_id } },
-        var.capacity_reservation_group_resource_id == null ? {} : {
-          capacityReservation = { capacityReservationGroup = { id = var.capacity_reservation_group_resource_id } }
+        # Each of these is a resource id the caller routinely computes, so the key is always
+        # present and only the value varies. Deciding key presence on an unknown would make the
+        # whole properties object unknown and blind every policy check on the machine.
+        {
+          capacityReservation     = var.capacity_reservation_group_resource_id == null ? null : { capacityReservationGroup = { id = var.capacity_reservation_group_resource_id } }
+          host                    = var.dedicated_host_resource_id == null ? null : { id = var.dedicated_host_resource_id }
+          hostGroup               = var.dedicated_host_group_resource_id == null ? null : { id = var.dedicated_host_group_resource_id }
+          proximityPlacementGroup = var.proximity_placement_group_resource_id == null ? null : { id = var.proximity_placement_group_resource_id }
+          virtualMachineScaleSet  = var.virtual_machine_scale_set_resource_id == null ? null : { id = var.virtual_machine_scale_set_resource_id }
+          userData                = var.user_data
         },
-        var.dedicated_host_resource_id == null ? {} : { host = { id = var.dedicated_host_resource_id } },
-        var.dedicated_host_group_resource_id == null ? {} : { hostGroup = { id = var.dedicated_host_group_resource_id } },
-        var.proximity_placement_group_resource_id == null ? {} : { proximityPlacementGroup = { id = var.proximity_placement_group_resource_id } },
-        var.virtual_machine_scale_set_resource_id == null ? {} : { virtualMachineScaleSet = { id = var.virtual_machine_scale_set_resource_id } },
+        # availabilitySet is the exception to the rule above. Policy requires the property to be
+        # absent rather than null, so the key has to stay conditional. That is safe here: the
+        # condition is only unknown when the caller actually supplies an availability set, and a
+        # machine that does cannot satisfy the rule anyway.
+        var.availability_set_resource_id == null ? {} : { availabilitySet = { id = var.availability_set_resource_id } },
         var.priority == null ? {} : { priority = var.priority },
         var.eviction_policy == null ? {} : { evictionPolicy = var.eviction_policy },
         var.max_bid_price == null || var.max_bid_price == -1 ? {} : { billingProfile = { maxPrice = var.max_bid_price } },
         var.license_type == null ? {} : { licenseType = var.license_type },
         var.extensions_time_budget == null ? {} : { extensionsTimeBudget = var.extensions_time_budget },
         var.platform_fault_domain == null || var.platform_fault_domain == -1 ? {} : { platformFaultDomain = var.platform_fault_domain },
-        var.user_data == null ? {} : { userData = var.user_data },
         length(local.linux_vm_gallery_applications) == 0 ? {} : {
           applicationProfile = { galleryApplications = local.linux_vm_gallery_applications }
         },

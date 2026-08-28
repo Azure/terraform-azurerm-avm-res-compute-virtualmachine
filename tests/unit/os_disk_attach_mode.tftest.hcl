@@ -131,8 +131,11 @@ run "linux_attach_mode_omits_os_profile_attributes" {
     condition     = local.linux_vm_body.properties.storageProfile.osDisk.deleteOption == "Detach"
     error_message = "A disk the caller attached belongs to them and must survive the machine."
   }
+  # The key is always present so that a computed image id cannot collapse the shape of the body
+  # and hide it from policy checks, so absence is expressed as a null value rather than a missing
+  # key.
   assert {
-    condition     = !can(local.linux_vm_body.properties.storageProfile.imageReference)
+    condition     = local.linux_vm_body.properties.storageProfile.imageReference == null
     error_message = "An imported OS disk must not also carry an image reference."
   }
 }
