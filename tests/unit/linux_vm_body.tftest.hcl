@@ -376,10 +376,6 @@ run "immutable_properties_force_replacement" {
   command = apply
 
   assert {
-    condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.storageProfile.imageReference")
-    error_message = "source_image_reference is ForceNew under azurerm and must trigger replacement under AzAPI."
-  }
-  assert {
     condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.osProfile.adminUsername")
     error_message = "admin_username is ForceNew under azurerm and must trigger replacement under AzAPI."
   }
@@ -390,6 +386,40 @@ run "immutable_properties_force_replacement" {
   assert {
     condition     = !contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.hardwareProfile.vmSize")
     error_message = "Resizing a virtual machine is an in-place operation and must not force replacement."
+  }
+}
+
+# A body path may only be watched when the module always sends a real value for it. A path the
+# module can omit, or send as null to keep the shape of the body readable, differs from the body a
+# moved block adopts from Azure, and watching it replaces an adopted machine.
+run "omittable_paths_are_watched_through_their_inputs" {
+  command = apply
+
+  variables {
+    source_image_reference = {
+      publisher = "Canonical"
+      offer     = "0001-com-ubuntu-server-focal"
+      sku       = "20_04-lts-gen2"
+      version   = "latest"
+    }
+  }
+
+  assert {
+    condition     = !contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.storageProfile.imageReference")
+    error_message = "The image reference is sent as null in attach mode, so watching the body path would replace an adopted machine."
+  }
+  assert {
+    condition     = !contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.osProfile.linuxConfiguration.ssh")
+    error_message = "The ssh block is omitted when no keys are supplied, so watching the body path would replace an adopted machine."
+  }
+  assert {
+    condition     = !contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.storageProfile.osDisk.managedDisk.securityProfile")
+    error_message = "The disk security profile is sent as null when unset, so watching the body path would replace an adopted machine."
+  }
+  # The image is still ForceNew, it is simply watched through the input instead.
+  assert {
+    condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_external_values, jsonencode(local.source_image_reference))
+    error_message = "source_image_reference is ForceNew under azurerm and must still replace the machine when it changes."
   }
 }
 

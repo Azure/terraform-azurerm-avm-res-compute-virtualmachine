@@ -20,26 +20,29 @@ resource "azapi_resource" "this_linux_virtual_machine" {
     # changed in place by ARM. They live in sensitive_body, which is write-only and therefore
     # invisible to the plan, so a hash stands in for them here. See locals.linux_vm.tf.
     local.linux_vm_secret_fingerprint,
-    # Azure names the OS disk and assigns its resource id when the machine is built from an image,
-    # so those values are present in the body adopted by the moved block but absent from the body
-    # this module sends. Watching the body paths would read that as an immutable change and
-    # replace an adopted machine, so the inputs behind them are watched instead.
+    # A body path may only be watched below when the module always sends a real value for it.
+    # Anything the module can omit, or send as null so that the shape of the body stays readable,
+    # differs from the body a moved block adopts from Azure and would replace the machine. The
+    # inputs behind those paths are watched here instead, and they still force replacement exactly
+    # as the azurerm provider did.
     var.os_disk.name,
     var.os_managed_disk_id,
+    var.os_disk.security_encryption_type,
+    var.os_disk.secure_vm_disk_encryption_set_id,
+    var.source_image_resource_id,
+    jsonencode(local.source_image_reference),
+    jsonencode(local.linux_vm_ssh_public_keys),
   ]
   replace_triggers_refs = [
-    # Every path the azurerm provider marked ForceNew. Under AzAPI these are ordinary body
-    # members, so without this an immutable edit would plan as an in-place update and then fail
-    # at apply.
+    # Every path the azurerm provider marked ForceNew that the module always sends a real value
+    # for. Under AzAPI these are ordinary body members, so without this an immutable edit would
+    # plan as an in-place update and then fail at apply.
     "properties.osProfile.adminUsername",
     "properties.osProfile.computerName",
     "properties.osProfile.linuxConfiguration.disablePasswordAuthentication",
     "properties.osProfile.linuxConfiguration.provisionVMAgent",
-    "properties.osProfile.linuxConfiguration.ssh",
-    "properties.storageProfile.imageReference",
     "properties.storageProfile.osDisk.diffDiskSettings",
     "properties.storageProfile.osDisk.managedDisk.storageAccountType",
-    "properties.storageProfile.osDisk.managedDisk.securityProfile",
     "properties.securityProfile.uefiSettings",
     "properties.availabilitySet",
     "properties.platformFaultDomain",
