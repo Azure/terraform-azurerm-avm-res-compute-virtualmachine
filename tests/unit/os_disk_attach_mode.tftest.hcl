@@ -51,6 +51,33 @@ mock_provider "random" {
 }
 mock_provider "tls" {}
 
+# The blanket azapi_resource mock gives every azapi resource the same id, which the still-azurerm
+# resources reject when they parse it as a virtual machine ID. The virtual machine also has to
+# expose an output, because the OS disk lock and network access updater read its managed disk id
+# back off the created machine.
+override_resource {
+  target = azapi_resource.this_linux_virtual_machine
+  values = {
+    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-test"
+    output = {
+      identity = {
+        principalId = "11111111-1111-1111-1111-111111111111"
+        tenantId    = "22222222-2222-2222-2222-222222222222"
+      }
+      properties = {
+        vmId = "33333333-3333-3333-3333-333333333333"
+        storageProfile = {
+          osDisk = {
+            managedDisk = {
+              id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/vm-test-osdisk"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 variables {
   location            = "eastus"
   name                = "vm-attach-mode"
@@ -93,12 +120,23 @@ run "linux_attach_mode_omits_os_profile_attributes" {
   }
 
   assert {
-    condition     = azurerm_linux_virtual_machine.this[0].allow_extension_operations == true
-    error_message = "allow_extension_operations must not be sent in attach mode - updating it rewrites osProfile, which Azure rejects with 409 PropertyChangeNotAllowed on an imported VM."
+    condition     = !can(local.linux_vm_body.properties.osProfile)
+    error_message = "osProfile must not be sent in attach mode - updating it rewrites the profile, which Azure rejects with 409 PropertyChangeNotAllowed on an imported VM."
   }
   assert {
-    condition     = azurerm_linux_virtual_machine.this[0].disable_password_authentication == true
-    error_message = "disable_password_authentication must not be sent in attach mode - it is part of osProfile and is ForceNew, so an imported VM would be planned for replacement."
+    condition     = local.linux_vm_body.properties.storageProfile.osDisk.createOption == "Attach"
+    error_message = "An imported OS disk must be attached rather than created from an image."
+  }
+  assert {
+    condition     = local.linux_vm_body.properties.storageProfile.osDisk.deleteOption == "Detach"
+    error_message = "A disk the caller attached belongs to them and must survive the machine."
+  }
+  # The key is always present so that a computed image id cannot collapse the shape of the body
+  # and hide it from policy checks, so absence is expressed as a null value rather than a missing
+  # key.
+  assert {
+    condition     = local.linux_vm_body.properties.storageProfile.imageReference == null
+    error_message = "An imported OS disk must not also carry an image reference."
   }
 }
 
@@ -116,11 +154,11 @@ run "linux_without_attach_mode_honours_os_profile_attributes" {
   }
 
   assert {
-    condition     = azurerm_linux_virtual_machine.this[0].allow_extension_operations == false
+    condition     = local.linux_vm_body.properties.osProfile.allowExtensionOperations == false
     error_message = "allow_extension_operations must still be taken from the input variable when attach mode is not in use."
   }
   assert {
-    condition     = azurerm_linux_virtual_machine.this[0].disable_password_authentication == false
+    condition     = local.linux_vm_body.properties.osProfile.linuxConfiguration.disablePasswordAuthentication == false
     error_message = "disable_password_authentication must still be taken from the credential inputs when attach mode is not in use."
   }
 }

@@ -235,7 +235,7 @@ resource "azapi_resource" "this_windows_virtualmachine_lock" {
     azapi_resource.system_managed_identity_role_assignments,
     azurerm_virtual_machine_data_disk_attachment.this_linux,
     azurerm_virtual_machine_data_disk_attachment.this_windows,
-    azurerm_linux_virtual_machine.this,
+    azapi_resource.this_linux_virtual_machine,
     azapi_resource.this_network_interface_diagnostic_settings,
     azapi_resource.this_virtual_machine_diagnostic_settings,
     module.extension,

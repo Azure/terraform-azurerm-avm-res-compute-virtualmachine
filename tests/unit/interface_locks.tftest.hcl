@@ -43,6 +43,33 @@ override_resource {
     id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/disk-test"
   }
 }
+# The blanket azapi_resource mock gives every azapi resource the same id, which the still-azurerm
+# resources reject when they parse it as a virtual machine ID. The virtual machine also has to
+# expose an output, because the OS disk lock and network access updater read its managed disk id
+# back off the created machine.
+override_resource {
+  target = azapi_resource.this_linux_virtual_machine
+  values = {
+    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-test"
+    output = {
+      identity = {
+        principalId = "11111111-1111-1111-1111-111111111111"
+        tenantId    = "22222222-2222-2222-2222-222222222222"
+      }
+      properties = {
+        vmId = "33333333-3333-3333-3333-333333333333"
+        storageProfile = {
+          osDisk = {
+            managedDisk = {
+              id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/vm-test-osdisk"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 variables {
   location            = "eastus"
   name                = "vm-locks"
@@ -97,7 +124,7 @@ run "virtual_machine_lock_carries_notes" {
     error_message = "A Linux virtual machine lock must be created when the lock variable is supplied."
   }
   assert {
-    condition     = azapi_resource.this_linux_virtualmachine_lock[0].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-locks"
+    condition     = azapi_resource.this_linux_virtualmachine_lock[0].parent_id == azapi_resource.this_linux_virtual_machine[0].id
     error_message = "The virtual machine lock must be parented to the virtual machine."
   }
   assert {
