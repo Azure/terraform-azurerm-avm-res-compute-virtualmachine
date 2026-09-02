@@ -400,6 +400,102 @@ run "key_vault_certificates_omit_the_certificate_store_on_linux" {
   }
 }
 
+# ARM carries the data disks on the machine rather than as separate attachment resources. Both
+# inputs feed one list, and every entry carries a name so that AzAPI matches the list by identity
+# rather than by position, which is what keeps ARM's attachment order from reading as a change.
+run "data_disks_are_folded_into_the_machine_and_ordered_by_lun" {
+  command = apply
+
+  variables {
+    data_disk_managed_disks = {
+      second = {
+        name                 = "dsk-two"
+        storage_account_type = "StandardSSD_LRS"
+        lun                  = 2
+        caching              = "ReadWrite"
+        disk_size_gb         = 32
+      }
+      first = {
+        name                 = "dsk-one"
+        storage_account_type = "StandardSSD_LRS"
+        lun                  = 0
+        caching              = "None"
+        disk_size_gb         = 32
+      }
+    }
+    data_disk_existing_disks = {
+      existing = {
+        caching                  = "ReadOnly"
+        lun                      = 1
+        managed_disk_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/dsk-existing"
+      }
+    }
+  }
+
+  assert {
+    condition     = length(local.linux_vm_body.properties.storageProfile.dataDisks) == 3
+    error_message = "Both the disks this module creates and the disks the caller supplies belong on the machine."
+  }
+  assert {
+    condition     = [for disk in local.linux_vm_body.properties.storageProfile.dataDisks : disk.lun] == [0, 1, 2]
+    error_message = "The list must be ordered by lun so that the emitted body does not depend on how the input maps are written."
+  }
+  # AzAPI only accepts a string as a list identifier, so the lun cannot serve as one. Without a
+  # name on every entry it falls back to comparing the list by position, and ARM returns these in
+  # attachment order, which produces a diff on every plan.
+  assert {
+    condition     = [for disk in local.linux_vm_body.properties.storageProfile.dataDisks : disk.name] == ["dsk-one", "dsk-existing", "dsk-two"]
+    error_message = "Every data disk must carry its name so that AzAPI matches the list by identity."
+  }
+  assert {
+    condition     = alltrue([for disk in local.linux_vm_body.properties.storageProfile.dataDisks : can(tostring(disk.name)) && disk.name != ""])
+    error_message = "A blank or non-string name makes AzAPI fall back to positional matching."
+  }
+  assert {
+    condition     = local.linux_vm_body.properties.storageProfile.dataDisks[1].managedDisk.id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/dsk-existing"
+    error_message = "A disk the caller already owns must be attached by its resource id."
+  }
+  assert {
+    condition     = local.linux_vm_body.properties.storageProfile.dataDisks[0].caching == "None"
+    error_message = "Each disk keeps its own caching setting after the sort."
+  }
+  # The disks are managed elsewhere, either by this module or by the caller, so ARM must not delete
+  # them along with the machine.
+  assert {
+    condition     = alltrue([for disk in local.linux_vm_body.properties.storageProfile.dataDisks : disk.deleteOption == "Detach"])
+    error_message = "The azurerm attachment only ever detached, so a data disk must survive the machine."
+  }
+  assert {
+    condition     = alltrue([for disk in local.linux_vm_body.properties.storageProfile.dataDisks : disk.createOption == "Attach"])
+    error_message = "disk_attachment_create_option must be carried through to the machine body."
+  }
+}
+
+run "two_data_disks_cannot_share_a_lun" {
+  command = plan
+
+  variables {
+    data_disk_managed_disks = {
+      one = {
+        name                 = "dsk-one"
+        storage_account_type = "StandardSSD_LRS"
+        lun                  = 0
+        caching              = "ReadWrite"
+        disk_size_gb         = 32
+      }
+    }
+    data_disk_existing_disks = {
+      clash = {
+        caching                  = "ReadWrite"
+        lun                      = 0
+        managed_disk_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/dsk-existing"
+      }
+    }
+  }
+
+  expect_failures = [azapi_resource.this_linux_virtual_machine]
+}
+
 run "immutable_properties_force_replacement" {
   command = apply
 

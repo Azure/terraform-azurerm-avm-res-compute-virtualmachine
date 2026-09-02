@@ -12,6 +12,13 @@ resource "azapi_resource" "this_windows_virtual_machine" {
   type                = var.resource_types.compute_virtual_machines
   body                = local.windows_vm_body
   ignore_body_changes = length(var.ignore_body_changes.compute_virtual_machines) > 0 ? var.ignore_body_changes.compute_virtual_machines : null
+  # ARM returns the data disks in the order they were attached, which is not the order this module
+  # sends them. Matching by name rather than by position stops that difference reading as a change
+  # on every plan. name is also AzAPI's default identifier, but it is set explicitly because the
+  # matching behaviour is not otherwise visible from the config.
+  list_unique_id_property = {
+    "properties.storageProfile.dataDisks" = "name"
+  }
   replace_triggers_external_values = [
     # The admin password, custom data and unattend content are ForceNew under the azurerm provider
     # and cannot be changed in place by ARM. They live in sensitive_body, which is write-only and
@@ -76,6 +83,12 @@ resource "azapi_resource" "this_windows_virtual_machine" {
       condition     = local.parent_id_for_resource_group[var.resource_group_name] != null
       error_message = "Unable to determine the subscription for the virtual machine. Set `parent_id` to the resource group resource ID, or supply `private_ip_subnet_resource_id` on at least one IP configuration so the subscription can be derived from it."
     }
+    # ARM keys a data disk by its lun, so two disks sharing one would silently collapse into a
+    # single entry rather than failing.
+    precondition {
+      condition     = length(local.vm_data_disks) == length(distinct([for disk in local.vm_data_disks : disk.lun]))
+      error_message = "Each data disk needs its own lun, across both `data_disk_managed_disks` and `data_disk_existing_disks`."
+    }
   }
   depends_on = [ #the associations are now properties of the interface body, so the interface alone is enough.
     azapi_resource.virtualmachine_network_interfaces
@@ -119,8 +132,6 @@ resource "azapi_resource" "this_windows_virtualmachine_lock" {
     azapi_resource.virtualmachine_network_interfaces,
     azapi_resource.virtualmachine_public_ips,
     azapi_resource.system_managed_identity_role_assignments,
-    azurerm_virtual_machine_data_disk_attachment.this_linux,
-    azurerm_virtual_machine_data_disk_attachment.this_windows,
     azapi_resource.this_linux_virtual_machine,
     azapi_resource.this_network_interface_diagnostic_settings,
     azapi_resource.this_virtual_machine_diagnostic_settings,
