@@ -58,50 +58,40 @@ resource "azapi_resource" "this_data_disk" {
   }
 }
 
-#attach the disk(s) to the virtual machine
-resource "azurerm_virtual_machine_data_disk_attachment" "this_linux" {
-  for_each = { for disk, values in var.data_disk_managed_disks : disk => values if(lower(var.os_type) == "linux") }
+# The data disks are now members of the machine body rather than separate attachments. The disks
+# are already attached in Azure, so Terraform only has to stop tracking these resources: the body
+# it sends next describes the attachments that already exist. Destroying them instead would detach
+# live disks from a running machine and immediately reattach them.
+removed {
+  from = azurerm_virtual_machine_data_disk_attachment.this_linux
 
-  caching                   = each.value.caching
-  lun                       = each.value.lun
-  managed_disk_id           = azapi_resource.this_data_disk[each.key].id
-  virtual_machine_id        = azapi_resource.this_linux_virtual_machine[0].id
-  create_option             = each.value.disk_attachment_create_option
-  write_accelerator_enabled = each.value.write_accelerator_enabled
+  lifecycle {
+    destroy = false
+  }
 }
 
-resource "azurerm_virtual_machine_data_disk_attachment" "this_windows" {
-  for_each = { for disk, values in var.data_disk_managed_disks : disk => values if(lower(var.os_type) == "windows") }
+removed {
+  from = azurerm_virtual_machine_data_disk_attachment.this_windows
 
-  caching                   = each.value.caching
-  lun                       = each.value.lun
-  managed_disk_id           = azapi_resource.this_data_disk[each.key].id
-  virtual_machine_id        = azapi_resource.this_windows_virtual_machine[0].id
-  create_option             = each.value.disk_attachment_create_option
-  write_accelerator_enabled = each.value.write_accelerator_enabled
+  lifecycle {
+    destroy = false
+  }
 }
 
-#attach the disk(s) to the virtual machine
-resource "azurerm_virtual_machine_data_disk_attachment" "this_linux_existing" {
-  for_each = { for disk, values in var.data_disk_existing_disks : disk => values if(lower(var.os_type) == "linux") }
+removed {
+  from = azurerm_virtual_machine_data_disk_attachment.this_linux_existing
 
-  caching                   = each.value.caching
-  lun                       = each.value.lun
-  managed_disk_id           = each.value.managed_disk_resource_id
-  virtual_machine_id        = azapi_resource.this_linux_virtual_machine[0].id
-  create_option             = each.value.disk_attachment_create_option
-  write_accelerator_enabled = each.value.write_accelerator_enabled
+  lifecycle {
+    destroy = false
+  }
 }
 
-resource "azurerm_virtual_machine_data_disk_attachment" "this_windows_existing" {
-  for_each = { for disk, values in var.data_disk_existing_disks : disk => values if(lower(var.os_type) == "windows") }
+removed {
+  from = azurerm_virtual_machine_data_disk_attachment.this_windows_existing
 
-  caching                   = each.value.caching
-  lun                       = each.value.lun
-  managed_disk_id           = each.value.managed_disk_resource_id
-  virtual_machine_id        = azapi_resource.this_windows_virtual_machine[0].id
-  create_option             = each.value.disk_attachment_create_option
-  write_accelerator_enabled = each.value.write_accelerator_enabled
+  lifecycle {
+    destroy = false
+  }
 }
 
 moved {
@@ -142,8 +132,8 @@ resource "azapi_resource" "this_disk_lock" {
   }
 
   depends_on = [
-    azurerm_virtual_machine_data_disk_attachment.this_linux,
-    azurerm_virtual_machine_data_disk_attachment.this_windows,
+    azapi_resource.this_linux_virtual_machine,
+    azapi_resource.this_windows_virtual_machine,
     azapi_resource.this_windows_virtual_machine,
     azapi_resource.this_linux_virtual_machine
   ]
@@ -185,8 +175,8 @@ resource "azapi_resource" "this_os_disk_lock" {
   }
 
   depends_on = [
-    azurerm_virtual_machine_data_disk_attachment.this_linux,
-    azurerm_virtual_machine_data_disk_attachment.this_windows,
+    azapi_resource.this_linux_virtual_machine,
+    azapi_resource.this_windows_virtual_machine,
     azapi_resource.this_windows_virtual_machine,
     azapi_resource.this_linux_virtual_machine,
     module.extension

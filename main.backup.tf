@@ -17,8 +17,8 @@ module "backup" {
   timeouts                      = var.timeouts
 
   depends_on = [
-    azurerm_virtual_machine_data_disk_attachment.this_linux,
-    azurerm_virtual_machine_data_disk_attachment.this_windows
+    azapi_resource.this_linux_virtual_machine,
+    azapi_resource.this_windows_virtual_machine
   ]
 }
 
