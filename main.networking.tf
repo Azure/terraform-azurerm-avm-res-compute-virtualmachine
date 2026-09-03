@@ -126,7 +126,7 @@ resource "azapi_resource" "this_public_ip_lock" {
     azapi_resource.virtualmachine_network_interfaces,
     azapi_resource.virtualmachine_public_ips,
     azapi_resource.this_linux_virtual_machine,
-    azurerm_windows_virtual_machine.this
+    azapi_resource.this_windows_virtual_machine
   ]
 }
 
@@ -170,7 +170,7 @@ resource "azapi_resource" "this_nic_lock" {
     azapi_resource.virtualmachine_network_interfaces,
     azapi_resource.virtualmachine_public_ips,
     azapi_resource.this_linux_virtual_machine,
-    azurerm_windows_virtual_machine.this
+    azapi_resource.this_windows_virtual_machine
   ]
 }
 

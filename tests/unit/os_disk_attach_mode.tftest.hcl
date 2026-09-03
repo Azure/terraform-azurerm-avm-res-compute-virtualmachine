@@ -1,13 +1,10 @@
 # Attach mode (os_disk_attach_mode / os_managed_disk_id) VMs have no osProfile in Azure, so the
-# module must not send any osProfile derived attribute. The provider marks those attributes
-# Optional+Computed, which means the mocked provider fills them from the `defaults` below whenever
-# the module leaves them null. The defaults are therefore deliberately the opposite of the values
-# fed in through `variables`, so a value that leaks through the guard is distinguishable from a
-# value that was correctly nulled out.
+# module must not send any osProfile derived attribute. The assertions read the request body the
+# module builds, and the inputs below are deliberately the opposite of the ARM defaults so that a
+# value leaking through the guard is distinguishable from one that was correctly dropped.
 mock_provider "azapi" {
-  # The virtual machine is still an azurerm resource and parses each network_interface_ids entry as
-  # an ARM ID, so the mocked interface must carry a well-formed one rather than the generated
-  # placeholder.
+  # The blanket mock gives every azapi resource the same id, and the data disk attachments still
+  # parse the machine id as an ARM ID, so it has to be well formed rather than a placeholder.
   mock_resource "azapi_resource" {
     defaults = {
       id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
@@ -18,25 +15,6 @@ mock_provider "azurerm" {
   mock_resource "azurerm_network_interface" {
     defaults = {
       id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
-    }
-  }
-
-  mock_resource "azurerm_linux_virtual_machine" {
-    defaults = {
-      allow_extension_operations      = true
-      disable_password_authentication = true
-      os_disk = {
-        id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/vm-attach-mode-osdisk"
-      }
-    }
-  }
-
-  mock_resource "azurerm_windows_virtual_machine" {
-    defaults = {
-      allow_extension_operations = true
-      os_disk = {
-        id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/vm-attach-mode-osdisk"
-      }
     }
   }
 }
@@ -57,6 +35,29 @@ mock_provider "tls" {}
 # back off the created machine.
 override_resource {
   target = azapi_resource.this_linux_virtual_machine
+  values = {
+    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-test"
+    output = {
+      identity = {
+        principalId = "11111111-1111-1111-1111-111111111111"
+        tenantId    = "22222222-2222-2222-2222-222222222222"
+      }
+      properties = {
+        vmId = "33333333-3333-3333-3333-333333333333"
+        storageProfile = {
+          osDisk = {
+            managedDisk = {
+              id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/vm-test-osdisk"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+override_resource {
+  target = azapi_resource.this_windows_virtual_machine
   values = {
     id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-test"
     output = {
@@ -173,8 +174,27 @@ run "windows_attach_mode_omits_os_profile_attributes" {
   }
 
   assert {
-    condition     = azurerm_windows_virtual_machine.this[0].allow_extension_operations == true
-    error_message = "allow_extension_operations must not be sent in attach mode - updating it rewrites osProfile, which Azure rejects with 409 PropertyChangeNotAllowed on an imported VM."
+    condition     = !can(local.windows_vm_body.properties.osProfile)
+    error_message = "osProfile must not be sent in attach mode - updating it rewrites the profile, which Azure rejects with 409 PropertyChangeNotAllowed on an imported VM."
+  }
+  assert {
+    condition     = local.windows_vm_sensitive_body == null
+    error_message = "An imported OS disk has no admin password to set, so the sensitive body must be empty."
+  }
+  assert {
+    condition     = local.windows_vm_body.properties.storageProfile.osDisk.createOption == "Attach"
+    error_message = "An imported OS disk must be attached rather than created from an image."
+  }
+  assert {
+    condition     = local.windows_vm_body.properties.storageProfile.osDisk.deleteOption == "Detach"
+    error_message = "A disk the caller attached belongs to them and must survive the machine."
+  }
+  # The key is always present so that a computed image id cannot collapse the shape of the body
+  # and hide it from policy checks, so absence is expressed as a null value rather than a missing
+  # key.
+  assert {
+    condition     = local.windows_vm_body.properties.storageProfile.imageReference == null
+    error_message = "An imported OS disk must not also carry an image reference."
   }
 }
 
@@ -187,7 +207,7 @@ run "windows_without_attach_mode_honours_os_profile_attributes" {
   }
 
   assert {
-    condition     = azurerm_windows_virtual_machine.this[0].allow_extension_operations == false
+    condition     = local.windows_vm_body.properties.osProfile.allowExtensionOperations == false
     error_message = "allow_extension_operations must still be taken from the input variable when attach mode is not in use."
   }
 }
