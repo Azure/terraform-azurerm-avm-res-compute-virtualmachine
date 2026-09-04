@@ -150,7 +150,6 @@ module "vnet" {
   }
 }
 
-
 # Uncomment this section if you would like to include a bastion resource with this example.
 # resource "azurerm_public_ip" "bastionpip" {
 #   name                = module.naming.public_ip.name_unique
@@ -324,12 +323,14 @@ resource "azurerm_monitor_data_collection_rule" "test" {
     destinations = [azurerm_log_analytics_workspace.this_workspace.name]
     streams      = ["Microsoft-Event", "Microsoft-Perf"]
   }
+
   destinations {
     log_analytics {
       name                  = azurerm_log_analytics_workspace.this_workspace.name
       workspace_resource_id = azurerm_log_analytics_workspace.this_workspace.id
     }
   }
+
   data_sources {
     performance_counter {
       counter_specifiers = [

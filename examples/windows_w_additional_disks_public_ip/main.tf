@@ -128,7 +128,6 @@ module "vnet" {
   }
 }
 
-
 # Uncomment this section if you would like to include a bastion resource with this example.
 # resource "azurerm_public_ip" "bastionpip" {
 #   allocation_method   = "Static"
@@ -185,8 +184,6 @@ resource "azurerm_managed_disk" "this" {
   disk_size_gb         = 128
   zone                 = random_integer.zone_index.result
 }
-
-
 
 module "testvm" {
   source = "../../"

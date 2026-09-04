@@ -197,10 +197,10 @@ resource "azurerm_storage_container" "app_container" {
 
 resource "azurerm_storage_blob" "app" {
   name                   = "install-script.ps1"
-  storage_account_name   = azurerm_storage_account.app_account.name
-  storage_container_name = azurerm_storage_container.app_container.name
   type                   = "Block"
   source                 = "${path.module}/install-vscode.ps1"
+  storage_account_name   = azurerm_storage_account.app_account.name
+  storage_container_name = azurerm_storage_container.app_container.name
 }
 
 #blob content = file
@@ -230,9 +230,11 @@ resource "azurerm_gallery_application_version" "test_app_version" {
     install = "powershell.exe -command ./install-script.ps1"
     remove  = "powershell.exe -command ./install-script.ps1 -mode uninstall"
   }
+
   source {
     media_link = azurerm_storage_blob.app.id
   }
+
   target_region {
     name                   = azurerm_gallery_application.app_gallery_sample.location
     regional_replica_count = 1
@@ -253,6 +255,7 @@ resource "azurerm_maintenance_configuration" "test_maintenance_config" {
       classifications_to_include = ["Critical", "Security", "UpdateRollup"]
     }
   }
+
   window {
     start_date_time = formatdate("YYYY-MM-DD hh:mm", timeadd(timestamp(), "30m"))
     time_zone       = "Pacific Standard Time"

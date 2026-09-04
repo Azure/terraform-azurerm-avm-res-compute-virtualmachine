@@ -11,10 +11,7 @@ resource "azapi_resource" "this_linux_virtual_machine" {
   parent_id           = local.parent_id_for_resource_group[var.resource_group_name]
   type                = var.resource_types.compute_virtual_machines
   body                = local.linux_vm_body
-  create_headers      = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers      = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes = length(var.ignore_body_changes.compute_virtual_machines) > 0 ? var.ignore_body_changes.compute_virtual_machines : null
-  read_headers        = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   replace_triggers_external_values = [
     # admin_password and custom_data are ForceNew under the azurerm provider and cannot be
     # changed in place by ARM. They live in sensitive_body, which is write-only and therefore
@@ -56,7 +53,6 @@ resource "azapi_resource" "this_linux_virtual_machine" {
   retry                  = var.retry
   sensitive_body         = local.linux_vm_sensitive_body
   tags                   = local.tags
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -107,13 +103,9 @@ resource "azapi_resource" "this_linux_virtualmachine_lock" {
       notes = local.interface_lock_notes[var.lock.kind]
     }
   }
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

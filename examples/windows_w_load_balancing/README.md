@@ -164,7 +164,6 @@ module "vnet" {
   }
 }
 
-
 # # Uncomment this section if you would like to include a bastion resource with this example.
 # resource "azurerm_public_ip" "bastionpip" {
 #   name                = module.naming.public_ip.name_unique
@@ -249,6 +248,7 @@ resource "azurerm_application_gateway" "network" {
   backend_address_pool {
     name = local.backend_address_pool_name
   }
+
   backend_http_settings {
     cookie_based_affinity = "Disabled"
     name                  = local.http_setting_name
@@ -257,24 +257,29 @@ resource "azurerm_application_gateway" "network" {
     path                  = "/path1/"
     request_timeout       = 60
   }
+
   frontend_ip_configuration {
     name                 = local.frontend_ip_configuration_name
     public_ip_address_id = azurerm_public_ip.app_gw_pip.id
   }
+
   frontend_port {
     name = local.frontend_port_name
     port = 80
   }
+
   gateway_ip_configuration {
     name      = "my-gateway-ip-configuration"
     subnet_id = module.vnet.subnets["vm_subnet_2"].resource_id
   }
+
   http_listener {
     frontend_ip_configuration_name = local.frontend_ip_configuration_name
     frontend_port_name             = local.frontend_port_name
     name                           = local.listener_name
     protocol                       = "Http"
   }
+
   request_routing_rule {
     http_listener_name         = local.listener_name
     name                       = local.request_routing_rule_name
@@ -283,10 +288,12 @@ resource "azurerm_application_gateway" "network" {
     backend_http_settings_name = local.http_setting_name
     priority                   = 9
   }
+
   sku {
     name = "Standard_v2"
     tier = "Standard_v2"
   }
+
   autoscale_configuration {
     min_capacity = 2
     max_capacity = 5
@@ -358,7 +365,6 @@ resource "azurerm_application_security_group" "test_asg" {
   name                = module.naming.application_security_group.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
 }
-
 
 module "testvm" {
   source = "../../"

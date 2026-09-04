@@ -11,10 +11,7 @@ resource "azapi_resource" "this_data_disk" {
   parent_id           = local.data_disk_parent_ids[each.key]
   type                = var.resource_types.compute_disks
   body                = local.data_disk_bodies[each.key]
-  create_headers      = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers      = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes = length(var.ignore_body_changes.compute_disks) > 0 ? var.ignore_body_changes.compute_disks : null
-  read_headers        = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   replace_triggers_refs = [
     # The azurerm provider marks these attributes ForceNew, so editing one destroyed and recreated
     # the disk. Under AzAPI they are ordinary body members and would otherwise be planned as an
@@ -37,7 +34,6 @@ resource "azapi_resource" "this_data_disk" {
   response_export_values = ["properties.diskSizeBytes", "properties.uniqueId"]
   retry                  = var.retry
   tags                   = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -130,13 +126,9 @@ resource "azapi_resource" "this_disk_lock" {
       level = each.value.lock_level
     }
   }
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -177,13 +169,9 @@ resource "azapi_resource" "this_os_disk_lock" {
       notes = local.interface_lock_notes[var.os_disk.lock_level]
     }
   }
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -218,18 +206,14 @@ resource "azapi_resource" "disks_role_assignments" {
   parent_id            = azapi_resource.this_data_disk[each.value.disk_key].id
   type                 = var.resource_types.authorization_role_assignments
   body                 = module.avm_utl_interfaces.role_assignments_azapi["disk-${each.key}"].body
-  create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes  = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
   ignore_null_property = true
-  read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   # Azure cannot change the principal or role definition of an existing role assignment, and the
   # azurerm resource treated both as ForceNew. The generated name is stable across such a change, so
   # without this the module would plan an in-place update that Azure rejects.
   replace_triggers_refs  = ["properties.principalId", "properties.roleDefinitionId"]
   response_export_values = []
   retry                  = var.retry
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

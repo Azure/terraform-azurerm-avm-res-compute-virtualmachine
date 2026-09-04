@@ -33,7 +33,6 @@ locals {
 data "azapi_resource" "backup_item" {
   resource_id            = local.backup_item_resource_id
   type                   = local.backup_protected_item_resource_type
-  headers                = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_not_found       = true
   response_export_values = ["properties.isScheduledForDeferredDelete"]
 }
@@ -52,11 +51,10 @@ resource "azapi_resource_action" "backup_ensure_active" {
     }) : jsonencode({
     properties = local.backup_body_properties
   }))
-  headers                = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   locks                  = [local.backup_item_resource_id]
   response_export_values = []
-  when                   = "apply"
   retry                  = var.retry
+  when                   = "apply"
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -81,12 +79,8 @@ resource "azapi_update_resource" "backup_protection" {
   }
   ignore_casing          = true
   locks                  = [local.backup_item_resource_id]
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-
-  depends_on = [azapi_resource_action.backup_ensure_active]
-  retry      = var.retry
+  retry                  = var.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -98,6 +92,8 @@ resource "azapi_update_resource" "backup_protection" {
       update = timeouts.value.update
     }
   }
+
+  depends_on = [azapi_resource_action.backup_ensure_active]
 }
 
 # The Backup API uses PUT ProtectionStopped to retain recovery points and DELETE to remove them.
@@ -113,14 +109,11 @@ resource "azapi_resource_action" "backup_destroy" {
       sourceResourceId  = var.virtualmachine_resource_id
     }
   } : null
-  headers                = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_not_found       = true
   locks                  = [local.backup_item_resource_id]
   response_export_values = []
+  retry                  = var.retry
   when                   = "destroy"
-
-  depends_on = [azapi_update_resource.backup_protection]
-  retry      = var.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -132,4 +125,6 @@ resource "azapi_resource_action" "backup_destroy" {
       update = timeouts.value.update
     }
   }
+
+  depends_on = [azapi_update_resource.backup_protection]
 }
