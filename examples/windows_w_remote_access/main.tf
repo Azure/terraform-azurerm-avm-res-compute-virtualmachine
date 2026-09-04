@@ -40,6 +40,7 @@ module "regions" {
 
   availability_zones_filter = true
 }
+
 locals {
   admin_username    = "azureuser"
   deployment_region = "canadacentral" #temporarily pinning on single region
@@ -260,7 +261,6 @@ resource "azurerm_public_ip" "this" {
   zones                   = ["1", "2", "3"]
 }
 
-
 # For production deployment, use a different keyvault for the winrm certificate from the password
 resource "azurerm_key_vault_certificate" "self_signed_winrm" {
   key_vault_id = module.avm_res_keyvault_vault.resource_id
@@ -474,7 +474,6 @@ resource "terraform_data" "enable_certificate_rotation_on_winrms_listener" {
     source      = "w_sc_task_rotate_winrms_cert.ps1"
     destination = "C:\\AzureData\\w_sc_task_rotate_winrms_cert.ps1"
   }
-
   provisioner "remote-exec" {
     inline = local.inline_remote_exec
   }

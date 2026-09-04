@@ -22,6 +22,7 @@ resource "azurerm_virtual_machine_run_command" "this" {
       }
     }
   }
+
   dynamic "error_blob_managed_identity" {
     for_each = var.error_blob_managed_identity == null ? [] : ["error_blob_managed_identity"]
 
@@ -30,6 +31,7 @@ resource "azurerm_virtual_machine_run_command" "this" {
       object_id = var.error_blob_managed_identity.object_id
     }
   }
+
   dynamic "output_blob_managed_identity" {
     for_each = var.output_blob_managed_identity == null ? [] : ["output_blob_managed_identity"]
 
@@ -38,6 +40,7 @@ resource "azurerm_virtual_machine_run_command" "this" {
       object_id = var.output_blob_managed_identity.object_id
     }
   }
+
   dynamic "parameter" {
     for_each = var.parameters
 
@@ -46,6 +49,7 @@ resource "azurerm_virtual_machine_run_command" "this" {
       value = parameter.value.value
     }
   }
+
   dynamic "protected_parameter" {
     for_each = try(length(var.protected_parameters) > 0, false) ? var.protected_parameters : {}
 
@@ -54,6 +58,7 @@ resource "azurerm_virtual_machine_run_command" "this" {
       value = protected_parameter.value.value
     }
   }
+
   timeouts {
     create = var.timeouts.create
     delete = var.timeouts.delete

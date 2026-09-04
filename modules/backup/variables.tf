@@ -57,30 +57,12 @@ variable "exclude_disk_luns" {
 DESCRIPTION
 }
 
-variable "include_disk_luns" {
-  type        = list(number)
-  default     = null
-  description = <<DESCRIPTION
-`include_disk_luns` - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection. Only one of `exclude_disk_luns` or `include_disk_luns` can be set. If both are set then only the `exclude_disk_luns` value will be used.
-DESCRIPTION
-}
-
-variable "retain_backup_data_on_destroy" {
-  type        = bool
-  default     = false
-  description = <<DESCRIPTION
-`retain_backup_data_on_destroy` - (Optional) - When `true`, destroying the module stops protection and retains the existing recovery points instead of deleting the protected item. Use this for immutable vaults or whenever backup data must outlive the VM. Retained backup data can continue to incur charges. Defaults to `false`.
-DESCRIPTION
-  nullable    = false
-}
-
 # tflint-ignore: terraform_unused_declarations
 variable "ignore_body_changes" {
   type = object({
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
   })
   default     = {}
-  nullable    = false
   description = <<DESCRIPTION
 Body-relative paths whose changes the AzAPI provider ignores, per resource. Paths use dot notation.
 Configuration changes at an ignored path are not sent to Azure until that path is removed from the
@@ -92,6 +74,15 @@ declared for interface consistency but is not currently applied to a resource.
 
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
 DESCRIPTION
+  nullable    = false
+}
+
+variable "include_disk_luns" {
+  type        = list(number)
+  default     = null
+  description = <<DESCRIPTION
+`include_disk_luns` - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection. Only one of `exclude_disk_luns` or `include_disk_luns` can be set. If both are set then only the `exclude_disk_luns` value will be used.
+DESCRIPTION
 }
 
 variable "resource_types" {
@@ -99,13 +90,22 @@ variable "resource_types" {
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01")
   })
   default     = {}
-  nullable    = false
   description = <<DESCRIPTION
 Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key
 defaults to a tested value; supply only the keys you want to override.
 
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
 DESCRIPTION
+  nullable    = false
+}
+
+variable "retain_backup_data_on_destroy" {
+  type        = bool
+  default     = false
+  description = <<DESCRIPTION
+`retain_backup_data_on_destroy` - (Optional) - When `true`, destroying the module stops protection and retains the existing recovery points instead of deleting the protected item. Use this for immutable vaults or whenever backup data must outlive the VM. Retained backup data can continue to incur charges. Defaults to `false`.
+DESCRIPTION
+  nullable    = false
 }
 
 variable "retry" {

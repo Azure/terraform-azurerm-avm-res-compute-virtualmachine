@@ -229,24 +229,24 @@ resource "azurerm_storage_container" "this" {
 
 resource "azurerm_storage_blob" "example1" {
   name                   = "script1"
-  storage_account_name   = azurerm_storage_account.this.name
-  storage_container_name = azurerm_storage_container.this.name
   type                   = "Block"
   source_content         = "echo hello world"
+  storage_account_name   = azurerm_storage_account.this.name
+  storage_container_name = azurerm_storage_container.this.name
 }
 
 resource "azurerm_storage_blob" "example2" {
   name                   = "output"
+  type                   = "Append"
   storage_account_name   = azurerm_storage_account.this.name
   storage_container_name = azurerm_storage_container.this.name
-  type                   = "Append"
 }
 
 resource "azurerm_storage_blob" "example3" {
   name                   = "error"
+  type                   = "Append"
   storage_account_name   = azurerm_storage_account.this.name
   storage_container_name = azurerm_storage_container.this.name
-  type                   = "Append"
 }
 
 resource "azurerm_role_assignment" "this" {

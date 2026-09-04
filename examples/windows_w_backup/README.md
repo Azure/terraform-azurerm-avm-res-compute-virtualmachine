@@ -176,6 +176,7 @@ resource "azurerm_bastion_host" "bastion" {
     subnet_id            = module.vnet.subnets["AzureBastionSubnet"].resource_id
   }
 }
+
 #*/
 
 data "azurerm_client_config" "current" {}
@@ -251,6 +252,7 @@ resource "azurerm_backup_policy_vm" "test_policy" {
     frequency = "Daily"
     time      = "23:00"
   }
+
   retention_daily {
     count = 10
   }

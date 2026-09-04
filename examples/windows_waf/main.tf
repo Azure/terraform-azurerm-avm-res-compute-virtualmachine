@@ -137,7 +137,6 @@ module "vnet" {
   }
 }
 
-
 # Uncomment this section if you would like to include a bastion resource with this example.
 # resource "azurerm_public_ip" "bastionpip" {
 #   name                = module.naming.public_ip.name_unique
@@ -241,6 +240,7 @@ resource "azurerm_backup_policy_vm" "test_policy" {
     frequency = "Daily"
     time      = "23:00"
   }
+
   retention_daily {
     count = 10
   }
@@ -262,6 +262,7 @@ resource "azurerm_maintenance_configuration" "test_maintenance_config" {
       classifications_to_include = ["Critical", "Security", "UpdateRollup"]
     }
   }
+
   window {
     start_date_time = formatdate("YYYY-MM-DD hh:mm", timeadd(timestamp(), "30m"))
     time_zone       = "Pacific Standard Time"
@@ -391,12 +392,14 @@ resource "azurerm_monitor_data_collection_rule" "test" {
     destinations = [azurerm_log_analytics_workspace.this_workspace.name]
     streams      = ["Microsoft-Event", "Microsoft-Perf"]
   }
+
   destinations {
     log_analytics {
       name                  = azurerm_log_analytics_workspace.this_workspace.name
       workspace_resource_id = azurerm_log_analytics_workspace.this_workspace.id
     }
   }
+
   data_sources {
     performance_counter {
       counter_specifiers = [

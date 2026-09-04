@@ -12,14 +12,10 @@ resource "azapi_resource" "virtualmachine_public_ips" {
   parent_id              = local.public_ip_parent_id
   type                   = var.resource_types.network_public_ip_addresses
   body                   = local.public_ip_body
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.network_public_ip_addresses) > 0 ? var.ignore_body_changes.network_public_ip_addresses : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = ["properties.ipAddress", "properties.dnsSettings"]
   retry                  = var.retry
   tags                   = var.public_ip_configuration_details.tags != null ? var.public_ip_configuration_details.tags : local.tags
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -54,14 +50,10 @@ resource "azapi_resource" "virtualmachine_network_interfaces" {
   parent_id              = local.nic_parent_ids[each.key]
   type                   = var.resource_types.network_network_interfaces
   body                   = local.nic_bodies[each.key]
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.network_network_interfaces) > 0 ? var.ignore_body_changes.network_network_interfaces : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = ["properties.ipConfigurations", "properties.macAddress", "properties.virtualMachine", "properties.dnsSettings"]
   retry                  = var.retry
   tags                   = each.value.tags != null && each.value.tags != {} ? each.value.tags : local.tags
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -103,13 +95,9 @@ resource "azapi_resource" "this_public_ip_lock" {
       level = var.public_ip_configuration_details.lock_level
     }
   }
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -147,13 +135,9 @@ resource "azapi_resource" "this_nic_lock" {
       level = each.value.lock_level
     }
   }
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -187,18 +171,14 @@ resource "azapi_resource" "this_network_interface_role_assignments" {
   parent_id            = azapi_resource.virtualmachine_network_interfaces[each.value.nic_key].id
   type                 = var.resource_types.authorization_role_assignments
   body                 = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].body
-  create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes  = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
   ignore_null_property = true
-  read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   # Azure cannot change the principal or role definition of an existing role assignment, and the
   # azurerm resource treated both as ForceNew. The generated name is stable across such a change, so
   # without this the module would plan an in-place update that Azure rejects.
   replace_triggers_refs  = ["properties.principalId", "properties.roleDefinitionId"]
   response_export_values = []
   retry                  = var.retry
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -230,14 +210,10 @@ resource "azapi_resource" "this_network_interface_diagnostic_settings" {
   parent_id              = azapi_resource.virtualmachine_network_interfaces[each.value.nic_key].id
   type                   = var.resource_types.insights_diagnostic_settings
   body                   = local.interface_diagnostic_settings_nic[each.key]
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.insights_diagnostic_settings) > 0 ? var.ignore_body_changes.insights_diagnostic_settings : null
   ignore_null_property   = true
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

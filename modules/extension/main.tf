@@ -20,6 +20,7 @@ resource "azurerm_virtual_machine_extension" "this" {
       source_vault_id = var.protected_settings_from_key_vault.source_vault_id
     }
   }
+
   timeouts {
     create = var.timeouts.create
     delete = var.timeouts.delete
