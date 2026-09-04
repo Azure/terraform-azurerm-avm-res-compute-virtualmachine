@@ -16,7 +16,7 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "this" {
   }
 
   depends_on = [
-    azurerm_virtual_machine_data_disk_attachment.this_linux,
-    azurerm_virtual_machine_data_disk_attachment.this_windows
+    azapi_resource.this_linux_virtual_machine,
+    azapi_resource.this_windows_virtual_machine
   ]
 }

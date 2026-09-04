@@ -113,6 +113,58 @@ locals {
     }
   ]
 
+  # ARM carries the data disks on the machine itself rather than as separate attachments. Both
+  # inputs feed one list: data_disk_managed_disks for the disks this module creates, and
+  # data_disk_existing_disks for disks the caller already owns.
+  #
+  # deleteOption is Detach on every entry, which is what the azurerm attachment resource did. The
+  # disks are managed elsewhere, either by this module as azapi_resource.this_data_disk or by the
+  # caller, so asking ARM to delete them with the machine would destroy a resource that something
+  # else still owns.
+  #
+  # name is what lets AzAPI match these entries by identity instead of by position, which is what
+  # list_unique_id_property on each machine selects. The lun would be the natural key, but AzAPI
+  # only accepts a string as an identifier and a lun is a number, so it silently falls back to
+  # positional matching. The disk name is a string and ARM returns it, so it works.
+  vm_data_disks_unsorted = concat(
+    [
+      for key, disk in var.data_disk_managed_disks : {
+        lun  = disk.lun
+        name = disk.name
+        # Neither of these carries a default on data_disk_managed_disks. The azurerm attachment
+        # supplied both from the provider, and ARM wants a value, so the documented defaults are
+        # supplied here instead.
+        createOption            = coalesce(disk.disk_attachment_create_option, "Attach")
+        writeAcceleratorEnabled = coalesce(disk.write_accelerator_enabled, false)
+        caching                 = disk.caching
+        deleteOption            = "Detach"
+        managedDisk             = { id = azapi_resource.this_data_disk[key].id }
+      }
+    ],
+    [
+      for key, disk in var.data_disk_existing_disks : {
+        lun = disk.lun
+        # Only the id is on the input, and the disk name is its last segment.
+        name                    = basename(disk.managed_disk_resource_id)
+        createOption            = coalesce(disk.disk_attachment_create_option, "Attach")
+        caching                 = disk.caching
+        deleteOption            = "Detach"
+        writeAcceleratorEnabled = disk.write_accelerator_enabled
+        managedDisk             = { id = disk.managed_disk_resource_id }
+      }
+    ],
+  )
+
+  # Sorting by lun keeps the emitted list deterministic however the caller writes the maps, so the
+  # body reads in lun order and a rename does not reshuffle it. It is not what keeps the plan
+  # clean: ARM returns these in attachment order, so the match has to be by name regardless. The
+  # lun is an ordinary input, so the sort is known at plan time even though the disk ids are not.
+  vm_data_disks = [
+    for lun in sort([for disk in local.vm_data_disks_unsorted : format("%09d", disk.lun)]) : [
+      for disk in local.vm_data_disks_unsorted : disk if format("%09d", disk.lun) == lun
+    ][0]
+  ]
+
   # Everything under `properties` that does not depend on the guest operating system. Each virtual
   # machine merges its own osProfile into this.
   vm_common_properties = merge(
@@ -121,6 +173,7 @@ locals {
       storageProfile = merge(
         { osDisk = local.vm_os_disk },
         { imageReference = local.vm_image_reference },
+        { dataDisks = local.vm_data_disks },
         var.disk_controller_type == null ? {} : { diskControllerType = var.disk_controller_type },
       )
       networkProfile = { networkInterfaces = local.vm_network_interfaces }
