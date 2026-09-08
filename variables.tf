@@ -1714,6 +1714,16 @@ variable "sku_size" {
   default     = "Standard_D2ds_v5"
   description = "The sku value to use for this virtual machine"
   nullable    = false
+
+  validation {
+    # Azure/avm-utl-sku-finder returns this sentinel instead of failing when no size in the region
+    # matched its filters, and callers routinely feed that module's output straight into sku_size.
+    # Left alone it reaches ARM as a VM size and comes back as a 400 InvalidParameter whose message
+    # lists every size the region offers, which buries the real cause. Reject it here so the
+    # failure names the region lookup that actually went wrong.
+    condition     = var.sku_size != "no_valid_skus_found"
+    error_message = "sku_size is \"no_valid_skus_found\", the sentinel Azure/avm-utl-sku-finder returns when no VM size in the target region matched its filters. No size was selected, so there is nothing to deploy. Choose another region or relax the vm_filters passed to that module."
+  }
 }
 
 variable "source_image_reference" {
