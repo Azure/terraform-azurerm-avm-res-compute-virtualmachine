@@ -1,3 +1,11 @@
+variable "location" {
+  type        = string
+  description = <<DESCRIPTION
+`location` - (Required) - The Azure region where the extension is deployed. This must match the region of the virtual machine the extension is applied to.
+DESCRIPTION
+  nullable    = false
+}
+
 variable "name" {
   type        = string
   description = <<DESCRIPTION
@@ -62,6 +70,25 @@ variable "failure_suppression_enabled" {
 DESCRIPTION
 }
 
+variable "ignore_body_changes" {
+  type = object({
+    compute_virtual_machines_extensions = optional(list(string), [])
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Body-relative paths whose changes the AzAPI provider ignores, per resource. Paths use dot notation,
+for example `properties.settings`. Individual list items cannot be targeted; ignore the whole list
+property instead.
+
+Configuration changes at an ignored path are not sent to Azure until that path is removed from the
+list. Because the value is held in provider-private state, a change takes effect only after an
+apply.
+
+- `compute_virtual_machines_extensions` - Ignored body paths for the virtual machine extension.
+DESCRIPTION
+  nullable    = false
+}
+
 variable "protected_settings" {
   type        = string
   default     = null
@@ -92,6 +119,37 @@ variable "provision_after_extensions" {
   default     = []
   description = <<DESCRIPTION
 `provision_after_extensions` - (Optional) - list of strings that specifies the collection of extension names after which this extension needs to be provisioned.
+DESCRIPTION
+}
+
+variable "resource_types" {
+  type = object({
+    compute_virtual_machines_extensions = optional(string, "Microsoft.Compute/virtualMachines/extensions@2024-11-01")
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key
+defaults to a tested value; supply only the keys you want to override.
+
+- `compute_virtual_machines_extensions` - The virtual machine extension.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "retry" {
+  type = object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+  default     = null
+  description = <<DESCRIPTION
+Retry configuration applied to every AzAPI resource managed by the module. Defaults to `null` (no
+custom retry).
+
+- `error_message_regex` - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds` - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
 DESCRIPTION
 }
 

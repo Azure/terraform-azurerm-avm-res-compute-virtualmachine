@@ -931,6 +931,10 @@ apply.
 - `compute_virtual_machines` - Ignored body paths for the virtual machine.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
+- `compute_virtual_machines_extensions` - Paths passed to the extension submodule.
+- `compute_virtual_machines_extensions.compute_virtual_machines_extensions` - Ignored body paths for the virtual machine extensions.
+- `compute_virtual_machines_run_commands` - Paths passed to the run command submodule.
+- `compute_virtual_machines_run_commands.compute_virtual_machines_run_commands` - Ignored body paths for the virtual machine run commands.
 
 Type:
 
@@ -947,6 +951,14 @@ object({
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
+    }), {})
+
+    compute_virtual_machines_extensions = optional(object({
+      compute_virtual_machines_extensions = optional(list(string), [])
+    }), {})
+
+    compute_virtual_machines_run_commands = optional(object({
+      compute_virtual_machines_run_commands = optional(list(string), [])
     }), {})
   })
 ```
@@ -1588,6 +1600,10 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 - `network_public_ip_addresses` - The public IP addresses created for the virtual machine's IP configurations.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
+- `compute_virtual_machines_extensions` - Resource-type overrides passed to the extension submodule.
+- `compute_virtual_machines_extensions.compute_virtual_machines_extensions` - The virtual machine extension.
+- `compute_virtual_machines_run_commands` - Resource-type overrides passed to the run command submodule.
+- `compute_virtual_machines_run_commands.compute_virtual_machines_run_commands` - The virtual machine run command.
 
 Type:
 
@@ -1604,6 +1620,14 @@ object({
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string)
+    }), {})
+
+    compute_virtual_machines_extensions = optional(object({
+      compute_virtual_machines_extensions = optional(string)
+    }), {})
+
+    compute_virtual_machines_run_commands = optional(object({
+      compute_virtual_machines_run_commands = optional(string)
     }), {})
   })
 ```

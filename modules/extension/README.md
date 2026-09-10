@@ -44,18 +44,22 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116, < 5.0)
-
 ## Resources
 
 The following resources are used by this module:
 
-- [azurerm_virtual_machine_extension.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_extension) (resource)
+- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
 
 The following input variables are required:
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: `location` - (Required) - The Azure region where the extension is deployed. This must match the region of the virtual machine the extension is applied to.
+
+Type: `string`
 
 ### <a name="input_name"></a> [name](#input\_name)
 
@@ -115,6 +119,28 @@ Type: `bool`
 
 Default: `false`
 
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative paths whose changes the AzAPI provider ignores, per resource. Paths use dot notation,  
+for example `properties.settings`. Individual list items cannot be targeted; ignore the whole list  
+property instead.
+
+Configuration changes at an ignored path are not sent to Azure until that path is removed from the  
+list. Because the value is held in provider-private state, a change takes effect only after an  
+apply.
+
+- `compute_virtual_machines_extensions` - Ignored body paths for the virtual machine extension.
+
+Type:
+
+```hcl
+object({
+    compute_virtual_machines_extensions = optional(list(string), [])
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_protected_settings"></a> [protected\_settings](#input\_protected\_settings)
 
 Description: `protected_settings` - (Optional) - The protected\_settings passed to the extension, like settings, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the protected\_settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
@@ -154,6 +180,44 @@ Description: `provision_after_extensions` - (Optional) - list of strings that sp
 Type: `list(string)`
 
 Default: `[]`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key  
+defaults to a tested value; supply only the keys you want to override.
+
+- `compute_virtual_machines_extensions` - The virtual machine extension.
+
+Type:
+
+```hcl
+object({
+    compute_virtual_machines_extensions = optional(string, "Microsoft.Compute/virtualMachines/extensions@2024-11-01")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to every AzAPI resource managed by the module. Defaults to `null` (no  
+custom retry).
+
+- `error_message_regex` - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds` - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
 
 ### <a name="input_settings"></a> [settings](#input\_settings)
 
