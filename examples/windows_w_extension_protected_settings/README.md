@@ -179,6 +179,11 @@ module "testvm" {
     # idempotency check - the extension has to fail for the test to catch it,
     # which is why failure_suppression_enabled stays false.
     #
+    # The command writes into C:\Windows\Temp because that always exists on a
+    # Windows image; C:\AzureData only appears once custom data has been staged,
+    # and this example deliberately supplies none. It ends in `exit 0` because
+    # the Custom Script extension treats any non-zero exit code as a failure.
+    #
     # `settings` is populated at the same time on purpose: protected and public
     # settings share one `properties` object, so this also proves that carrying
     # the secret does not strip its non-sensitive siblings.
@@ -197,7 +202,7 @@ module "testvm" {
 
       protected_settings = jsonencode(
         {
-          commandToExecute = "powershell.exe -ExecutionPolicy Unrestricted -Command \"Set-Content -Path C:\\AzureData\\avm-protected-settings-proof.txt -Value delivered\""
+          commandToExecute = "powershell.exe -ExecutionPolicy Unrestricted -Command \"Set-Content -Path C:\\Windows\\Temp\\avm-protected-settings-proof.txt -Value delivered; exit 0\""
         }
       )
     }
