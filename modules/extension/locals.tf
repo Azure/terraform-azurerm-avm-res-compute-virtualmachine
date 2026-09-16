@@ -17,12 +17,23 @@ locals {
   }
   extension_properties = merge(
     {
+      publisher          = var.publisher
+      suppressFailures   = var.failure_suppression_enabled
+      type               = var.type
+      typeHandlerVersion = var.type_handler_version
+    },
+    # The parent always passes these two explicitly, so a null arrives whenever the consumer omits
+    # them from the `extensions` map and the variable default never applies. Sending the null is a
+    # permanent diff: Azure stores false and echoes false back, never null, so every subsequent plan
+    # wants to rewrite the property. The azurerm provider normalised the null to false before
+    # writing, so omitting the key leaves the value Azure already holds rather than fighting it on
+    # every plan. Caught by the step 5 upgrade test, where both extensions failed to converge on the
+    # second plan.
+    var.auto_upgrade_minor_version == null ? {} : {
       autoUpgradeMinorVersion = var.auto_upgrade_minor_version
-      enableAutomaticUpgrade  = var.automatic_upgrade_enabled
-      publisher               = var.publisher
-      suppressFailures        = var.failure_suppression_enabled
-      type                    = var.type
-      typeHandlerVersion      = var.type_handler_version
+    },
+    var.automatic_upgrade_enabled == null ? {} : {
+      enableAutomaticUpgrade = var.automatic_upgrade_enabled
     },
     length(var.provision_after_extensions) == 0 ? {} : {
       provisionAfterExtensions = var.provision_after_extensions

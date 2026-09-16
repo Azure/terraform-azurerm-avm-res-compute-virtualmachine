@@ -74,6 +74,59 @@ run "omitted_optional_properties_are_absent_from_the_body" {
   }
 }
 
+# The parent passes every extension attribute explicitly, so a consumer who omits
+# `auto_upgrade_minor_version` or `automatic_upgrade_enabled` from the `extensions` map sends an
+# explicit null rather than falling back to this submodule's default - a default only fills an
+# omitted argument, never an explicit null. Azure stores false and returns false, so a null left in
+# the body is a permanent diff. These runs pass the nulls directly because reproducing the parent's
+# call shape is the only way to reach the path; the submodule defaults are exactly what the explicit
+# null defeats.
+run "explicit_null_upgrade_flags_are_absent_from_the_body" {
+  command = plan
+
+  module {
+    source = "./modules/extension"
+  }
+
+  variables {
+    auto_upgrade_minor_version = null
+    automatic_upgrade_enabled  = null
+  }
+
+  assert {
+    condition     = !can(local.extension_properties.autoUpgradeMinorVersion)
+    error_message = "A null auto_upgrade_minor_version must be absent from the body rather than sent as null."
+  }
+  assert {
+    condition     = !can(local.extension_properties.enableAutomaticUpgrade)
+    error_message = "A null automatic_upgrade_enabled must be absent from the body rather than sent as null."
+  }
+}
+
+run "supplied_upgrade_flags_are_carried_into_the_body" {
+  command = plan
+
+  module {
+    source = "./modules/extension"
+  }
+
+  variables {
+    auto_upgrade_minor_version = true
+    automatic_upgrade_enabled  = false
+  }
+
+  assert {
+    condition     = local.extension_properties.autoUpgradeMinorVersion == true
+    error_message = "A supplied auto_upgrade_minor_version must be carried into the body."
+  }
+  # Guards the obvious wrong fix: dropping the keys whenever they are falsy would silently discard a
+  # deliberate false.
+  assert {
+    condition     = local.extension_properties.enableAutomaticUpgrade == false
+    error_message = "A supplied automatic_upgrade_enabled must be carried into the body, including when false."
+  }
+}
+
 run "protected_settings_go_to_the_sensitive_body_only" {
   command = plan
 
