@@ -62,6 +62,7 @@ module "regions" {
   version = "0.5.0"
 
   availability_zones_filter = true
+  enable_telemetry          = false
 }
 
 locals {
@@ -92,8 +93,9 @@ module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
   version = "0.3.0"
 
-  location      = azurerm_resource_group.this_rg.location
-  cache_results = true
+  location         = azurerm_resource_group.this_rg.location
+  cache_results    = true
+  enable_telemetry = false
   vm_filters = {
     min_vcpus                      = 2
     max_vcpus                      = 2
@@ -113,7 +115,7 @@ module "natgateway" {
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.nat_gateway.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = true
+  enable_telemetry    = false
   public_ips = {
     public_ip_1 = {
       name = "nat_gw_pip1"
@@ -125,10 +127,11 @@ module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
   version = "=0.15.0"
 
-  location      = azurerm_resource_group.this_rg.location
-  parent_id     = azurerm_resource_group.this_rg.id
-  address_space = ["10.0.0.0/16"]
-  name          = module.naming.virtual_network.name_unique
+  location         = azurerm_resource_group.this_rg.location
+  parent_id        = azurerm_resource_group.this_rg.id
+  address_space    = ["10.0.0.0/16"]
+  enable_telemetry = false
+  name             = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-1"
@@ -204,7 +207,7 @@ module "loadbalancer" {
       name = "testBackendPool"
     }
   }
-  enable_telemetry = var.enable_telemetry
+  enable_telemetry = false
   # Virtual Network and Subnet for Internal LoadBalancer
   # frontend_vnet_resource_id   = azurerm_virtual_network.example.id
   frontend_subnet_resource_id = module.vnet.subnets["lb_subnet_1"].resource_id
@@ -310,6 +313,7 @@ module "avm_res_keyvault_vault" {
   name                        = "${module.naming.key_vault.name_unique}-win-alb"
   resource_group_name         = azurerm_resource_group.this_rg.name
   tenant_id                   = data.azurerm_client_config.current.tenant_id
+  enable_telemetry            = false
   enabled_for_disk_encryption = true
   network_acls = {
     default_action = "Allow"
@@ -357,7 +361,7 @@ module "testnsg" {
     }
   }
   resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = var.enable_telemetry
+  enable_telemetry    = false
 }
 
 resource "azurerm_application_security_group" "test_asg" {
@@ -378,7 +382,7 @@ module "testvm" {
       resource_id = module.avm_res_keyvault_vault.resource_id
     }
   }
-  enable_telemetry           = var.enable_telemetry
+  enable_telemetry           = false
   encryption_at_host_enabled = true
   network_interfaces = {
     network_interface_1 = {

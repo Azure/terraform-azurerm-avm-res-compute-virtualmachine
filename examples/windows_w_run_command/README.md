@@ -59,6 +59,7 @@ module "regions" {
   version = "0.5.0"
 
   availability_zones_filter = true
+  enable_telemetry          = false
 }
 
 locals {
@@ -89,8 +90,9 @@ module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
   version = "0.3.0"
 
-  location      = azurerm_resource_group.this_rg.location
-  cache_results = true
+  location         = azurerm_resource_group.this_rg.location
+  cache_results    = true
+  enable_telemetry = false
   vm_filters = {
     min_vcpus                      = 2
     max_vcpus                      = 2
@@ -110,7 +112,7 @@ module "natgateway" {
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.nat_gateway.name_unique
   resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = true
+  enable_telemetry    = false
   public_ips = {
     public_ip_1 = {
       name = "nat_gw_pip1"
@@ -125,6 +127,7 @@ module "vnet" {
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this_rg.location
   resource_group_name = azurerm_resource_group.this_rg.name
+  enable_telemetry    = false
   name                = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
@@ -179,6 +182,7 @@ module "avm_res_keyvault_vault" {
   name                        = "${module.naming.key_vault.name_unique}-win-rcm"
   resource_group_name         = azurerm_resource_group.this_rg.name
   tenant_id                   = data.azurerm_client_config.current.tenant_id
+  enable_telemetry            = false
   enabled_for_disk_encryption = true
   network_acls = {
     default_action = "Allow"
@@ -291,7 +295,7 @@ module "testvm" {
       content = "<FirstLogonCommands><SynchronousCommand><CommandLine>%windir%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoProfile -ExecutionPolicy Bypass -file C:\\test.ps1</CommandLine><Description>script</Description><Order>2</Order></SynchronousCommand></FirstLogonCommands>"
     }
   ]
-  enable_telemetry           = var.enable_telemetry
+  enable_telemetry           = false
   encryption_at_host_enabled = true
   managed_identities = {
     system_assigned            = true
