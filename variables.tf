@@ -733,6 +733,7 @@ variable "ignore_body_changes" {
     network_public_ip_addresses           = optional(list(string), [])
     compute_disks                         = optional(list(string), [])
     compute_virtual_machines              = optional(list(string), [])
+    devtestlab_schedules                  = optional(list(string), [])
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
@@ -764,6 +765,7 @@ apply.
 - `network_public_ip_addresses` - Ignored body paths for the public IP addresses.
 - `compute_disks` - Ignored body paths for the data disks.
 - `compute_virtual_machines` - Ignored body paths for the virtual machine.
+- `devtestlab_schedules` - Ignored body paths for the auto-shutdown schedule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
 - `compute_virtual_machines_extensions` - Paths passed to the extension submodule.
@@ -1395,6 +1397,7 @@ variable "resource_types" {
     insights_diagnostic_settings          = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
     network_network_interfaces            = optional(string, "Microsoft.Network/networkInterfaces@2024-10-01")
     network_public_ip_addresses           = optional(string, "Microsoft.Network/publicIPAddresses@2024-10-01")
+    devtestlab_schedules                  = optional(string, "Microsoft.DevTestLab/schedules@2018-09-15")
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string)
@@ -1422,6 +1425,7 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 - `insights_diagnostic_settings` - Diagnostic settings applied to the virtual machine and its OS disk.
 - `network_network_interfaces` - The network interfaces created for the virtual machine.
 - `network_public_ip_addresses` - The public IP addresses created for the virtual machine's IP configurations.
+- `devtestlab_schedules` - The auto-shutdown schedule applied to the virtual machine.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
 - `compute_virtual_machines_extensions` - Resource-type overrides passed to the extension submodule.
@@ -1703,6 +1707,8 @@ variable "shutdown_schedules" {
   description = <<SHUTDOWN_SCHEDULES
 This map of objects describes an auto-shutdown schedule for the virtual machine.  The default is to not have a shutdown schedule.
 
+Azure names the schedule after the virtual machine, so a machine can only have one. Supply at most one entry in this map.
+
 - `<map key>` - Use a custom map key for the shutdown schedule definition
   - `daily_recurrence_time` = (Required) The time each day when the schedule takes effect. Must match the format HHmm where HH is 00-23 and mm is 00-59 (e.g. 0930, 2300, etc.)
   - `enabled` = (Required) Designates whether the shutdown schedule is enabled.  Defaults to true when a schedule is configured.
@@ -1731,6 +1737,11 @@ Example Input:
 
 ```
 SHUTDOWN_SCHEDULES
+
+  validation {
+    condition     = length(var.shutdown_schedules) <= 1
+    error_message = "Only one shutdown schedule can be defined per virtual machine. Azure derives the schedule's name from the machine's name, so every entry in this map resolves to the same Azure resource."
+  }
 }
 
 variable "sku_size" {
