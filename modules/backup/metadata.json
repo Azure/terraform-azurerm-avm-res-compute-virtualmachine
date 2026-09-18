@@ -1,0 +1,7 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-verified-modules-tools/main/src/Avm.Authoring/Resources/Schemas/v1/avm-module-metadata.schema.json",
+  "moduleDisplayName": "Azure Virtual Machine Backup Module",
+  "moduleDescription": "This module manages the Azure Backup protected item for a single virtual machine in a Recovery Services vault, independently of the virtual machine's own lifecycle.",
+  "canonicalType": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems",
+  "telemetryIdPrefix": "46d3xtrf.res.bc45a4c"
+}
