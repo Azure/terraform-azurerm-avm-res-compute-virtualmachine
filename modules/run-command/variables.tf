@@ -57,6 +57,25 @@ variable "error_blob_uri" {
 DESCRIPTION
 }
 
+variable "ignore_body_changes" {
+  type = object({
+    compute_virtual_machines_run_commands = optional(list(string), [])
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Body-relative paths whose changes the AzAPI provider ignores, per resource. Paths use dot notation,
+for example `properties.source`. Individual list items cannot be targeted; ignore the whole list
+property instead.
+
+Configuration changes at an ignored path are not sent to Azure until that path is removed from the
+list. Because the value is held in provider-private state, a change takes effect only after an
+apply.
+
+- `compute_virtual_machines_run_commands` - Ignored body paths for the virtual machine run command.
+DESCRIPTION
+  nullable    = false
+}
+
 variable "output_blob_managed_identity" {
   type = object({
     client_id = optional(string)
@@ -103,6 +122,37 @@ variable "protected_parameters" {
   - `value` (Required): The run parameter value.
 DESCRIPTION
   sensitive   = true
+}
+
+variable "resource_types" {
+  type = object({
+    compute_virtual_machines_run_commands = optional(string, "Microsoft.Compute/virtualMachines/runCommands@2024-11-01")
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key
+defaults to a tested value; supply only the keys you want to override.
+
+- `compute_virtual_machines_run_commands` - The virtual machine run command.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "retry" {
+  type = object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+  default     = null
+  description = <<DESCRIPTION
+Retry configuration applied to every AzAPI resource managed by the module. Defaults to `null` (no
+custom retry).
+
+- `error_message_regex` - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds` - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+DESCRIPTION
 }
 
 variable "run_as_password" {

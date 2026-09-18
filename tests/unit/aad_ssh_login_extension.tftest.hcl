@@ -23,12 +23,6 @@ mock_provider "azurerm" {
       }
     }
   }
-
-  mock_resource "azurerm_virtual_machine_extension" {
-    defaults = {
-      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-aad-ssh/extensions/AADSSHLoginForLinux"
-    }
-  }
 }
 mock_provider "modtm" {}
 mock_provider "random" {
@@ -64,6 +58,16 @@ override_resource {
         }
       }
     }
+  }
+}
+
+# The extension is an azapi resource now, so the blanket azapi_resource mock would hand it the
+# network interface id. Override it with the id the extension actually gets, so the assertion still
+# proves the extension was created against the right virtual machine.
+override_resource {
+  target = module.extension["aad_ssh_login"].azapi_resource.this
+  values = {
+    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-aad-ssh/extensions/AADSSHLoginForLinux"
   }
 }
 

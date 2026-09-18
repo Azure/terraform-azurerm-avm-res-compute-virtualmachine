@@ -1,68 +1,33 @@
-resource "azurerm_virtual_machine_run_command" "this" {
-  location           = var.location
-  name               = var.name
-  virtual_machine_id = var.virtualmachine_resource_id
-  error_blob_uri     = var.error_blob_uri
-  output_blob_uri    = var.output_blob_uri
-  run_as_password    = var.run_as_password
-  run_as_user        = var.run_as_user
-  tags               = var.tags
+moved {
+  from = azurerm_virtual_machine_run_command.this
+  to   = azapi_resource.this
+}
 
-  source {
-    command_id = var.script_source.command_id
-    script     = var.script_source.script
-    script_uri = var.script_source.script_uri
-
-    dynamic "script_uri_managed_identity" {
-      for_each = var.script_source.script_uri_managed_identity == null ? [] : ["script_uri_managed_identity"]
-
-      content {
-        client_id = var.script_source.script_uri_managed_identity.client_id
-        object_id = var.script_source.script_uri_managed_identity.object_id
-      }
-    }
+resource "azapi_resource" "this" {
+  location  = var.location
+  name      = var.name
+  parent_id = var.virtualmachine_resource_id
+  type      = var.resource_types.compute_virtual_machines_run_commands
+  body = {
+    properties = local.run_command_properties
   }
+  ignore_body_changes = length(var.ignore_body_changes.compute_virtual_machines_run_commands) > 0 ? var.ignore_body_changes.compute_virtual_machines_run_commands : null
+  # No `replace_triggers_refs`: the only arguments the azurerm provider marked ForceNew were `name`,
+  # `location` and the parent virtual machine, and AzAPI already forces replacement on all three.
+  response_export_values = []
+  retry                  = var.retry
+  sensitive_body         = local.run_command_sensitive_body
+  sensitive_body_version = local.run_command_sensitive_body_version
+  tags                   = var.tags
 
-  dynamic "error_blob_managed_identity" {
-    for_each = var.error_blob_managed_identity == null ? [] : ["error_blob_managed_identity"]
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
-      client_id = var.error_blob_managed_identity.client_id
-      object_id = var.error_blob_managed_identity.object_id
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
     }
-  }
-
-  dynamic "output_blob_managed_identity" {
-    for_each = var.output_blob_managed_identity == null ? [] : ["output_blob_managed_identity"]
-
-    content {
-      client_id = var.output_blob_managed_identity.client_id
-      object_id = var.output_blob_managed_identity.object_id
-    }
-  }
-
-  dynamic "parameter" {
-    for_each = var.parameters
-
-    content {
-      name  = parameter.value.name
-      value = parameter.value.value
-    }
-  }
-
-  dynamic "protected_parameter" {
-    for_each = try(length(var.protected_parameters) > 0, false) ? var.protected_parameters : {}
-
-    content {
-      name  = protected_parameter.value.name
-      value = protected_parameter.value.value
-    }
-  }
-
-  timeouts {
-    create = var.timeouts.create
-    delete = var.timeouts.delete
-    read   = var.timeouts.read
-    update = var.timeouts.update
   }
 }
