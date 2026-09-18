@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-verified-modules-tools/main/src/Avm.Authoring/Resources/Schemas/v1/avm-module-metadata.schema.json",
+  "moduleDisplayName": "Virtual Machine",
+  "moduleDescription": "AVM Resource Module for Virtual Machine",
+  "canonicalType": "Microsoft.Compute/virtualMachines",
+  "owners": [
+    "jchancellor-ms"
+  ],
+  "telemetryIdPrefix": "46d3xtrf.res.32971de"
+}
