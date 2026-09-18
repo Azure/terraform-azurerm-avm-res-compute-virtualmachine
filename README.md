@@ -111,6 +111,7 @@ The following resources are used by this module:
 - [azapi_resource.this_nic_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_os_disk_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_public_ip_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_shutdown_schedule](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_virtual_machine_diagnostic_settings](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_virtual_machine_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_windows_virtual_machine](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
@@ -118,7 +119,6 @@ The following resources are used by this module:
 - [azapi_resource.virtualmachine_network_interfaces](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.virtualmachine_public_ips](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_update_resource.this_os_disk_network_access](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
-- [azurerm_dev_test_global_vm_shutdown_schedule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dev_test_global_vm_shutdown_schedule) (resource)
 - [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
@@ -929,6 +929,7 @@ apply.
 - `network_public_ip_addresses` - Ignored body paths for the public IP addresses.
 - `compute_disks` - Ignored body paths for the data disks.
 - `compute_virtual_machines` - Ignored body paths for the virtual machine.
+- `devtestlab_schedules` - Ignored body paths for the auto-shutdown schedule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Paths passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Ignored body paths for the backup protected item.
 - `compute_virtual_machines_extensions` - Paths passed to the extension submodule.
@@ -948,6 +949,7 @@ object({
     network_public_ip_addresses           = optional(list(string), [])
     compute_disks                         = optional(list(string), [])
     compute_virtual_machines              = optional(list(string), [])
+    devtestlab_schedules                  = optional(list(string), [])
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(list(string), [])
@@ -1598,6 +1600,7 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 - `insights_diagnostic_settings` - Diagnostic settings applied to the virtual machine and its OS disk.
 - `network_network_interfaces` - The network interfaces created for the virtual machine.
 - `network_public_ip_addresses` - The public IP addresses created for the virtual machine's IP configurations.
+- `devtestlab_schedules` - The auto-shutdown schedule applied to the virtual machine.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
 - `compute_virtual_machines_extensions` - Resource-type overrides passed to the extension submodule.
@@ -1617,6 +1620,7 @@ object({
     insights_diagnostic_settings          = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
     network_network_interfaces            = optional(string, "Microsoft.Network/networkInterfaces@2024-10-01")
     network_public_ip_addresses           = optional(string, "Microsoft.Network/publicIPAddresses@2024-10-01")
+    devtestlab_schedules                  = optional(string, "Microsoft.DevTestLab/schedules@2018-09-15")
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string)
@@ -1911,6 +1915,8 @@ Default: `null`
 ### <a name="input_shutdown_schedules"></a> [shutdown\_schedules](#input\_shutdown\_schedules)
 
 Description: This map of objects describes an auto-shutdown schedule for the virtual machine.  The default is to not have a shutdown schedule.
+
+Azure names the schedule after the virtual machine, so a machine can only have one. Supply at most one entry in this map.
 
 - `<map key>` - Use a custom map key for the shutdown schedule definition
   - `daily_recurrence_time` = (Required) The time each day when the schedule takes effect. Must match the format HHmm where HH is 00-23 and mm is 00-59 (e.g. 0930, 2300, etc.)
