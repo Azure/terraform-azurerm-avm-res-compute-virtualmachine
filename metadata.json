@@ -6,5 +6,8 @@
   "owners": [
     "jchancellor-ms"
   ],
-  "telemetryIdPrefix": "46d3xtrf.res.32971de"
+  "telemetryIdPrefix": "46d3xtrf.res.32971de",
+  "alternativeNames": [
+    "VM"
+  ]
 }
