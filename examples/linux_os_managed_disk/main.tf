@@ -35,8 +35,8 @@ module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
   version = "0.12.0"
 
-  availability_zones_filter = true
   enable_telemetry          = var.enable_telemetry
+  availability_zones_filter = true
 }
 
 locals {
@@ -85,26 +85,25 @@ module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
   version = "0.3.2"
 
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.nat_gateway.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = var.enable_telemetry
+  location         = azurerm_resource_group.this_rg.location
+  name             = module.naming.nat_gateway.name_unique
+  enable_telemetry = var.enable_telemetry
   public_ips = {
     public_ip_1 = {
       name = "nat_gw_pip1"
     }
   }
+  resource_group_name = azurerm_resource_group.this_rg.name
 }
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
   version = "0.22.2"
 
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = var.enable_telemetry
-  name                = module.naming.virtual_network.name_unique
+  location         = azurerm_resource_group.this_rg.location
+  address_space    = ["10.0.0.0/16"]
+  enable_telemetry = var.enable_telemetry
+  name             = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-1"
@@ -114,6 +113,7 @@ module "vnet" {
       }
     }
   }
+  resource_group_name = azurerm_resource_group.this_rg.name
 }
 
 data "azurerm_client_config" "current" {}
