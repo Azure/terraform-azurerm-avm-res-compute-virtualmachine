@@ -33,6 +33,20 @@ resource "random_password" "admin_password" {
   special          = true
 }
 
+# This secret used to be an azurerm_key_vault_secret. A moved block cannot adopt it, because
+# azapi_data_plane_resource does not support moving state from another resource type, so an upgraded
+# configuration would be left holding the old resource with nothing declaring it. Terraform would
+# then destroy it, deleting the live secret, and the azurerm provider purges secrets on destroy by
+# default. Forgetting it instead leaves the secret untouched: the create below stops with "Resource
+# already exists" until the secret is imported, as described in the README.
+removed {
+  from = azurerm_key_vault_secret.admin_password
+
+  lifecycle {
+    destroy = false
+  }
+}
+
 #store the initial password in the secrets key vault
 #Requires that the deployment user has key vault secrets write access
 resource "azapi_data_plane_resource" "admin_password" {
@@ -74,6 +88,15 @@ resource "tls_private_key" "this" {
 
   algorithm = "RSA"
   rsa_bits  = 4096
+}
+
+# See the note on the removed block for azurerm_key_vault_secret.admin_password.
+removed {
+  from = azurerm_key_vault_secret.admin_ssh_key
+
+  lifecycle {
+    destroy = false
+  }
 }
 
 #Store the created ssh key in the secrets key vault - does not make sense to store public keys in the vault as they can't be used to login and we don't ask for private keys outside of the generation of one.
