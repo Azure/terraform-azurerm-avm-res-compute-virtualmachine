@@ -1,4 +1,15 @@
 ####Admin password related Resources
+# The expiration is anchored once, when the secret is first created, and then stays put. Deriving it
+# from timestamp() on every plan is why the azurerm resource had to ignore expiration_date outright;
+# azapi_data_plane_resource has no ignore_body_changes, so the value has to be stable on its own.
+# Changing the configured length moves the anchor and updates the secret, which the old
+# ignore_changes silently refused to do.
+resource "time_offset" "credential_secret_expiration" {
+  count = local.credential_secret_vault_count
+
+  offset_days = local.credential_secret_expiration_days
+}
+
 #generate the initial admin password if requested
 
 #scenarios:
@@ -22,21 +33,51 @@ resource "random_password" "admin_password" {
   special          = true
 }
 
-#store the initial password in the secrets key vault
-#Requires that the deployment user has key vault secrets write access
-resource "azurerm_key_vault_secret" "admin_password" {
-  count = local.password_secret_count
-
-  key_vault_id    = local.credentials_key_vault_config.resource_id
-  name            = local.credential_secret_name_password
-  content_type    = local.credentials_key_vault_config.secret_configuration.content_type
-  expiration_date = local.generated_secret_expiration_date_utc
-  not_before_date = local.credentials_key_vault_config.secret_configuration.not_before_date
-  tags            = local.credentials_key_vault_config.secret_configuration.tags != {} ? local.credentials_key_vault_config.secret_configuration.tags : var.tags
-  value           = coalesce(local.admin_password_windows, local.admin_password_linux, "notset")
+# This secret used to be an azurerm_key_vault_secret. A moved block cannot adopt it, because
+# azapi_data_plane_resource does not support moving state from another resource type, so an upgraded
+# configuration would be left holding the old resource with nothing declaring it. Terraform would
+# then destroy it, deleting the live secret, and the azurerm provider purges secrets on destroy by
+# default. Forgetting it instead leaves the secret untouched: the create below stops with "Resource
+# already exists" until the secret is imported, as described in the README.
+removed {
+  from = azurerm_key_vault_secret.admin_password
 
   lifecycle {
-    ignore_changes = [expiration_date]
+    destroy = false
+  }
+}
+
+#store the initial password in the secrets key vault
+#Requires that the deployment user has key vault secrets write access
+resource "azapi_data_plane_resource" "admin_password" {
+  count = local.password_secret_count
+
+  name                   = local.credential_secret_name_password
+  parent_id              = local.credentials_key_vault_host
+  type                   = var.resource_types.keyvault_vaults_secrets
+  body                   = local.credential_secret_body
+  response_export_values = []
+  retry                  = var.retry
+  sensitive_body = {
+    value = coalesce(local.admin_password_windows, local.admin_password_linux, "notset")
+  }
+  # `value` is write-only, so the provider cannot see the secret change and would never send an
+  # update on its own. A hash stands in for it: it moves exactly when the credential moves, without
+  # the credential itself entering state. The azurerm provider held the value in state in plaintext,
+  # so this is strictly less exposure than before.
+  sensitive_body_version = {
+    value = sha256(coalesce(local.admin_password_windows, local.admin_password_linux, "notset"))
+  }
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
   }
 }
 
@@ -49,20 +90,42 @@ resource "tls_private_key" "this" {
   rsa_bits  = 4096
 }
 
-#Store the created ssh key in the secrets key vault - does not make sense to store public keys in the vault as they can't be used to login and we don't ask for private keys outside of the generation of one.
-resource "azurerm_key_vault_secret" "admin_ssh_key" {
-  count = local.ssh_secret_count
-
-  key_vault_id    = local.credentials_key_vault_config.resource_id
-  name            = local.credential_secret_name_ssh_key
-  content_type    = local.credentials_key_vault_config.secret_configuration.content_type
-  expiration_date = local.generated_secret_expiration_date_utc
-  not_before_date = local.credentials_key_vault_config.secret_configuration.not_before_date
-  tags            = local.credentials_key_vault_config.secret_configuration.tags != {} ? local.credentials_key_vault_config.secret_configuration.tags : var.tags
-  value           = local.admin_ssh_key_secret_value
+# See the note on the removed block for azurerm_key_vault_secret.admin_password.
+removed {
+  from = azurerm_key_vault_secret.admin_ssh_key
 
   lifecycle {
-    ignore_changes = [expiration_date]
+    destroy = false
+  }
+}
+
+#Store the created ssh key in the secrets key vault - does not make sense to store public keys in the vault as they can't be used to login and we don't ask for private keys outside of the generation of one.
+resource "azapi_data_plane_resource" "admin_ssh_key" {
+  count = local.ssh_secret_count
+
+  name                   = local.credential_secret_name_ssh_key
+  parent_id              = local.credentials_key_vault_host
+  type                   = var.resource_types.keyvault_vaults_secrets
+  body                   = local.credential_secret_body
+  response_export_values = []
+  retry                  = var.retry
+  sensitive_body = {
+    value = local.admin_ssh_key_secret_value
+  }
+  # See the note on azapi_data_plane_resource.admin_password.
+  sensitive_body_version = {
+    value = sha256(local.admin_ssh_key_secret_value)
+  }
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
   }
 }
 

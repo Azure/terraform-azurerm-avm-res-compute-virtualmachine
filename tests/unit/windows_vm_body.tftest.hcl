@@ -5,7 +5,6 @@ mock_provider "azapi" {
     }
   }
 }
-mock_provider "azurerm" {}
 mock_provider "modtm" {}
 mock_provider "random" {
   #the generated value has to satisfy the provider side complexity check on admin_password.

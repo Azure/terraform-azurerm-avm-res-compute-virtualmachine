@@ -4,7 +4,34 @@
 
 ### NOTE: This module follows the semantic versioning and versions prior to 1.0.0 should be considered pre-release versions. This v0.19.0 version contains a number of breaking changes and is intended to be the final signficant release prior to the v1.0.0 release.  Please review the release notes prior to updating previous deployments to use this version.
 
-This is the virtual machine resource module for the Azure Verified Modules library.  This module deploys a Windows and/or Linux virtual machine along with common associated resources.  It leverages the AzureRM provider and sets a number of initial defaults to minimize the overall inputs for simple configurations.
+This is the virtual machine resource module for the Azure Verified Modules library.  This module deploys a Windows and/or Linux virtual machine along with common associated resources.  It leverages the AzAPI provider and sets a number of initial defaults to minimize the overall inputs for simple configurations.
+
+## Upgrading generated credential secrets
+
+The generated admin password and SSH key secrets are now written with `azapi_data_plane_resource` instead of `azurerm_key_vault_secret`. Terraform cannot move that state automatically, because `azapi_data_plane_resource` does not support moving state from another resource type, so each existing secret has to be imported once.
+
+This affects you if you set `account_credentials.key_vault_configuration` (or the deprecated `generated_secrets_key_vault_secret_config`) and let the module generate a credential. The module stops managing the old `azurerm_key_vault_secret` without destroying it, so the upgrade never deletes the secret from Key Vault. Until the secret is imported, `terraform apply` stops with a `Resource already exists` error.
+
+Add an `import` block to your root module for each generated secret, then plan and apply as usual:
+
+```hcl
+import {
+  to = module.<module name>.azapi_data_plane_resource.admin_password[0]
+  id = "<vault name>.vault.azure.net/secrets/<secret name>|Microsoft.KeyVault/vaults/secrets@7.5"
+}
+```
+
+Use `admin_password` for a generated password and `admin_ssh_key` for a generated SSH key. Unless you overrode `secret_configuration.name`, the secret names default to `<vm name>-<admin username>-password` and `<vm name>-<admin username>-ssh-private-key`. In a sovereign cloud, substitute the host suffix you pass to `key_vault_configuration.dns_suffix`. You can remove the `import` block after the apply.
+
+Keep the `azurerm` provider configured in your root module until this upgrade has been applied. Terraform still needs it to stop managing the old secrets, and planning without it fails with `The argument "features" is required`. Once the apply succeeds, the module no longer needs it.
+
+The same import can be run from the command line instead:
+
+```pwsh
+terraform import 'module.<module name>.azapi_data_plane_resource.admin_password[0]' '<vault name>.vault.azure.net/secrets/<secret name>|Microsoft.KeyVault/vaults/secrets@7.5'
+```
+
+The plan reports the old secret as no longer managed rather than destroyed, and the imported secret as an in-place update. The secret keeps its name, its value and its version history. Key Vault creates a new version on any write, so the apply adds a version carrying the same value rather than replacing the secret.
 
 ## Azure Backup lifecycle
 
@@ -19,17 +46,11 @@ By default, removing a backup configuration or destroying the module deletes the
 
 ## Cross-subscription Application Gateway backend pools
 
-An IP configuration can join an Application Gateway backend pool in another subscription by passing the pool's full Azure resource ID to `app_gateway_backend_pool_resource_id`. The association is written to the VM's network interface, so this module continues to use the `azurerm` provider configured for the VM subscription. A provider alias is only needed in the root configuration that reads or creates the Application Gateway.
+An IP configuration can join an Application Gateway backend pool in another subscription by passing the pool's full Azure resource ID to `app_gateway_backend_pool_resource_id`. The association is written to the VM's network interface, so this module writes it in the VM subscription and no provider is passed to the module. A provider alias is only needed in the root configuration that reads or creates the Application Gateway, as in the example below.
 
 The identity running this deployment must have the permissions Azure requires to update the NIC and reference the backend pool across subscriptions. The Application Gateway and backend networks must also have supported connectivity, such as cross-subscription VNet peering.
 
 ```hcl
-provider "azurerm" {
-  features {}
-
-  subscription_id = var.vm_subscription_id
-}
-
 provider "azurerm" {
   alias = "application_gateway"
 
@@ -87,11 +108,11 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.42, < 5.0)
-
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.6.2, < 4.0.0)
+
+- <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.12)
 
 - <a name="requirement_tls"></a> [tls](#requirement\_tls) (~> 4.0)
 
@@ -99,6 +120,8 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_data_plane_resource.admin_password](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/data_plane_resource) (resource)
+- [azapi_data_plane_resource.admin_ssh_key](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/data_plane_resource) (resource)
 - [azapi_resource.disks_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.system_managed_identity_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_data_disk](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
@@ -119,11 +142,10 @@ The following resources are used by this module:
 - [azapi_resource.virtualmachine_network_interfaces](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.virtualmachine_public_ips](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_update_resource.this_os_disk_network_access](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
-- [azurerm_key_vault_secret.admin_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
-- [azurerm_key_vault_secret.admin_ssh_key](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_password.admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
+- [time_offset.credential_secret_expiration](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/offset) (resource)
 - [tls_private_key.this](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) (resource)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
@@ -183,6 +205,7 @@ Schema:
   - `generate_admin_password_or_ssh_key`: bool (optional, default: true) = (optional) A flag to indicate whether to generate a password or SSH key for the admin account. If set to true, a password or SSH key will be auto-generated. If set to false, the provided password or SSH keys will be used.
 - `key_vault_configuration` = Object (optional, default: null) = (optional) The configuration for storing credentials in an Azure Key Vault. If not provided, credentials will not be stored in Key Vault as part of this module.
   - `resource_id`: string (required) = (required) The resource ID of the Key Vault where the credentials will be stored.
+  - `dns_suffix`: string (optional, default: vault.azure.net) = (optional) The Key Vault data plane DNS suffix for the target cloud. The secrets are written through the data plane, which is addressed by host name rather than by resource ID. Override this in a sovereign cloud, for example `vault.usgovcloudapi.net`.
   - `secret_configuration` = Object (optional, default: null) = (optional) The secret configuration that is used when storing credentials in the Key Vault.
     - `name`: string (optional, default: null) = (optional) The name of the secret in the Key Vault. If not provided, a name will be generated using the pattern <vm name>-<admin username>-<password | ssh-private-key>.
     - `expiration_date_length_in_days`: number (optional, default: 45) = (optional) The number of days until the secret expires. If not provided, the default is 45 days.
@@ -225,6 +248,7 @@ object({
     }), {})
     key_vault_configuration = optional(object({
       resource_id = string
+      dns_suffix  = optional(string, "vault.azure.net")
       secret_configuration = optional(object({
         name                           = optional(string, null)
         expiration_date_length_in_days = optional(number, 45)
@@ -1601,6 +1625,7 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 - `network_network_interfaces` - The network interfaces created for the virtual machine.
 - `network_public_ip_addresses` - The public IP addresses created for the virtual machine's IP configurations.
 - `devtestlab_schedules` - The auto-shutdown schedule applied to the virtual machine.
+- `keyvault_vaults_secrets` - The generated credential secrets. This is a Key Vault data plane API version, not an ARM API version.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
 - `compute_virtual_machines_extensions` - Resource-type overrides passed to the extension submodule.
@@ -1621,6 +1646,7 @@ object({
     network_network_interfaces            = optional(string, "Microsoft.Network/networkInterfaces@2024-10-01")
     network_public_ip_addresses           = optional(string, "Microsoft.Network/publicIPAddresses@2024-10-01")
     devtestlab_schedules                  = optional(string, "Microsoft.DevTestLab/schedules@2018-09-15")
+    keyvault_vaults_secrets               = optional(string, "Microsoft.KeyVault/vaults/secrets@7.5")
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string)
