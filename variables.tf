@@ -1880,6 +1880,18 @@ variable "timezone" {
   description = "(Optional) Specifies the Time Zone which should be used by the Windows Virtual Machine, [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/). Changing this forces a new resource to be created."
 }
 
+variable "upgrade_from_azurerm" {
+  type        = bool
+  default     = false
+  description = <<DESCRIPTION
+(Optional) Set to `true` for a single apply when upgrading from a module version that wrote the generated credential secrets with `azurerm_key_vault_secret`. The module then adopts the existing secrets into `azapi_data_plane_resource` instead of failing with `Resource already exists`.
+
+Leave this `false` on a new deployment. An import cannot adopt a secret that does not exist yet, so enabling it before the secrets exist fails at plan time.
+
+The flag is only read while a secret is still unmanaged, so it is a no-op once the upgrade has been applied and can be removed at your convenience.
+DESCRIPTION
+}
+
 variable "user_data" {
   type        = string
   default     = null
