@@ -37,14 +37,24 @@ resource "random_password" "admin_password" {
 # azapi_data_plane_resource does not support moving state from another resource type, so an upgraded
 # configuration would be left holding the old resource with nothing declaring it. Terraform would
 # then destroy it, deleting the live secret, and the azurerm provider purges secrets on destroy by
-# default. Forgetting it instead leaves the secret untouched: the create below stops with "Resource
-# already exists" until the secret is imported, as described in the README.
+# default. Forgetting it instead leaves the secret untouched, and the import block below adopts the
+# same live secret in the same apply.
 removed {
   from = azurerm_key_vault_secret.admin_password
 
   lifecycle {
     destroy = false
   }
+}
+
+# Adopts the secret the removed block above just let go of, so the upgrade needs no state commands.
+# The gate is required: on a new deployment the secret does not exist yet and an unconditional
+# import fails at plan time. Terraform skips an import whose target is already in state, so leaving
+# the flag set after the upgrade is a no-op.
+import {
+  for_each = var.upgrade_from_azurerm ? toset(range(local.password_secret_count)) : toset([])
+  to       = azapi_data_plane_resource.admin_password[each.value]
+  id       = "${local.credentials_key_vault_host}/secrets/${local.credential_secret_name_password}|${var.resource_types.keyvault_vaults_secrets}"
 }
 
 #store the initial password in the secrets key vault
@@ -97,6 +107,13 @@ removed {
   lifecycle {
     destroy = false
   }
+}
+
+# See the note on the import block for azapi_data_plane_resource.admin_password.
+import {
+  for_each = var.upgrade_from_azurerm ? toset(range(local.ssh_secret_count)) : toset([])
+  to       = azapi_data_plane_resource.admin_ssh_key[each.value]
+  id       = "${local.credentials_key_vault_host}/secrets/${local.credential_secret_name_ssh_key}|${var.resource_types.keyvault_vaults_secrets}"
 }
 
 #Store the created ssh key in the secrets key vault - does not make sense to store public keys in the vault as they can't be used to login and we don't ask for private keys outside of the generation of one.

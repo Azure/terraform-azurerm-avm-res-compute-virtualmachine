@@ -6,30 +6,28 @@ This is the virtual machine resource module for the Azure Verified Modules libra
 
 ## Upgrading generated credential secrets
 
-The generated admin password and SSH key secrets are now written with `azapi_data_plane_resource` instead of `azurerm_key_vault_secret`. Terraform cannot move that state automatically, because `azapi_data_plane_resource` does not support moving state from another resource type, so each existing secret has to be imported once.
+The generated admin password and SSH key secrets are now written with `azapi_data_plane_resource` instead of `azurerm_key_vault_secret`. Terraform cannot move that state automatically, because `azapi_data_plane_resource` does not support moving state from another resource type, so each existing secret has to be adopted once.
 
-This affects you if you set `account_credentials.key_vault_configuration` (or the deprecated `generated_secrets_key_vault_secret_config`) and let the module generate a credential. The module stops managing the old `azurerm_key_vault_secret` without destroying it, so the upgrade never deletes the secret from Key Vault. Until the secret is imported, `terraform apply` stops with a `Resource already exists` error.
+This affects you if you set `account_credentials.key_vault_configuration` (or the deprecated `generated_secrets_key_vault_secret_config`) and let the module generate a credential. The module stops managing the old `azurerm_key_vault_secret` without destroying it, so the upgrade never deletes the secret from Key Vault.
 
-Add an `import` block to your root module for each generated secret, then plan and apply as usual:
+The module performs the adoption for you. Set `upgrade_from_azurerm` for a single apply:
 
 ```hcl
-import {
-  to = module.<module name>.azapi_data_plane_resource.admin_password[0]
-  id = "<vault name>.vault.azure.net/secrets/<secret name>|Microsoft.KeyVault/vaults/secrets@7.5"
+module "vm" {
+  # ...
+  upgrade_from_azurerm = true
 }
 ```
 
-Use `admin_password` for a generated password and `admin_ssh_key` for a generated SSH key. Unless you overrode `secret_configuration.name`, the secret names default to `<vm name>-<admin username>-password` and `<vm name>-<admin username>-ssh-private-key`. In a sovereign cloud, substitute the host suffix you pass to `key_vault_configuration.dns_suffix`. You can remove the `import` block after the apply.
+Then plan and apply as usual. The plan reports the old secret as no longer managed rather than destroyed, and the live secret as an import plus an in-place update. No `terraform import` or `terraform state` commands are needed. The flag is only read while a secret is still unmanaged, so it is a no-op afterwards and can be removed at your convenience.
+
+Leave `upgrade_from_azurerm` at its default of `false` on a new deployment. An import cannot adopt a secret that does not exist yet, so setting it before the secrets exist fails at plan time.
+
+This upgrade requires Terraform 1.16 or later, which is when `import` blocks became usable inside a module, so the module's minimum version has been raised to `>= 1.16`. Terraform refuses to run the module on anything older, which is deliberate: on an earlier version the import block is silently ignored, and the apply would stop with `Resource already exists` after the old secret had already been forgotten. Upgrade Terraform before upgrading the module.
 
 Keep the `azurerm` provider configured in your root module until this upgrade has been applied. Terraform still needs it to stop managing the old secrets, and planning without it fails with `The argument "features" is required`. Once the apply succeeds, the module no longer needs it.
 
-The same import can be run from the command line instead:
-
-```pwsh
-terraform import 'module.<module name>.azapi_data_plane_resource.admin_password[0]' '<vault name>.vault.azure.net/secrets/<secret name>|Microsoft.KeyVault/vaults/secrets@7.5'
-```
-
-The plan reports the old secret as no longer managed rather than destroyed, and the imported secret as an in-place update. The secret keeps its name, its value and its version history. Key Vault creates a new version on any write, so the apply adds a version carrying the same value rather than replacing the secret.
+The secret keeps its name, its value and its version history. Key Vault creates a new version on any write, so the apply adds a version carrying the same value rather than replacing the secret.
 
 ## Azure Backup lifecycle
 
