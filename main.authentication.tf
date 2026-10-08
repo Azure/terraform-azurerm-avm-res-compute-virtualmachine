@@ -103,6 +103,11 @@ resource "azapi_resource" "system_managed_identity_role_assignments" {
     # See the note on azapi_resource.disks_role_assignments: the generated GUID name would force a
     # replacement, and deleting an assignment under a CanNotDelete lock fails with ScopeLocked.
     ignore_changes = [name]
+    # A new system-assigned identity has a new principal ID, which ARM cannot change on an existing
+    # assignment. The new ID is only known once the machine has been applied, too late for AzAPI to
+    # plan the replacement it needs, so the assignment is replaced whenever the identity may have
+    # been recreated.
+    replace_triggered_by = [terraform_data.virtual_machine_assigned_values]
   }
 }
 
