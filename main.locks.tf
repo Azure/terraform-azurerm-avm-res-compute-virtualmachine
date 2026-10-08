@@ -3,11 +3,15 @@
 # it, and it depends on every resource a lock can cover. On destroy it therefore runs after the locks
 # are deleted and before anything under them is, and on create the locks are applied last. There is
 # one instance per lock, so removing a single lock still pauses before the resources it covered are
-# deleted.
+# deleted. An instance is also replaced, and so pauses again, when the resource its lock covers is
+# replaced, because that replaces the lock as well.
 resource "time_sleep" "lock_removal" {
-  for_each = local.lock_removal_keys
+  for_each = local.lock_removal_resource_ids
 
   destroy_duration = "30s"
+  triggers = {
+    resource_id = each.value
+  }
 
   depends_on = [
     azapi_resource.disks_role_assignments,

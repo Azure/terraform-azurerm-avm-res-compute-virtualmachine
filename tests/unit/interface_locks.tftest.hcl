@@ -152,6 +152,10 @@ run "virtual_machine_lock_carries_notes" {
     condition     = time_sleep.lock_removal["virtual_machine"].destroy_duration == "30s"
     error_message = "The lock removal pause must wait 30 seconds on destroy, so Azure stops enforcing the deleted lock before the resources under it are deleted."
   }
+  assert {
+    condition     = time_sleep.lock_removal["virtual_machine"].triggers.resource_id == azapi_resource.this_linux_virtual_machine[0].id
+    error_message = "The virtual machine lock's pause must be keyed to the virtual machine, so replacing the machine pauses again."
+  }
 }
 
 run "read_only_virtual_machine_lock_notes" {
@@ -215,6 +219,10 @@ run "network_interface_lock_omits_notes" {
     condition     = toset(keys(time_sleep.lock_removal)) == toset(["network_interface/network_interface_1"])
     error_message = "The interface lock must have its own lock removal pause, keyed by the interface."
   }
+  assert {
+    condition     = time_sleep.lock_removal["network_interface/network_interface_1"].triggers.resource_id == azapi_resource.virtualmachine_network_interfaces["network_interface_1"].id
+    error_message = "The interface lock's pause must be keyed to the interface, so replacing the interface pauses again."
+  }
 }
 
 run "data_disk_lock_omits_notes" {
@@ -253,6 +261,10 @@ run "data_disk_lock_omits_notes" {
   assert {
     condition     = toset(keys(time_sleep.lock_removal)) == toset(["data_disk/disk1"])
     error_message = "The data disk lock must have its own lock removal pause, keyed by the disk."
+  }
+  assert {
+    condition     = time_sleep.lock_removal["data_disk/disk1"].triggers.resource_id == azapi_resource.this_data_disk["disk1"].id
+    error_message = "The data disk lock's pause must be keyed to the disk, so replacing the disk pauses again."
   }
 }
 
@@ -312,5 +324,9 @@ run "every_lock_has_its_own_lock_removal_pause" {
       "public_ip/network_interface_1-ip_configuration_1",
     ])
     error_message = "Every lock must have its own lock removal pause."
+  }
+  assert {
+    condition     = time_sleep.lock_removal["public_ip/network_interface_1-ip_configuration_1"].triggers.resource_id == azapi_resource.virtualmachine_public_ips["network_interface_1-ip_configuration_1"].id
+    error_message = "The public IP lock's pause must be keyed to the public IP, so replacing the public IP pauses again."
   }
 }

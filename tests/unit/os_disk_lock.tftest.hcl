@@ -153,6 +153,10 @@ run "os_disk_lock_cannot_delete" {
     condition     = toset(keys(time_sleep.lock_removal)) == toset(["os_disk"])
     error_message = "The OS disk lock must have its own lock removal pause."
   }
+  assert {
+    condition     = time_sleep.lock_removal["os_disk"].triggers.resource_id == azapi_resource.this_linux_virtual_machine[0].id
+    error_message = "The OS disk lock's pause must be keyed to the virtual machine, which is the only thing whose replacement replaces the OS disk."
+  }
 }
 
 run "os_disk_lock_read_only_with_custom_name" {
