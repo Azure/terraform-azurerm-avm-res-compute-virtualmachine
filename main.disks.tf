@@ -170,6 +170,15 @@ resource "azapi_resource" "this_os_disk_lock" {
     }
   }
 
+  lifecycle {
+    # The OS disk's ID is read back off the virtual machine. It only changes when the machine is
+    # replaced, but it is unknown in any plan that creates or refreshes
+    # terraform_data.virtual_machine_assigned_values, such as switching the system-assigned identity
+    # on or off, and an unknown parent_id would replace the lock. Keep the recorded scope, and
+    # replace the lock when the machine is replaced instead.
+    ignore_changes       = [parent_id]
+    replace_triggered_by = [terraform_data.virtual_machine_assigned_values.triggers_replace.virtual_machine_id]
+  }
   # Apply the lock after, and remove it before, everything it covers. See time_sleep.lock_removal.
   depends_on = [time_sleep.lock_removal]
 }
