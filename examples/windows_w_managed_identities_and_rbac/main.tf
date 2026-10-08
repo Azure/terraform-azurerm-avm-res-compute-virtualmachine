@@ -205,6 +205,9 @@ module "testvm" {
     }
   }
   enable_telemetry = var.enable_telemetry
+  lock = {
+    kind = "CanNotDelete"
+  }
   managed_identities = {
     system_assigned            = true
     user_assigned_resource_ids = [azurerm_user_assigned_identity.example_identity.id]
