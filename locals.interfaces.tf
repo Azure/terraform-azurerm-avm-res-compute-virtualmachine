@@ -89,4 +89,17 @@ locals {
     CanNotDelete = "Cannot delete the resource or its child resources."
     ReadOnly     = "Cannot delete or modify the resource or its child resources."
   }
+  # The resource each lock covers, keyed by lock using the same conditions as the lock resources. The
+  # keys come from variables only, so they are known at plan time. The IDs re-run the lock removal
+  # pause when the covered resource is replaced, because replacing a resource replaces its lock too.
+  # The OS disk is only ever replaced together with the virtual machine, and its own ID is read from
+  # the machine's output, which is unknown whenever the machine changes at all, so the machine's ID
+  # stands in for it.
+  lock_removal_resource_ids = merge(
+    var.lock != null ? { virtual_machine = local.virtualmachine_resource_id } : {},
+    var.os_disk.lock_level != null ? { os_disk = local.virtualmachine_resource_id } : {},
+    { for k, v in var.data_disk_managed_disks : "data_disk/${k}" => azapi_resource.this_data_disk[k].id if v.lock_level != null },
+    { for k, v in var.network_interfaces : "network_interface/${k}" => azapi_resource.virtualmachine_network_interfaces[k].id if v.lock_level != null },
+    { for k, v in local.nics_ip_configs : "public_ip/${k}" => azapi_resource.virtualmachine_public_ips[k].id if v.ipconfig.create_public_ip_address == true && var.public_ip_configuration_details.lock_level != null },
+  )
 }

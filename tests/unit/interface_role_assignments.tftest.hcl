@@ -49,6 +49,7 @@ mock_provider "azurerm" {
 }
 mock_provider "modtm" {}
 mock_provider "random" {}
+mock_provider "time" {}
 mock_provider "tls" {}
 
 # A single mock_resource default applies to every azapi_resource in the module, so the data disk

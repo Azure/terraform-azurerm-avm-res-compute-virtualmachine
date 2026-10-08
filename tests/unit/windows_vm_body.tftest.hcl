@@ -15,6 +15,7 @@ mock_provider "random" {
     }
   }
 }
+mock_provider "time" {}
 mock_provider "tls" {}
 
 override_resource {

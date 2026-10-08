@@ -27,6 +27,7 @@ mock_provider "azurerm" {
 }
 mock_provider "modtm" {}
 mock_provider "random" {}
+mock_provider "time" {}
 mock_provider "tls" {}
 
 # The blanket azapi_resource mock gives every azapi resource the same id, which the still-azurerm
