@@ -131,12 +131,8 @@ resource "azapi_resource" "this_disk_lock" {
     }
   }
 
-  depends_on = [
-    azapi_resource.this_linux_virtual_machine,
-    azapi_resource.this_windows_virtual_machine,
-    azapi_resource.this_windows_virtual_machine,
-    azapi_resource.this_linux_virtual_machine
-  ]
+  # Apply the lock after, and remove it before, everything it covers. See time_sleep.lock_removal.
+  depends_on = [time_sleep.lock_removal]
 }
 
 moved {
@@ -174,13 +170,8 @@ resource "azapi_resource" "this_os_disk_lock" {
     }
   }
 
-  depends_on = [
-    azapi_resource.this_linux_virtual_machine,
-    azapi_resource.this_windows_virtual_machine,
-    azapi_resource.this_windows_virtual_machine,
-    azapi_resource.this_linux_virtual_machine,
-    module.extension
-  ]
+  # Apply the lock after, and remove it before, everything it covers. See time_sleep.lock_removal.
+  depends_on = [time_sleep.lock_removal]
 }
 
 moved {

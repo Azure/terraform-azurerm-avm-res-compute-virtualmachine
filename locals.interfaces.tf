@@ -89,4 +89,13 @@ locals {
     CanNotDelete = "Cannot delete the resource or its child resources."
     ReadOnly     = "Cannot delete or modify the resource or its child resources."
   }
+  # One key per lock, using the same conditions as the lock resources, so that removing any single
+  # lock also removes a pause. Evaluated from variables only so that the keys are known at plan time.
+  lock_removal_keys = toset(concat(
+    var.lock != null ? ["virtual_machine"] : [],
+    var.os_disk.lock_level != null ? ["os_disk"] : [],
+    [for k, v in var.data_disk_managed_disks : "data_disk/${k}" if v.lock_level != null],
+    [for k, v in var.network_interfaces : "network_interface/${k}" if v.lock_level != null],
+    [for k, v in local.nics_ip_configs : "public_ip/${k}" if v.ipconfig.create_public_ip_address == true && var.public_ip_configuration_details.lock_level != null],
+  ))
 }

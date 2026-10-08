@@ -32,6 +32,7 @@ mock_provider "azurerm" {
 }
 mock_provider "modtm" {}
 mock_provider "random" {}
+mock_provider "time" {}
 mock_provider "tls" {}
 
 # A single mock_resource default applies to every azapi_resource in the module, so the data disk
@@ -108,6 +109,10 @@ run "no_locks_created_by_default" {
     condition     = length(azapi_resource.this_nic_lock) == 0 && length(azapi_resource.this_disk_lock) == 0 && length(azapi_resource.this_linux_virtualmachine_lock) == 0
     error_message = "No locks must be created when no lock levels are supplied."
   }
+  assert {
+    condition     = length(time_sleep.lock_removal) == 0
+    error_message = "No lock removal pause must be created when no locks are supplied."
+  }
 }
 
 run "virtual_machine_lock_carries_notes" {
@@ -138,6 +143,14 @@ run "virtual_machine_lock_carries_notes" {
   assert {
     condition     = azapi_resource.this_linux_virtualmachine_lock[0].body.properties.notes == "Cannot delete the resource or its child resources."
     error_message = "The virtual machine lock must carry the CanNotDelete notes text, as the azurerm resource did."
+  }
+  assert {
+    condition     = toset(keys(time_sleep.lock_removal)) == toset(["virtual_machine"])
+    error_message = "The virtual machine lock must have its own lock removal pause."
+  }
+  assert {
+    condition     = time_sleep.lock_removal["virtual_machine"].destroy_duration == "30s"
+    error_message = "The lock removal pause must wait 30 seconds on destroy, so Azure stops enforcing the deleted lock before the resources under it are deleted."
   }
 }
 
@@ -198,6 +211,10 @@ run "network_interface_lock_omits_notes" {
     condition     = !can(azapi_resource.this_nic_lock["network_interface_1"].body.properties.notes)
     error_message = "The interface lock must not emit notes, because the azurerm resource never set them."
   }
+  assert {
+    condition     = toset(keys(time_sleep.lock_removal)) == toset(["network_interface/network_interface_1"])
+    error_message = "The interface lock must have its own lock removal pause, keyed by the interface."
+  }
 }
 
 run "data_disk_lock_omits_notes" {
@@ -232,5 +249,68 @@ run "data_disk_lock_omits_notes" {
   assert {
     condition     = !can(azapi_resource.this_disk_lock["disk1"].body.properties.notes)
     error_message = "The data disk lock must not emit notes, because the azurerm resource never set them."
+  }
+  assert {
+    condition     = toset(keys(time_sleep.lock_removal)) == toset(["data_disk/disk1"])
+    error_message = "The data disk lock must have its own lock removal pause, keyed by the disk."
+  }
+}
+
+# Each lock gets its own pause, so removing one lock still waits before the resources it covered are
+# deleted, even while the other locks stay in place.
+run "every_lock_has_its_own_lock_removal_pause" {
+  command = apply
+
+  variables {
+    lock = {
+      kind = "CanNotDelete"
+    }
+    os_disk = {
+      caching              = "ReadWrite"
+      storage_account_type = "Premium_LRS"
+      lock_level           = "CanNotDelete"
+    }
+    data_disk_managed_disks = {
+      disk1 = {
+        name                 = "disk-test"
+        storage_account_type = "Premium_LRS"
+        lun                  = 0
+        caching              = "ReadWrite"
+        disk_size_gb         = 32
+        lock_level           = "CanNotDelete"
+      }
+    }
+    network_interfaces = {
+      network_interface_1 = {
+        name       = "nic-test"
+        lock_level = "CanNotDelete"
+        ip_configurations = {
+          ip_configuration_1 = {
+            name                          = "nic-test-ipconfig1"
+            private_ip_subnet_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualNetworks/vnet-test/subnets/snet-test"
+            create_public_ip_address      = true
+            public_ip_address_name        = "pip-test"
+          }
+        }
+      }
+    }
+    public_ip_configuration_details = {
+      lock_level = "CanNotDelete"
+    }
+  }
+
+  assert {
+    condition     = length(azapi_resource.this_public_ip_lock) == 1
+    error_message = "The public IP lock must be created, so that its pause below is meaningful."
+  }
+  assert {
+    condition = toset(keys(time_sleep.lock_removal)) == toset([
+      "virtual_machine",
+      "os_disk",
+      "data_disk/disk1",
+      "network_interface/network_interface_1",
+      "public_ip/network_interface_1-ip_configuration_1",
+    ])
+    error_message = "Every lock must have its own lock removal pause."
   }
 }

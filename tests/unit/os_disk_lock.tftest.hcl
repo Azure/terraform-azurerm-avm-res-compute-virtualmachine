@@ -28,6 +28,7 @@ mock_provider "azurerm" {
 }
 mock_provider "modtm" {}
 mock_provider "random" {}
+mock_provider "time" {}
 mock_provider "tls" {}
 
 # The blanket azapi_resource mock gives every azapi resource the same id, which the still-azurerm
@@ -96,6 +97,10 @@ run "os_disk_lock_not_created_by_default" {
     condition     = length(azapi_resource.this_os_disk_lock) == 0
     error_message = "The OS disk lock must not be created when os_disk lock_level is not supplied."
   }
+  assert {
+    condition     = length(time_sleep.lock_removal) == 0
+    error_message = "No lock removal pause must be created when no locks are supplied."
+  }
 }
 
 run "os_disk_lock_is_not_inherited_from_the_resource_level_lock" {
@@ -110,6 +115,10 @@ run "os_disk_lock_is_not_inherited_from_the_resource_level_lock" {
   assert {
     condition     = length(azapi_resource.this_os_disk_lock) == 0
     error_message = "The OS disk lock must not be inherited from the resource level lock variable."
+  }
+  assert {
+    condition     = toset(keys(time_sleep.lock_removal)) == toset(["virtual_machine"])
+    error_message = "Only the virtual machine lock must get a lock removal pause when the OS disk has no lock."
   }
 }
 
@@ -139,6 +148,10 @@ run "os_disk_lock_cannot_delete" {
   assert {
     condition     = azapi_resource.this_os_disk_lock[0].parent_id == azapi_resource.this_linux_virtual_machine[0].output.properties.storageProfile.osDisk.managedDisk.id && azapi_resource.this_os_disk_lock[0].parent_id != azapi_resource.this_linux_virtual_machine[0].id
     error_message = "The OS disk lock must be scoped to the OS disk resource id, not the virtual machine."
+  }
+  assert {
+    condition     = toset(keys(time_sleep.lock_removal)) == toset(["os_disk"])
+    error_message = "The OS disk lock must have its own lock removal pause."
   }
 }
 
