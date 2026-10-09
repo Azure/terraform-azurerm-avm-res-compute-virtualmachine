@@ -538,7 +538,7 @@ DESCRIPTION
 variable "encryption_at_host_enabled" {
   type        = bool
   default     = true
-  description = "(Optional) Should all of the disks (including the temp disk) attached to this Virtual Machine be encrypted by enabling Encryption at Host?"
+  description = "(Optional) Should all of the disks (including the temp disk) attached to this Virtual Machine be encrypted by enabling Encryption at Host? Azure only changes this setting on an existing Virtual Machine while it is deallocated, and this module does not deallocate machines, so switching an existing machine between true and false must be done while it is deallocated."
 }
 
 variable "eviction_policy" {
