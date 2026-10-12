@@ -38,8 +38,8 @@ module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
   version = "0.12.0"
 
-  availability_zones_filter = true
   enable_telemetry          = var.enable_telemetry
+  availability_zones_filter = true
 }
 
 locals {
@@ -89,15 +89,15 @@ module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
   version = "0.3.2"
 
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.nat_gateway.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = var.enable_telemetry
+  location         = azurerm_resource_group.this_rg.location
+  name             = module.naming.nat_gateway.name_unique
+  enable_telemetry = var.enable_telemetry
   public_ips = {
     public_ip_1 = {
       name = "nat_gw_pip1"
     }
   }
+  resource_group_name = azurerm_resource_group.this_rg.name
 }
 
 module "vnet" {
@@ -313,8 +313,9 @@ module "testnsg" {
   source  = "Azure/avm-res-network-networksecuritygroup/azurerm"
   version = "0.6.0"
 
-  location = azurerm_resource_group.this_rg.location
-  name     = module.naming.network_security_group.name_unique
+  location         = azurerm_resource_group.this_rg.location
+  name             = module.naming.network_security_group.name_unique
+  enable_telemetry = var.enable_telemetry
   nsgrules = { #allow all just to show the association.
     "rule01" : {
       "nsg_rule_access" : "Allow",
@@ -338,7 +339,6 @@ module "testnsg" {
     }
   }
   resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = var.enable_telemetry
 }
 
 resource "azurerm_application_security_group" "test_asg" {
