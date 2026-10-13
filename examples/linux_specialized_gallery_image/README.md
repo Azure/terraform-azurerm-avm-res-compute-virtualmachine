@@ -68,10 +68,15 @@ module "regions" {
 }
 
 locals {
-  deployment_region = "canadacentral" #temporarily pinning on single region
+  deployment_region = module.regions.regions[random_integer.region_index.result].name
   tags = {
     scenario = "linux_specialized_gallery_image"
   }
+}
+
+resource "random_integer" "region_index" {
+  max = length(module.regions.regions_by_name) - 1
+  min = 0
 }
 
 resource "random_integer" "zone_index" {
@@ -298,6 +303,7 @@ The following resources are used by this module:
 - [azurerm_shared_image_gallery.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/shared_image_gallery) (resource)
 - [azurerm_shared_image_version.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/shared_image_version) (resource)
 - [azurerm_snapshot.seed](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/snapshot) (resource)
+- [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 - [azurerm_platform_image.ubuntu](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/platform_image) (data source)
