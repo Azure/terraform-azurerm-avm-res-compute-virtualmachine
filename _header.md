@@ -10,18 +10,18 @@ The generated admin password and SSH key secrets are now written with `azapi_dat
 
 This affects you if you set `account_credentials.key_vault_configuration` (or the deprecated `generated_secrets_key_vault_secret_config`) and let the module generate a credential. The module stops managing the old `azurerm_key_vault_secret` without destroying it, so the upgrade never deletes the secret from Key Vault.
 
-The module performs the adoption for you. Set `upgrade_from_azurerm` for a single apply:
+The module performs the adoption for you. Set `avm_managed_migration_enabled` for a single apply:
 
 ```hcl
 module "vm" {
   # ...
-  upgrade_from_azurerm = true
+  avm_managed_migration_enabled = true
 }
 ```
 
 Then plan and apply as usual. The plan reports the old secret as no longer managed rather than destroyed, and the live secret as an import plus an in-place update. No `terraform import` or `terraform state` commands are needed. The flag is only read while a secret is still unmanaged, so it is a no-op afterwards and can be removed at your convenience.
 
-Leave `upgrade_from_azurerm` at its default of `false` on a new deployment. An import cannot adopt a secret that does not exist yet, so setting it before the secrets exist fails at plan time.
+Leave `avm_managed_migration_enabled` at its default of `false` on a new deployment. An import cannot adopt a secret that does not exist yet, so setting it before the secrets exist fails at plan time.
 
 This upgrade requires Terraform 1.16 or later, which is when `import` blocks became usable inside a module, so the module's minimum version has been raised to `>= 1.16`. Terraform refuses to run the module on anything older, which is deliberate: on an earlier version the import block is silently ignored, and the apply would stop with `Resource already exists` after the old secret had already been forgotten. Upgrade Terraform before upgrading the module.
 

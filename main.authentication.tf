@@ -52,7 +52,7 @@ removed {
 # import fails at plan time. Terraform skips an import whose target is already in state, so leaving
 # the flag set after the upgrade is a no-op.
 import {
-  for_each = var.upgrade_from_azurerm ? toset(range(local.password_secret_count)) : toset([])
+  for_each = var.avm_managed_migration_enabled ? toset(range(local.password_secret_count)) : toset([])
   to       = azapi_data_plane_resource.admin_password[each.value]
   id       = "${local.credentials_key_vault_host}/secrets/${local.credential_secret_name_password}|${var.resource_types.keyvault_vaults_secrets}"
 }
@@ -111,7 +111,7 @@ removed {
 
 # See the note on the import block for azapi_data_plane_resource.admin_password.
 import {
-  for_each = var.upgrade_from_azurerm ? toset(range(local.ssh_secret_count)) : toset([])
+  for_each = var.avm_managed_migration_enabled ? toset(range(local.ssh_secret_count)) : toset([])
   to       = azapi_data_plane_resource.admin_ssh_key[each.value]
   id       = "${local.credentials_key_vault_host}/secrets/${local.credential_secret_name_ssh_key}|${var.resource_types.keyvault_vaults_secrets}"
 }
