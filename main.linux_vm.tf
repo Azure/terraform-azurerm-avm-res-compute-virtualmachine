@@ -131,19 +131,6 @@ resource "azapi_resource" "this_linux_virtualmachine_lock" {
     }
   }
 
-  depends_on = [
-    azapi_resource.this_data_disk,
-    azapi_resource.virtualmachine_network_interfaces,
-    azapi_resource.virtualmachine_public_ips,
-    azapi_resource.system_managed_identity_role_assignments,
-    azapi_resource.this_linux_virtual_machine,
-    azapi_resource.this_network_interface_diagnostic_settings,
-    azapi_resource.this_virtual_machine_diagnostic_settings,
-    module.extension,
-    module.extension_1,
-    module.extension_2,
-    module.run_command,
-    module.run_command_1,
-    module.run_command_2
-  ]
+  # Apply the lock after, and remove it before, everything it covers. See time_sleep.lock_removal.
+  depends_on = [time_sleep.lock_removal]
 }
