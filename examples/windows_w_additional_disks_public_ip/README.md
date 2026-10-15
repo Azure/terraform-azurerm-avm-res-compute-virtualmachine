@@ -63,15 +63,24 @@ module "regions" {
 }
 
 locals {
-  #deployment_region = module.regions.regions[random_integer.region_index.result].name
-  deployment_region = "canadacentral" #temporarily pinning on single region
+  deployment_region = local.shutdown_schedule_regions[random_integer.region_index.result].name
+  # Microsoft.DevTestLab/schedules (the VM shutdown schedule) is only offered in these regions.
+  devtestlab_schedule_locations = [
+    "australiacentral", "australiacentral2", "australiaeast", "australiasoutheast", "brazilsouth", "brazilsoutheast",
+    "canadacentral", "canadaeast", "centralindia", "centralus", "eastasia", "eastus", "eastus2", "francecentral",
+    "francesouth", "germanywestcentral", "japaneast", "japanwest", "jioindiawest", "koreacentral", "koreasouth",
+    "northcentralus", "northeurope", "norwayeast", "qatarcentral", "southafricanorth", "southcentralus", "southeastasia",
+    "southindia", "swedencentral", "switzerlandnorth", "switzerlandwest", "uaenorth", "uksouth", "ukwest",
+    "westcentralus", "westeurope", "westindia", "westus", "westus2", "westus3",
+  ]
+  shutdown_schedule_regions = [for region in module.regions.regions : region if contains(local.devtestlab_schedule_locations, region.name)]
   tags = {
     scenario = "Default"
   }
 }
 
 resource "random_integer" "region_index" {
-  max = length(module.regions.regions_by_name) - 1
+  max = length(local.shutdown_schedule_regions) - 1
   min = 0
 }
 

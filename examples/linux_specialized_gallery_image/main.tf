@@ -40,10 +40,15 @@ module "regions" {
 }
 
 locals {
-  deployment_region = "canadacentral" #temporarily pinning on single region
+  deployment_region = module.regions.regions[random_integer.region_index.result].name
   tags = {
     scenario = "linux_specialized_gallery_image"
   }
+}
+
+resource "random_integer" "region_index" {
+  max = length(module.regions.regions_by_name) - 1
+  min = 0
 }
 
 resource "random_integer" "zone_index" {

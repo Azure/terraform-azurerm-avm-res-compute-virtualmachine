@@ -43,8 +43,7 @@ module "regions" {
 }
 
 locals {
-  #deployment_region = module.regions.regions[random_integer.region_index.result].name
-  deployment_region = "canadacentral" #temporarily pinning on single region
+  deployment_region = module.regions.regions[random_integer.region_index.result].name
   tags = {
     scenario = "os_disk_network_access"
   }

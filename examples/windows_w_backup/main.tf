@@ -48,8 +48,7 @@ module "regions" {
 }
 
 locals {
-  #deployment_region = module.regions.regions[random_integer.region_index.result].name
-  deployment_region = "canadacentral" #temporarily pinning on single region
+  deployment_region = module.regions.regions[random_integer.region_index.result].name
   tags = {
     scenario = "Default"
   }
@@ -143,7 +142,7 @@ resource "azurerm_public_ip" "bastionpip" {
   name                = "${module.naming.public_ip.name_unique}-bastion"
   resource_group_name = azurerm_resource_group.this_rg.name
   sku                 = "Standard"
-  zones               = module.regions.regions_by_name[local.deployment_region].zones
+  zones               = ["1", "2", "3"]
 }
 
 resource "azurerm_bastion_host" "bastion" {

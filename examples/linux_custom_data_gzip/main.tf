@@ -47,7 +47,7 @@ module "regions" {
 }
 
 locals {
-  deployment_region = "canadacentral"
+  deployment_region = module.regions.regions[random_integer.region_index.result].name
   tags = {
     scenario = "linux_custom_data_gzip"
   }
