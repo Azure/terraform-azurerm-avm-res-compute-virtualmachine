@@ -5,7 +5,6 @@ mock_provider "azapi" {
     }
   }
 }
-mock_provider "azurerm" {}
 mock_provider "modtm" {}
 mock_provider "random" {}
 mock_provider "tls" {}

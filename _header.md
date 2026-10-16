@@ -2,7 +2,32 @@
 
 ### NOTE: This module follows the semantic versioning and versions prior to 1.0.0 should be considered pre-release versions. This v0.19.0 version contains a number of breaking changes and is intended to be the final signficant release prior to the v1.0.0 release.  Please review the release notes prior to updating previous deployments to use this version.
 
-This is the virtual machine resource module for the Azure Verified Modules library.  This module deploys a Windows and/or Linux virtual machine along with common associated resources.  It leverages the AzureRM provider and sets a number of initial defaults to minimize the overall inputs for simple configurations.
+This is the virtual machine resource module for the Azure Verified Modules library.  This module deploys a Windows and/or Linux virtual machine along with common associated resources.  It leverages the AzAPI provider and sets a number of initial defaults to minimize the overall inputs for simple configurations.
+
+## Upgrading generated credential secrets
+
+The generated admin password and SSH key secrets are now written with `azapi_data_plane_resource` instead of `azurerm_key_vault_secret`. Terraform cannot move that state automatically, because `azapi_data_plane_resource` does not support moving state from another resource type, so each existing secret has to be adopted once.
+
+This affects you if you set `account_credentials.key_vault_configuration` (or the deprecated `generated_secrets_key_vault_secret_config`) and let the module generate a credential. The module stops managing the old `azurerm_key_vault_secret` without destroying it, so the upgrade never deletes the secret from Key Vault.
+
+The module performs the adoption for you. Set `avm_managed_migration_enabled` for a single apply:
+
+```hcl
+module "vm" {
+  # ...
+  avm_managed_migration_enabled = true
+}
+```
+
+Then plan and apply as usual. The plan reports the old secret as no longer managed rather than destroyed, and the live secret as an import plus an in-place update. No `terraform import` or `terraform state` commands are needed. The flag is only read while a secret is still unmanaged, so it is a no-op afterwards and can be removed at your convenience.
+
+Leave `avm_managed_migration_enabled` at its default of `false` on a new deployment. An import cannot adopt a secret that does not exist yet, so setting it before the secrets exist fails at plan time.
+
+This upgrade requires Terraform 1.16 or later, which is when `import` blocks became usable inside a module, so the module's minimum version has been raised to `>= 1.16`. Terraform refuses to run the module on anything older, which is deliberate: on an earlier version the import block is silently ignored, and the apply would stop with `Resource already exists` after the old secret had already been forgotten. Upgrade Terraform before upgrading the module.
+
+Keep the `azurerm` provider configured in your root module until this upgrade has been applied. Terraform still needs it to stop managing the old secrets, and planning without it fails with `The argument "features" is required`. Once the apply succeeds, the module no longer needs it.
+
+The secret keeps its name, its value and its version history. Key Vault creates a new version on any write, so the apply adds a version carrying the same value rather than replacing the secret.
 
 ## Azure Backup lifecycle
 
@@ -17,17 +42,11 @@ By default, removing a backup configuration or destroying the module deletes the
 
 ## Cross-subscription Application Gateway backend pools
 
-An IP configuration can join an Application Gateway backend pool in another subscription by passing the pool's full Azure resource ID to `app_gateway_backend_pool_resource_id`. The association is written to the VM's network interface, so this module continues to use the `azurerm` provider configured for the VM subscription. A provider alias is only needed in the root configuration that reads or creates the Application Gateway.
+An IP configuration can join an Application Gateway backend pool in another subscription by passing the pool's full Azure resource ID to `app_gateway_backend_pool_resource_id`. The association is written to the VM's network interface, so this module writes it in the VM subscription and no provider is passed to the module. A provider alias is only needed in the root configuration that reads or creates the Application Gateway, as in the example below.
 
 The identity running this deployment must have the permissions Azure requires to update the NIC and reference the backend pool across subscriptions. The Application Gateway and backend networks must also have supported connectivity, such as cross-subscription VNet peering.
 
 ```hcl
-provider "azurerm" {
-  features {}
-
-  subscription_id = var.vm_subscription_id
-}
-
 provider "azurerm" {
   alias = "application_gateway"
 
