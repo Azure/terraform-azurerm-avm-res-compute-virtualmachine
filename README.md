@@ -698,7 +698,7 @@ Default: `true`
 
 ### <a name="input_encryption_at_host_enabled"></a> [encryption\_at\_host\_enabled](#input\_encryption\_at\_host\_enabled)
 
-Description: (Optional) Should all of the disks (including the temp disk) attached to this Virtual Machine be encrypted by enabling Encryption at Host?
+Description: (Optional) Should all of the disks (including the temp disk) attached to this Virtual Machine be encrypted by enabling Encryption at Host? Azure only changes this setting on an existing Virtual Machine while it is deallocated, and this module does not deallocate machines, so switching an existing machine between true and false must be done while it is deallocated.
 
 Type: `bool`
 

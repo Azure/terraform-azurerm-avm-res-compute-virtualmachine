@@ -602,3 +602,78 @@ run "the_virtual_machine_azurerm_output_keeps_its_shape" {
     error_message = "azurerm exposed identity as a single element list, so the shape must be preserved."
   }
 }
+
+# AzureRM never sent encryptionAtHost = false, so machines it created with encryption at host
+# disabled have no value for the property. ARM treats an explicit false as a change on those
+# machines and rejects it unless they are deallocated, which failed the upgrade from AzureRM.
+run "encryption_at_host_is_sent_when_enabled" {
+  command = apply
+
+  assert {
+    condition     = local.linux_vm_body.properties.securityProfile.encryptionAtHost == true
+    error_message = "Encryption at host is enabled by default and must be sent as true."
+  }
+}
+
+run "disabled_encryption_at_host_is_left_out_of_the_body" {
+  command = apply
+
+  variables {
+    encryption_at_host_enabled = false
+  }
+
+  assert {
+    condition     = !can(local.linux_vm_body.properties.securityProfile.encryptionAtHost)
+    error_message = "A disabled encryption at host must be left out of the body rather than sent as false, which ARM rejects on a running machine that AzureRM created."
+  }
+}
+
+run "unset_encryption_at_host_is_left_out_of_the_body" {
+  command = apply
+
+  variables {
+    encryption_at_host_enabled = null
+  }
+
+  assert {
+    condition     = !can(local.linux_vm_body.properties.securityProfile.encryptionAtHost)
+    error_message = "An unset encryption at host must be left out of the body."
+  }
+}
+
+# Leaving false out of the body means the module cannot turn encryption at host off on a machine
+# that has it. That must fail loudly rather than leave the machine silently encrypted.
+run "disabling_encryption_at_host_on_a_machine_that_has_it_fails" {
+  command = apply
+  # Start from fresh state: the earlier runs already left encryptionAtHost out of the body, so on
+  # shared state the machine would not change and the overridden output would never be read.
+  state_key = "encryption_at_host_still_enabled"
+
+  variables {
+    encryption_at_host_enabled = false
+  }
+
+  override_resource {
+    target = azapi_resource.this_linux_virtual_machine
+    values = {
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vm-test"
+      output = {
+        properties = {
+          vmId = "33333333-3333-3333-3333-333333333333"
+          securityProfile = {
+            encryptionAtHost = true
+          }
+          storageProfile = {
+            osDisk = {
+              managedDisk = {
+                id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/vm-test-osdisk"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  expect_failures = [azapi_resource.this_linux_virtual_machine]
+}
