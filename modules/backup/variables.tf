@@ -1,3 +1,9 @@
+variable "location" {
+  type        = string
+  description = "The Azure region for this module's resources or telemetry deployment."
+  nullable    = false
+}
+
 variable "recovery_vault_resource_id" {
   type        = string
   description = <<DESCRIPTION

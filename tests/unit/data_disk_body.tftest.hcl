@@ -7,7 +7,13 @@ mock_provider "azapi" {
       id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
     }
   }
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
 }
+
 mock_provider "azurerm" {
   # The data disk attachment parses the virtual machine ID, so the mocked machine needs a
   # well-formed ARM ID rather than the generated placeholder.
@@ -20,9 +26,11 @@ mock_provider "azurerm" {
     }
   }
 }
-mock_provider "modtm" {}
+
 mock_provider "random" {}
+
 mock_provider "time" {}
+
 mock_provider "tls" {}
 
 # A single mock_resource default applies to every azapi_resource in the module, so the data disk
@@ -34,6 +42,7 @@ override_resource {
     id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/disk-test"
   }
 }
+
 # The blanket azapi_resource mock gives every azapi resource the same id, which the still-azurerm
 # resources reject when they parse it as a virtual machine ID. The virtual machine also has to
 # expose an output, because the OS disk lock and network access updater read its managed disk id

@@ -6,6 +6,7 @@ module "run_command" {
   name                         = each.value.name
   script_source                = each.value.script_source
   virtualmachine_resource_id   = local.virtualmachine_resource_id
+  enable_telemetry             = var.enable_telemetry
   error_blob_managed_identity  = each.value.error_blob_managed_identity
   error_blob_uri               = each.value.error_blob_uri
   ignore_body_changes          = var.ignore_body_changes.compute_virtual_machines_run_commands
@@ -44,6 +45,7 @@ module "run_command_1" {
   name                         = each.value.name
   script_source                = each.value.script_source
   virtualmachine_resource_id   = local.virtualmachine_resource_id
+  enable_telemetry             = var.enable_telemetry
   error_blob_managed_identity  = each.value.error_blob_managed_identity
   error_blob_uri               = each.value.error_blob_uri
   ignore_body_changes          = var.ignore_body_changes.compute_virtual_machines_run_commands
@@ -80,6 +82,7 @@ module "run_command_2" {
   name                         = each.value.name
   script_source                = each.value.script_source
   virtualmachine_resource_id   = local.virtualmachine_resource_id
+  enable_telemetry             = var.enable_telemetry
   error_blob_managed_identity  = each.value.error_blob_managed_identity
   error_blob_uri               = each.value.error_blob_uri
   ignore_body_changes          = var.ignore_body_changes.compute_virtual_machines_run_commands

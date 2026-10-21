@@ -3,7 +3,13 @@
 # secret that silently fails to reach the request cannot be caught by an idempotency check - only by
 # asserting on what the module builds, and by the e2e example that fails when the secret is missing
 # (examples/windows_w_extension_protected_settings).
-mock_provider "azapi" {}
+mock_provider "azapi" {
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
+}
 
 variables {
   location                   = "eastus"
