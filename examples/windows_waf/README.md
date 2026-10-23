@@ -86,7 +86,10 @@ module "regions" {
 }
 
 locals {
-  deployment_region = module.regions.regions[random_integer.region_index.result].name
+  # Azure Disk Encryption isn't available on v6 or newer VM sizes, and the SKU finder can't filter
+  # them out, so the virtual machine's size is picked from the finder's candidates without them.
+  ade_supported_skus = [for sku in module.vm_sku.sku_list : sku if length(regexall("_v([6-9]|[1-9][0-9]+)$", lower(sku))) == 0]
+  deployment_region  = module.regions.regions[random_integer.region_index.result].name
   tags = {
     scenario = "WAF example"
   }
@@ -125,6 +128,11 @@ module "vm_sku" {
   }
 
   depends_on = [random_integer.zone_index]
+}
+
+resource "random_integer" "ade_sku_index" {
+  max = max(length(local.ade_supported_skus) - 1, 0)
+  min = 0
 }
 
 module "natgateway" {
@@ -401,7 +409,7 @@ module "testvm" {
   os_type               = "Windows"
   patch_assessment_mode = "AutomaticByPlatform"
   patch_mode            = "AutomaticByPlatform"
-  sku_size              = module.vm_sku.sku
+  sku_size              = length(local.ade_supported_skus) > 0 ? local.ade_supported_skus[random_integer.ade_sku_index.result] : module.vm_sku.sku
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
@@ -590,6 +598,7 @@ The following resources are used by this module:
 - [azurerm_recovery_services_vault.test_vault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_user_assigned_identity.example_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
+- [random_integer.ade_sku_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [azuread_service_principal.backup_service_app](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/data-sources/service_principal) (data source)

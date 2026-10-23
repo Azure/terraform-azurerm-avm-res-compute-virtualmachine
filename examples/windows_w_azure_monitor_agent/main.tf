@@ -49,7 +49,10 @@ module "regions" {
 }
 
 locals {
-  deployment_region = module.regions.regions[random_integer.region_index.result].name
+  # Azure Disk Encryption isn't available on v6 or newer VM sizes, and the SKU finder can't filter
+  # them out, so the virtual machine's size is picked from the finder's candidates without them.
+  ade_supported_skus = [for sku in module.vm_sku.sku_list : sku if length(regexall("_v([6-9]|[1-9][0-9]+)$", lower(sku))) == 0]
+  deployment_region  = module.regions.regions[random_integer.region_index.result].name
   tags = {
     scenario = "Default"
   }
@@ -88,6 +91,11 @@ module "vm_sku" {
   }
 
   depends_on = [random_integer.zone_index]
+}
+
+resource "random_integer" "ade_sku_index" {
+  max = max(length(local.ade_supported_skus) - 1, 0)
+  min = 0
 }
 
 module "natgateway" {
@@ -284,7 +292,7 @@ module "testvm" {
     }
   }
   os_type  = "Windows"
-  sku_size = module.vm_sku.sku
+  sku_size = length(local.ade_supported_skus) > 0 ? local.ade_supported_skus[random_integer.ade_sku_index.result] : module.vm_sku.sku
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
