@@ -11,6 +11,7 @@ module "extension" {
   virtualmachine_resource_id        = local.virtualmachine_resource_id
   auto_upgrade_minor_version        = var.extensions[each.key].auto_upgrade_minor_version
   automatic_upgrade_enabled         = var.extensions[each.key].automatic_upgrade_enabled
+  enable_telemetry                  = var.enable_telemetry
   failure_suppression_enabled       = var.extensions[each.key].failure_suppression_enabled
   ignore_body_changes               = var.ignore_body_changes.compute_virtual_machines_extensions
   protected_settings                = var.extensions[each.key].protected_settings
@@ -50,6 +51,7 @@ module "extension_1" {
   virtualmachine_resource_id        = local.virtualmachine_resource_id
   auto_upgrade_minor_version        = var.extensions[each.key].auto_upgrade_minor_version
   automatic_upgrade_enabled         = var.extensions[each.key].automatic_upgrade_enabled
+  enable_telemetry                  = var.enable_telemetry
   failure_suppression_enabled       = var.extensions[each.key].failure_suppression_enabled
   ignore_body_changes               = var.ignore_body_changes.compute_virtual_machines_extensions
   protected_settings                = var.extensions[each.key].protected_settings
@@ -85,6 +87,7 @@ module "extension_2" {
   virtualmachine_resource_id        = local.virtualmachine_resource_id
   auto_upgrade_minor_version        = var.extensions[each.key].auto_upgrade_minor_version
   automatic_upgrade_enabled         = var.extensions[each.key].automatic_upgrade_enabled
+  enable_telemetry                  = var.enable_telemetry
   failure_suppression_enabled       = var.extensions[each.key].failure_suppression_enabled
   ignore_body_changes               = var.ignore_body_changes.compute_virtual_machines_extensions
   protected_settings                = var.extensions[each.key].protected_settings
@@ -121,6 +124,7 @@ module "extension_3" {
   virtualmachine_resource_id        = local.virtualmachine_resource_id
   auto_upgrade_minor_version        = var.extensions[each.key].auto_upgrade_minor_version
   automatic_upgrade_enabled         = var.extensions[each.key].automatic_upgrade_enabled
+  enable_telemetry                  = var.enable_telemetry
   failure_suppression_enabled       = var.extensions[each.key].failure_suppression_enabled
   ignore_body_changes               = var.ignore_body_changes.compute_virtual_machines_extensions
   protected_settings                = var.extensions[each.key].protected_settings
@@ -158,6 +162,7 @@ module "extension_4" {
   virtualmachine_resource_id        = local.virtualmachine_resource_id
   auto_upgrade_minor_version        = var.extensions[each.key].auto_upgrade_minor_version
   automatic_upgrade_enabled         = var.extensions[each.key].automatic_upgrade_enabled
+  enable_telemetry                  = var.enable_telemetry
   failure_suppression_enabled       = var.extensions[each.key].failure_suppression_enabled
   ignore_body_changes               = var.ignore_body_changes.compute_virtual_machines_extensions
   protected_settings                = var.extensions[each.key].protected_settings

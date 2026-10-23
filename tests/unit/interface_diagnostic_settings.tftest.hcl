@@ -7,7 +7,13 @@ mock_provider "azapi" {
       id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
     }
   }
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
 }
+
 mock_provider "azurerm" {
   # AzAPI validates parent_id at plan time, so every mocked resource that becomes a parent must
   # carry a well-formed ARM ID rather than the generated placeholder.
@@ -25,9 +31,11 @@ mock_provider "azurerm" {
     }
   }
 }
-mock_provider "modtm" {}
+
 mock_provider "random" {}
+
 mock_provider "time" {}
+
 mock_provider "tls" {}
 
 # The blanket azapi_resource mock gives every azapi resource the same id, which the still-azurerm

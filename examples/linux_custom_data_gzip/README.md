@@ -21,6 +21,11 @@ terraform {
       source  = "hashicorp/cloudinit"
       version = "~> 2.0"
     }
+    # tflint-ignore: terraform_unused_required_providers
+    modtm = {
+      source  = "registry.terraform.io/azure/modtm"
+      version = "~> 0.3"
+    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7"
@@ -41,16 +46,17 @@ provider "azurerm" {
 }
 
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.4.2"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.5.0"
+  version = "0.13.0"
 
-  availability_zones_filter = true
-  enable_telemetry          = var.enable_telemetry
+  location               = var.location
+  enable_telemetry       = var.enable_telemetry
+  has_availability_zones = true
 }
 
 locals {
@@ -288,6 +294,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_cloudinit"></a> [cloudinit](#requirement\_cloudinit) (~> 2.0)
 
+- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
+
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
 ## Resources
@@ -321,6 +329,14 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The Azure region for this module's resources or telemetry deployment.
+
+Type: `string`
+
+Default: `"eastus"`
+
 ## Outputs
 
 No outputs.
@@ -337,9 +353,9 @@ Version: =0.10.0
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
-Source: Azure/naming/azurerm
+Source: Azure/avm-utl-naming/azure
 
-Version: 0.4.2
+Version: 0.2.0
 
 ### <a name="module_natgateway"></a> [natgateway](#module\_natgateway)
 
@@ -351,7 +367,7 @@ Version: 0.2.1
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: 0.5.0
+Version: 0.13.0
 
 ### <a name="module_vm_gzipped_custom_data"></a> [vm\_gzipped\_custom\_data](#module\_vm\_gzipped\_custom\_data)
 

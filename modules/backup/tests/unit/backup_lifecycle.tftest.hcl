@@ -5,6 +5,11 @@ mock_provider "azapi" {
       output = null
     }
   }
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
 }
 
 variables {
@@ -43,6 +48,9 @@ run "missing_backup_item_is_created" {
     condition     = azapi_resource_action.backup_destroy.resource_id == "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/rg-backup/providers/Microsoft.RecoveryServices/vaults/rsv-test/backupFabrics/Azure/protectionContainers/iaasvmcontainer;iaasvmcontainerv2;rg-test;vm-backup/protectedItems/VM;iaasvmcontainerv2;rg-test;vm-backup"
     error_message = "The protected item resource ID must support a vault in a different subscription from the VM."
   }
+  variables {
+    location = "eastus"
+  }
 }
 
 run "soft_deleted_backup_item_is_rehydrated" {
@@ -72,6 +80,9 @@ run "soft_deleted_backup_item_is_rehydrated" {
     condition     = azapi_update_resource.backup_protection.body.properties.policyId == "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/rg-backup/providers/Microsoft.RecoveryServices/vaults/rsv-test/backupPolicies/policy-test"
     error_message = "The full backup configuration must be managed after rehydrating a soft-deleted item."
   }
+  variables {
+    location = "eastus"
+  }
 }
 
 run "active_backup_item_is_adopted" {
@@ -93,6 +104,9 @@ run "active_backup_item_is_adopted" {
     condition     = azapi_resource_action.backup_ensure_active.body.properties.policyId == "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/rg-backup/providers/Microsoft.RecoveryServices/vaults/rsv-test/backupPolicies/policy-test"
     error_message = "An existing active or ProtectionStopped item must be adopted with the full backup configuration rather than rehydrated."
   }
+  variables {
+    location = "eastus"
+  }
 }
 
 run "backup_data_can_be_retained_on_destroy" {
@@ -100,6 +114,7 @@ run "backup_data_can_be_retained_on_destroy" {
 
   variables {
     retain_backup_data_on_destroy = true
+    location                      = "eastus"
   }
 
   assert {
@@ -121,6 +136,7 @@ run "excluded_disk_luns_are_sent_as_exclusion_list" {
 
   variables {
     exclude_disk_luns = [0, 1]
+    location          = "eastus"
   }
 
   assert {

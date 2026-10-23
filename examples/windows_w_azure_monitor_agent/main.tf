@@ -10,6 +10,11 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 4.42, < 5.0"
     }
+    # tflint-ignore: terraform_unused_required_providers
+    modtm = {
+      source  = "registry.terraform.io/azure/modtm"
+      version = "~> 0.3"
+    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7"
@@ -30,20 +35,24 @@ provider "azurerm" {
 }
 
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.4.2"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.5.0"
+  version = "0.13.0"
 
-  availability_zones_filter = true
-  enable_telemetry          = var.enable_telemetry
+  location               = var.location
+  enable_telemetry       = var.enable_telemetry
+  has_availability_zones = true
 }
 
 locals {
-  deployment_region = module.regions.regions[random_integer.region_index.result].name
+  # Azure Disk Encryption isn't available on v6 or newer VM sizes, and the SKU finder can't filter
+  # them out, so the virtual machine's size is picked from the finder's candidates without them.
+  ade_supported_skus = [for sku in module.vm_sku.sku_list : sku if length(regexall("_v([6-9]|[1-9][0-9]+)$", lower(sku))) == 0]
+  deployment_region  = module.regions.regions[random_integer.region_index.result].name
   tags = {
     scenario = "Default"
   }
@@ -82,6 +91,11 @@ module "vm_sku" {
   }
 
   depends_on = [random_integer.zone_index]
+}
+
+resource "random_integer" "ade_sku_index" {
+  max = max(length(local.ade_supported_skus) - 1, 0)
+  min = 0
 }
 
 module "natgateway" {
@@ -278,7 +292,7 @@ module "testvm" {
     }
   }
   os_type  = "Windows"
-  sku_size = module.vm_sku.sku
+  sku_size = length(local.ade_supported_skus) > 0 ? local.ade_supported_skus[random_integer.ade_sku_index.result] : module.vm_sku.sku
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
