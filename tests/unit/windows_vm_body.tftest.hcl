@@ -4,9 +4,15 @@ mock_provider "azapi" {
       id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
     }
   }
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
 }
+
 mock_provider "azurerm" {}
-mock_provider "modtm" {}
+
 mock_provider "random" {
   #the generated value has to satisfy the provider side complexity check on admin_password.
   mock_resource "random_password" {
@@ -15,7 +21,9 @@ mock_provider "random" {
     }
   }
 }
+
 mock_provider "time" {}
+
 mock_provider "tls" {}
 
 override_resource {

@@ -2,6 +2,7 @@ module "backup" {
   source   = "./modules/backup"
   for_each = var.azure_backup_configurations
 
+  location                      = var.location
   recovery_vault_resource_id    = each.value.recovery_vault_resource_id
   resource_group_name           = var.resource_group_name
   virtual_machine_name          = var.name

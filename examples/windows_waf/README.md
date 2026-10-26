@@ -42,6 +42,11 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 4.42, < 5.0"
     }
+    # tflint-ignore: terraform_unused_required_providers
+    modtm = {
+      source  = "registry.terraform.io/azure/modtm"
+      version = "~> 0.3"
+    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7"
@@ -67,20 +72,24 @@ provider "azurerm" {
 }
 
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.4.2"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.5.0"
+  version = "0.13.0"
 
-  availability_zones_filter = true
-  enable_telemetry          = var.enable_telemetry
+  location               = var.location
+  enable_telemetry       = var.enable_telemetry
+  has_availability_zones = true
 }
 
 locals {
-  deployment_region = module.regions.regions[random_integer.region_index.result].name
+  # Azure Disk Encryption isn't available on v6 or newer VM sizes, and the SKU finder can't filter
+  # them out, so the virtual machine's size is picked from the finder's candidates without them.
+  ade_supported_skus = [for sku in module.vm_sku.sku_list : sku if length(regexall("_v([6-9]|[1-9][0-9]+)$", lower(sku))) == 0]
+  deployment_region  = module.regions.regions[random_integer.region_index.result].name
   tags = {
     scenario = "WAF example"
   }
@@ -119,6 +128,11 @@ module "vm_sku" {
   }
 
   depends_on = [random_integer.zone_index]
+}
+
+resource "random_integer" "ade_sku_index" {
+  max = max(length(local.ade_supported_skus) - 1, 0)
+  min = 0
 }
 
 module "natgateway" {
@@ -395,7 +409,7 @@ module "testvm" {
   os_type               = "Windows"
   patch_assessment_mode = "AutomaticByPlatform"
   patch_mode            = "AutomaticByPlatform"
-  sku_size              = module.vm_sku.sku
+  sku_size              = length(local.ade_supported_skus) > 0 ? local.ade_supported_skus[random_integer.ade_sku_index.result] : module.vm_sku.sku
   source_image_reference = {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
@@ -567,6 +581,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.42, < 5.0)
 
+- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
+
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
 ## Resources
@@ -582,6 +598,7 @@ The following resources are used by this module:
 - [azurerm_recovery_services_vault.test_vault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault) (resource)
 - [azurerm_resource_group.this_rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_user_assigned_identity.example_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
+- [random_integer.ade_sku_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [azuread_service_principal.backup_service_app](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/data-sources/service_principal) (data source)
@@ -607,6 +624,14 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The Azure region for this module's resources or telemetry deployment.
+
+Type: `string`
+
+Default: `"eastus"`
+
 ## Outputs
 
 No outputs.
@@ -623,9 +648,9 @@ Version: =0.10.0
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
-Source: Azure/naming/azurerm
+Source: Azure/avm-utl-naming/azure
 
-Version: 0.4.2
+Version: 0.2.0
 
 ### <a name="module_natgateway"></a> [natgateway](#module\_natgateway)
 
@@ -637,7 +662,7 @@ Version: 0.2.1
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: 0.5.0
+Version: 0.13.0
 
 ### <a name="module_testvm"></a> [testvm](#module\_testvm)
 

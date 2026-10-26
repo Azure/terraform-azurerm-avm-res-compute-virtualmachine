@@ -6,7 +6,13 @@
 # The assertions read the locals rather than the resource because the protected parameters now
 # travel in `sensitive_body`, which is write-only: the provider never stores it, so there is nothing
 # to read back off `azapi_resource.this`.
-mock_provider "azapi" {}
+mock_provider "azapi" {
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
+}
 
 variables {
   location                   = "eastus"
