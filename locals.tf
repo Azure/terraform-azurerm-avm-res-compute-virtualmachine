@@ -22,7 +22,7 @@ locals {
     private_ip_addresses = local.virtual_machine_private_ip_addresses
     public_ip_address    = local.virtual_machine_public_ip_address
     public_ip_addresses  = local.virtual_machine_public_ip_addresses
-    virtual_machine_id   = try(azapi_resource.this_linux_virtual_machine[0].output.properties.vmId, null)
+    virtual_machine_id   = terraform_data.virtual_machine_assigned_values.output.vm_id
   } : null
   #set the type value for the managed identity that is used by azurerm
   managed_identity_type = var.managed_identities.system_assigned ? ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "SystemAssigned, UserAssigned" : "SystemAssigned") : ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "UserAssigned" : null)
@@ -67,12 +67,12 @@ locals {
   # which would make count expressions that depend on this local undeterminable during planning.
   os_disk_is_imported = var.os_disk_attach_mode
   #the OS disk is an inline block on the vm resource rather than a separate managed disk, so its resource id is read
-  #back off the created virtual machine.
-  os_disk_resource_id = (lower(var.os_type) == "windows") ? try(azapi_resource.this_windows_virtual_machine[0].output.properties.storageProfile.osDisk.managedDisk.id, null) : try(azapi_resource.this_linux_virtual_machine[0].output.properties.storageProfile.osDisk.managedDisk.id, null)
+  #back off the created virtual machine, through the copy that stays known while the machine is updated.
+  os_disk_resource_id = terraform_data.virtual_machine_assigned_values.output.os_disk_id
   #concat the input variable with the simple list going forward - this is a placeholder so that we can continue to reference the local source image reference value when it includes the simpleOS option.
   source_image_reference = var.source_image_reference
   #get the first system managed identity id if it is provisioned and depending on whether the vm type is linux or windows
-  system_managed_identity_id = var.managed_identities.system_assigned ? ((lower(var.os_type) == "windows") ? try(azapi_resource.this_windows_virtual_machine[0].output.identity.principalId, null) : try(azapi_resource.this_linux_virtual_machine[0].output.identity.principalId, null)) : null
+  system_managed_identity_id = var.managed_identities.system_assigned ? terraform_data.virtual_machine_assigned_values.output.principal_id : null
   #merge the resource group tags if tag inheritance is on.  Add this back in if agreed, passing through the resource tags for now.
   #tags = var.inherit_tags ? merge(data.azurerm_resource_group.virtualmachine_deployment.tags, var.tags) : var.tags
   tags = var.tags
@@ -87,6 +87,6 @@ locals {
     private_ip_addresses = local.virtual_machine_private_ip_addresses
     public_ip_address    = local.virtual_machine_public_ip_address
     public_ip_addresses  = local.virtual_machine_public_ip_addresses
-    virtual_machine_id   = try(azapi_resource.this_windows_virtual_machine[0].output.properties.vmId, null)
+    virtual_machine_id   = terraform_data.virtual_machine_assigned_values.output.vm_id
   } : null
 }

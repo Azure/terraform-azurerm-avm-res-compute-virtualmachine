@@ -42,6 +42,12 @@ resource "azapi_update_resource" "this_os_disk_network_access" {
     }
   }
 
+  lifecycle {
+    # See the note on azapi_resource.this_os_disk_lock: keep the recorded disk, and apply the
+    # settings to the new disk when the virtual machine is replaced.
+    ignore_changes       = [resource_id]
+    replace_triggered_by = [terraform_data.virtual_machine_assigned_values.triggers_replace.virtual_machine_id]
+  }
   depends_on = [
     azapi_resource.this_linux_virtual_machine,
     azapi_resource.this_windows_virtual_machine
