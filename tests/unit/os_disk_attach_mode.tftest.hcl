@@ -17,14 +17,6 @@ mock_provider "azapi" {
   }
 }
 
-mock_provider "azurerm" {
-  mock_resource "azurerm_network_interface" {
-    defaults = {
-      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
-    }
-  }
-}
-
 mock_provider "random" {
   #the generated value has to satisfy the provider side complexity check on admin_password.
   mock_resource "random_password" {
@@ -38,7 +30,7 @@ mock_provider "time" {}
 
 mock_provider "tls" {}
 
-# The blanket azapi_resource mock gives every azapi resource the same id, which the still-azurerm
+# The blanket azapi_resource mock gives every azapi resource the same id, which the other
 # resources reject when they parse it as a virtual machine ID. The virtual machine also has to
 # expose an output, because the OS disk lock and network access updater read its managed disk id
 # back off the created machine.
