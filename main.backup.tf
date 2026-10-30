@@ -2,7 +2,6 @@ module "backup" {
   source   = "./modules/backup"
   for_each = var.azure_backup_configurations
 
-  location                      = var.location
   recovery_vault_resource_id    = each.value.recovery_vault_resource_id
   resource_group_name           = var.resource_group_name
   virtual_machine_name          = var.name
@@ -12,6 +11,7 @@ module "backup" {
   exclude_disk_luns             = each.value.exclude_disk_luns
   ignore_body_changes           = var.ignore_body_changes.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems
   include_disk_luns             = each.value.include_disk_luns
+  location                      = var.location
   resource_types                = var.resource_types.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems
   retain_backup_data_on_destroy = each.value.retain_backup_data_on_destroy
   retry                         = var.retry
