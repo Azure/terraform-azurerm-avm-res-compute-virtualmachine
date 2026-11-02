@@ -45,6 +45,7 @@ variable "account_credentials" {
     }), {})
     key_vault_configuration = optional(object({
       resource_id = string
+      dns_suffix  = optional(string, "vault.azure.net")
       secret_configuration = optional(object({
         name                           = optional(string, null)
         expiration_date_length_in_days = optional(number, 45)
@@ -78,6 +79,7 @@ Schema:
   - `generate_admin_password_or_ssh_key`: bool (optional, default: true) = (optional) A flag to indicate whether to generate a password or SSH key for the admin account. If set to true, a password or SSH key will be auto-generated. If set to false, the provided password or SSH keys will be used.
 - `key_vault_configuration` = Object (optional, default: null) = (optional) The configuration for storing credentials in an Azure Key Vault. If not provided, credentials will not be stored in Key Vault as part of this module.
   - `resource_id`: string (required) = (required) The resource ID of the Key Vault where the credentials will be stored.
+  - `dns_suffix`: string (optional, default: vault.azure.net) = (optional) The Key Vault data plane DNS suffix for the target cloud. The secrets are written through the data plane, which is addressed by host name rather than by resource ID. Override this in a sovereign cloud, for example `vault.usgovcloudapi.net`.
   - `secret_configuration` = Object (optional, default: null) = (optional) The secret configuration that is used when storing credentials in the Key Vault.
     - `name`: string (optional, default: null) = (optional) The name of the secret in the Key Vault. If not provided, a name will be generated using the pattern <vm name>-<admin username>-<password | ssh-private-key>.
     - `expiration_date_length_in_days`: number (optional, default: 45) = (optional) The number of days until the secret expires. If not provided, the default is 45 days.
@@ -214,6 +216,18 @@ variable "availability_set_resource_id" {
   type        = string
   default     = null
   description = "(Optional) Specifies the Azure Resource ID of the Availability Set in which the Virtual Machine should exist. Cannot be used along with `new_availability_set`, `new_capacity_reservation_group`, `capacity_reservation_group_id`, `virtual_machine_scale_set_id`, `zone`. Changing this forces a new resource to be created."
+}
+
+variable "avm_managed_migration_enabled" {
+  type        = bool
+  default     = false
+  description = <<DESCRIPTION
+(Optional) Set to `true` for a single apply when upgrading from a module version that wrote the generated credential secrets with `azurerm_key_vault_secret`. The module then adopts the existing secrets into `azapi_data_plane_resource` instead of failing with `Resource already exists`.
+
+Leave this `false` on a new deployment. An import cannot adopt a secret that does not exist yet, so enabling it before the secrets exist fails at plan time.
+
+The flag is only read while a secret is still unmanaged, so it is a no-op once the upgrade has been applied and can be removed at your convenience.
+DESCRIPTION
 }
 
 variable "azure_backup_configurations" {
@@ -1398,6 +1412,7 @@ variable "resource_types" {
     network_network_interfaces            = optional(string, "Microsoft.Network/networkInterfaces@2024-10-01")
     network_public_ip_addresses           = optional(string, "Microsoft.Network/publicIPAddresses@2024-10-01")
     devtestlab_schedules                  = optional(string, "Microsoft.DevTestLab/schedules@2018-09-15")
+    keyvault_vaults_secrets               = optional(string, "Microsoft.KeyVault/vaults/secrets@7.5")
 
     recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(object({
       recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems = optional(string)
@@ -1426,6 +1441,7 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 - `network_network_interfaces` - The network interfaces created for the virtual machine.
 - `network_public_ip_addresses` - The public IP addresses created for the virtual machine's IP configurations.
 - `devtestlab_schedules` - The auto-shutdown schedule applied to the virtual machine.
+- `keyvault_vaults_secrets` - The generated credential secrets. This is a Key Vault data plane API version, not an ARM API version.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
 - `compute_virtual_machines_extensions` - Resource-type overrides passed to the extension submodule.
