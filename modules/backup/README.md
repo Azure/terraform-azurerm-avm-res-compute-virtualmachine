@@ -65,12 +65,6 @@ The following resources are used by this module:
 
 The following input variables are required:
 
-### <a name="input_location"></a> [location](#input\_location)
-
-Description: The Azure region for this module's resources or telemetry deployment.
-
-Type: `string`
-
 ### <a name="input_recovery_vault_resource_id"></a> [recovery\_vault\_resource\_id](#input\_recovery\_vault\_resource\_id)
 
 Description: `recovery_vault_resource_id` - (Required) - The Azure Resource ID of the recovery services vault where the backup will be stored. The vault may reside in a different subscription and resource group than the virtual machine.
@@ -152,6 +146,14 @@ Default: `{}`
 Description: `include_disk_luns` - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection. Only one of `exclude_disk_luns` or `include_disk_luns` can be set. If both are set then only the `exclude_disk_luns` value will be used.
 
 Type: `list(number)`
+
+Default: `null`
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The Azure region for this module's resources or telemetry deployment.
+
+Type: `string`
 
 Default: `null`
 
