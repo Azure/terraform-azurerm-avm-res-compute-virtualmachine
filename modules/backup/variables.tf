@@ -1,9 +1,3 @@
-variable "location" {
-  type        = string
-  description = "The Azure region for this module's resources or telemetry deployment."
-  nullable    = false
-}
-
 variable "recovery_vault_resource_id" {
   type        = string
   description = <<DESCRIPTION
@@ -89,6 +83,17 @@ variable "include_disk_luns" {
   description = <<DESCRIPTION
 `include_disk_luns` - (Optional) - A list of Disk Logical Unit Numbers (LUN) to be included for VM Protection. Only one of `exclude_disk_luns` or `include_disk_luns` can be set. If both are set then only the `exclude_disk_luns` value will be used.
 DESCRIPTION
+}
+
+variable "location" {
+  type        = string
+  default     = null
+  description = "The Azure region for this module's resources or telemetry deployment."
+
+  validation {
+    condition     = !var.enable_telemetry || var.location != null
+    error_message = "The location must not be null when telemetry is enabled."
+  }
 }
 
 variable "resource_types" {
