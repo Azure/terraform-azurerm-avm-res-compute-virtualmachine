@@ -37,16 +37,16 @@ locals {
   linux_vm_identity_output = local.managed_identity_type == null ? [] : [
     {
       type         = local.managed_identity_type
-      principal_id = try(azapi_resource.this_linux_virtual_machine[0].output.identity.principalId, null)
-      tenant_id    = try(azapi_resource.this_linux_virtual_machine[0].output.identity.tenantId, null)
+      principal_id = terraform_data.virtual_machine_assigned_values.output.principal_id
+      tenant_id    = terraform_data.virtual_machine_assigned_values.output.tenant_id
       identity_ids = var.managed_identities.user_assigned_resource_ids
     }
   ]
   windows_vm_identity_output = local.managed_identity_type == null ? [] : [
     {
       type         = local.managed_identity_type
-      principal_id = try(azapi_resource.this_windows_virtual_machine[0].output.identity.principalId, null)
-      tenant_id    = try(azapi_resource.this_windows_virtual_machine[0].output.identity.tenantId, null)
+      principal_id = terraform_data.virtual_machine_assigned_values.output.principal_id
+      tenant_id    = terraform_data.virtual_machine_assigned_values.output.tenant_id
       identity_ids = var.managed_identities.user_assigned_resource_ids
     }
   ]

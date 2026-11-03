@@ -83,9 +83,10 @@ module "vm_sku" {
   cache_results    = true
   enable_telemetry = var.enable_telemetry
   vm_filters = {
-    min_vcpus     = 2
-    max_vcpus     = 2
-    location_zone = random_integer.zone_index.result
+    min_vcpus            = 2
+    max_vcpus            = 2
+    premium_io_supported = true
+    location_zone        = random_integer.zone_index.result
   }
 
   depends_on = [random_integer.zone_index]

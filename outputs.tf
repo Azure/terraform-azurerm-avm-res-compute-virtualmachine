@@ -69,7 +69,7 @@ output "resource_id" {
 
 output "system_assigned_mi_principal_id" {
   description = "The principal id of the system managed identity assigned to the virtual machine"
-  value       = var.managed_identities.system_assigned == true ? ((lower(var.os_type) == "windows") ? try(azapi_resource.this_windows_virtual_machine[0].output.identity.principalId, null) : try(azapi_resource.this_linux_virtual_machine[0].output.identity.principalId, "")) : ""
+  value       = var.managed_identities.system_assigned == true ? ((lower(var.os_type) == "windows") ? terraform_data.virtual_machine_assigned_values.output.principal_id : try(coalesce(terraform_data.virtual_machine_assigned_values.output.principal_id), "")) : ""
 }
 
 output "virtual_machine" {
