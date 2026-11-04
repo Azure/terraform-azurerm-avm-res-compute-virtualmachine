@@ -56,7 +56,7 @@ resource "azapi_resource" "this_linux_virtual_machine" {
     "zones",
     "extendedLocation",
   ]
-  response_export_values = ["properties.vmId", "properties.storageProfile.osDisk.managedDisk.id", "identity"]
+  response_export_values = ["properties.vmId", "properties.storageProfile.osDisk.managedDisk.id", "identity", "properties.securityProfile.encryptionAtHost"]
   retry                  = var.retry
   sensitive_body         = local.linux_vm_sensitive_body
   tags                   = local.tags
@@ -86,6 +86,13 @@ resource "azapi_resource" "this_linux_virtual_machine" {
     precondition {
       condition     = length(local.vm_data_disks) == length(distinct([for disk in local.vm_data_disks : disk.lun]))
       error_message = "Each data disk needs its own lun, across both `data_disk_managed_disks` and `data_disk_existing_disks`."
+    }
+    # The body leaves encryptionAtHost out rather than sending false (see local.vm_security_profile),
+    # so a machine that has encryption at host would silently keep it. ARM only changes the setting
+    # while the machine is deallocated, and the module does not deallocate machines, so say so.
+    postcondition {
+      condition     = var.encryption_at_host_enabled != false || try(self.output.properties.securityProfile.encryptionAtHost, false) != true
+      error_message = "Encryption at host is enabled on this virtual machine, but `encryption_at_host_enabled` is false. ARM only changes this setting while the machine is deallocated, and this module does not deallocate machines. Deallocate the machine, disable encryption at host on it and start it again, or set `encryption_at_host_enabled = true`."
     }
   }
   depends_on = [ #the associations are now properties of the interface body, so the interface alone is enough.

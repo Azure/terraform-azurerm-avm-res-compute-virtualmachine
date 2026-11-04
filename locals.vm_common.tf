@@ -75,7 +75,13 @@ locals {
   )
 
   vm_security_profile = merge(
-    var.encryption_at_host_enabled == null ? {} : { encryptionAtHost = var.encryption_at_host_enabled },
+    # Only ever send true. ARM treats an explicit false as a change on a machine that has no value
+    # for the property, and only accepts that change while the machine is deallocated. AzureRM never
+    # sent false, so every machine it created with encryption at host disabled has no value, and
+    # sending false failed the upgrade from AzureRM with OperationNotAllowed. Leaving the property
+    # out still creates a machine without encryption at host. Switching an existing machine from
+    # true to false is caught by the postcondition on the virtual machine resource instead.
+    var.encryption_at_host_enabled == true ? { encryptionAtHost = true } : {},
     local.vm_uefi_settings == null ? {} : { uefiSettings = local.vm_uefi_settings },
     # ARM requires a security type alongside the UEFI settings. Each conditional yields an object
     # with a single attribute so Terraform can unify it with the empty case.
