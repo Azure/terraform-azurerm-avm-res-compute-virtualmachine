@@ -137,13 +137,13 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.8.1"
+  version = "=0.23.0"
 
-  address_space       = ["10.0.0.0/16"]
-  location            = azapi_resource.this_rg.location
-  resource_group_name = azapi_resource.this_rg.name
-  enable_telemetry    = var.enable_telemetry
-  name                = module.naming.virtual_network.name_unique
+  location         = azapi_resource.this_rg.location
+  parent_id        = azapi_resource.this_rg.id
+  address_space    = ["10.0.0.0/16"]
+  enable_telemetry = var.enable_telemetry
+  name             = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-1"
@@ -342,7 +342,7 @@ Version: 0.3.0
 
 Source: Azure/avm-res-network-virtualnetwork/azurerm
 
-Version: =0.8.1
+Version: =0.23.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
