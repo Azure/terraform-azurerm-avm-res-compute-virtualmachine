@@ -107,7 +107,7 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.15.0"
+  version = "=0.23.0"
 
   location         = azurerm_resource_group.this_rg.location
   parent_id        = azurerm_resource_group.this_rg.id
@@ -289,11 +289,11 @@ data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.10.0"
+  version = "=0.13.0"
 
   location                    = azurerm_resource_group.this_rg.location
   name                        = "${module.naming.key_vault.name_unique}-win-alb"
-  resource_group_name         = azurerm_resource_group.this_rg.name
+  parent_id                   = azurerm_resource_group.this_rg.id
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   enable_telemetry            = var.enable_telemetry
   enabled_for_disk_encryption = true

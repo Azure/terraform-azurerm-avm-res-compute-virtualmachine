@@ -106,13 +106,13 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.8.1"
+  version = "=0.23.0"
 
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = var.enable_telemetry
-  name                = module.naming.virtual_network.name_unique
+  location         = azurerm_resource_group.this_rg.location
+  parent_id        = azurerm_resource_group.this_rg.id
+  address_space    = ["10.0.0.0/16"]
+  enable_telemetry = var.enable_telemetry
+  name             = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-1"
@@ -177,11 +177,11 @@ resource "random_password" "admin_password" {
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.10.0"
+  version = "=0.13.0"
 
   location                    = azurerm_resource_group.this_rg.location
   name                        = "${module.naming.key_vault.name_unique}-linux-ptp"
-  resource_group_name         = azurerm_resource_group.this_rg.name
+  parent_id                   = azurerm_resource_group.this_rg.id
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   enable_telemetry            = var.enable_telemetry
   enabled_for_disk_encryption = true

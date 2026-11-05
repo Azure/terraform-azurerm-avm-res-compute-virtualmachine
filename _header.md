@@ -1,8 +1,16 @@
 # terraform-azurerm-avm-res-compute-virtualmachine
 
-### NOTE: This module follows the semantic versioning and versions prior to 1.0.0 should be considered pre-release versions. This v0.19.0 version contains a number of breaking changes and is intended to be the final signficant release prior to the v1.0.0 release.  Please review the release notes prior to updating previous deployments to use this version.
+### NOTE: Versions prior to 1.0.0 are pre-release versions and may contain breaking changes. Review the release notes before upgrading.
 
 This is the virtual machine resource module for the Azure Verified Modules library.  This module deploys a Windows and/or Linux virtual machine along with common associated resources.  It leverages the AzAPI provider and sets a number of initial defaults to minimize the overall inputs for simple configurations.
+
+## Upgrading from version 0.21.0
+
+The module now requires Terraform `>= 1.16, < 2.0` and AzAPI `~> 2.12`. It moves virtual machines, disks, network interfaces, public IP addresses, locks, role assignments, diagnostic settings, extensions, run commands, and shutdown schedules from AzureRM to AzAPI. It also changes how disk attachments, network interface associations, backup protection, and telemetry are represented in state.
+
+Back up your Terraform state and review the complete upgrade plan before applying. Keep the AzureRM and ModTM providers available for the migration when they are present in the existing state, even though the current module no longer actively uses them. Do not remove state entries merely to make the plan pass. Check for unexpected replacements or deletions, especially of virtual machines, disks, network interfaces, and backup protection.
+
+Disk attachments and network interface associations are now described in the corresponding virtual machine and network interface bodies; their old standalone state entries are forgotten without an intentional remote delete. Backup protection is managed by the backup submodule, which inspects the existing protected item. The old telemetry state entries are also forgotten without an intentional remote delete. Review these changes against your own deployed configuration rather than assuming every upgrade will be a no-op.
 
 ## Upgrading generated credential secrets
 

@@ -138,13 +138,13 @@ module "natgateway" {
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.8.1"
+  version = "=0.23.0"
 
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = var.enable_telemetry
-  name                = module.naming.virtual_network.name_unique
+  location         = azurerm_resource_group.this_rg.location
+  parent_id        = azurerm_resource_group.this_rg.id
+  address_space    = ["10.0.0.0/16"]
+  enable_telemetry = var.enable_telemetry
+  name             = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-1"
@@ -232,11 +232,11 @@ resource "azurerm_user_assigned_identity" "this" {
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.10.0"
+  version = "=0.13.0"
 
   location               = azurerm_resource_group.this_rg.location
   name                   = "${module.naming.key_vault.name_unique}-win-rac"
-  resource_group_name    = azurerm_resource_group.this_rg.name
+  parent_id              = azurerm_resource_group.this_rg.id
   tenant_id              = data.azurerm_client_config.current.tenant_id
   enable_telemetry       = var.enable_telemetry
   enabled_for_deployment = true # Required to deploy the certificates to the VM
@@ -616,7 +616,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: =0.10.0
+Version: =0.13.0
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
@@ -652,7 +652,7 @@ Version: 0.3.0
 
 Source: Azure/avm-res-network-virtualnetwork/azurerm
 
-Version: =0.8.1
+Version: =0.23.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
