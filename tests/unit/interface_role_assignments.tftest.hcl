@@ -7,8 +7,8 @@ mock_provider "azapi" {
       id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/networkInterfaces/nic-test"
     }
   }
-  # The interfaces utility resolves built-in role names to definition IDs through this data source.
-  # Without a mock its output is unset and the lookup fails.
+  # The module resolves role names to definition IDs through this data source. Without a mock its
+  # output is unset and the lookup fails.
   mock_data "azapi_resource_list" {
     defaults = {
       output = {
@@ -143,13 +143,104 @@ run "virtual_machine_role_assignment_is_scoped_to_the_machine" {
     condition     = azapi_resource.this_virtual_machine_role_assignments["vm_reader"].body.properties.principalType == "User"
     error_message = "The principal type must be carried into the body."
   }
-  # AzureRM treated principal and role definition as ForceNew. Under AzAPI they live in the body and
-  # the generated name is stable, so replacement has to be requested explicitly or the module plans
-  # an in-place update that Azure rejects.
+  # AzureRM treated every input as ForceNew. Under AzAPI they live in the body and the generated name
+  # is stable, so replacement has to be requested explicitly or the module plans an in-place update
+  # that Azure rejects. It compares the inputs, because Azure normalises the role definition ID.
   assert {
-    condition     = contains(azapi_resource.this_virtual_machine_role_assignments["vm_reader"].replace_triggers_refs, "properties.principalId") && contains(azapi_resource.this_virtual_machine_role_assignments["vm_reader"].replace_triggers_refs, "properties.roleDefinitionId")
+    condition     = azapi_resource.this_virtual_machine_role_assignments["vm_reader"].replace_triggers_refs == null
+    error_message = "Replacement must not compare body paths, which Azure normalises."
+  }
+  assert {
+    condition     = azapi_resource.this_virtual_machine_role_assignments["vm_reader"].replace_triggers_external_values.principal_id == "22222222-2222-2222-2222-222222222222" && azapi_resource.this_virtual_machine_role_assignments["vm_reader"].replace_triggers_external_values.role_definition_id_or_name == "reader"
     error_message = "Changing the principal or role definition must force replacement, matching the previous azurerm behaviour."
   }
+}
+
+# AzureRM matched role names case-insensitively. An exact-case lookup would pass the name through as
+# the role definition ID, which plans a replacement of every upgraded assignment that Azure then
+# rejects.
+run "role_name_matches_case_insensitively" {
+  command = apply
+
+  variables {
+    role_assignments = {
+      vm_reader = {
+        role_definition_id_or_name = "reader"
+        principal_id               = "AAAAAAAA-2222-2222-2222-222222222222"
+      }
+    }
+  }
+
+  assert {
+    condition     = azapi_resource.this_virtual_machine_role_assignments["vm_reader"].body.properties.roleDefinitionId == "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7"
+    error_message = "A role name must resolve regardless of its casing."
+  }
+  assert {
+    condition     = azapi_resource.this_virtual_machine_role_assignments["vm_reader"].ignore_casing
+    error_message = "Azure returns principal and role definition IDs in its own casing, so casing must be ignored."
+  }
+  assert {
+    condition     = azapi_resource.this_virtual_machine_role_assignments["vm_reader"].replace_triggers_external_values.principal_id == "aaaaaaaa-2222-2222-2222-222222222222"
+    error_message = "A change in casing alone must not replace the assignment."
+  }
+}
+
+# Azure returns tenant-level role definition IDs prefixed with the subscription of the assignment's
+# scope. Sending the unprefixed form leaves a permanent difference against the deployed assignment.
+run "tenant_level_role_definition_id_is_qualified" {
+  command = apply
+
+  variables {
+    role_assignments = {
+      vm_reader = {
+        role_definition_id_or_name = "/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7"
+        principal_id               = "22222222-2222-2222-2222-222222222222"
+      }
+    }
+  }
+
+  assert {
+    condition     = azapi_resource.this_virtual_machine_role_assignments["vm_reader"].body.properties.roleDefinitionId == "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7"
+    error_message = "A tenant-level role definition ID must be qualified with the subscription."
+  }
+}
+
+# AzureRM sent a ServicePrincipal principal type when the check was skipped. Without it Azure looks the
+# principal up in Entra ID, which fails for a service principal that has only just been created.
+run "skipping_the_principal_check_sets_the_principal_type" {
+  command = apply
+
+  variables {
+    role_assignments = {
+      vm_reader = {
+        role_definition_id_or_name       = "Reader"
+        principal_id                     = "22222222-2222-2222-2222-222222222222"
+        skip_service_principal_aad_check = true
+      }
+    }
+  }
+
+  assert {
+    condition     = azapi_resource.this_virtual_machine_role_assignments["vm_reader"].body.properties.principalType == "ServicePrincipal"
+    error_message = "Skipping the principal check must send the ServicePrincipal principal type."
+  }
+}
+
+# A name that resolves to nothing would otherwise be sent as the role definition ID and only fail at
+# apply, after any replacement had already deleted the original assignment.
+run "unknown_role_name_fails_at_plan" {
+  command = plan
+
+  variables {
+    role_assignments = {
+      vm_unknown = {
+        role_definition_id_or_name = "Not A Role"
+        principal_id               = "22222222-2222-2222-2222-222222222222"
+      }
+    }
+  }
+
+  expect_failures = [azapi_resource.this_virtual_machine_role_assignments]
 }
 
 run "network_interface_role_assignment_is_scoped_to_the_interface" {
@@ -243,5 +334,29 @@ run "system_managed_identity_role_assignment_uses_the_identity_and_supplied_scop
   assert {
     condition     = azapi_resource.system_managed_identity_role_assignments["law_reader"].body.properties.roleDefinitionId == "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7"
     error_message = "The role name must be resolved through the same lookup as the other collections."
+  }
+}
+
+# The identity's assignments may target a resource in another subscription. Azure returns the role
+# definition ID in that subscription, so the ID resolved at the machine's resource group is moved into
+# it.
+run "system_managed_identity_role_definition_follows_the_scope_subscription" {
+  command = apply
+
+  variables {
+    managed_identities = {
+      system_assigned = true
+    }
+    role_assignments_system_managed_identity = {
+      kv_reader = {
+        role_definition_id_or_name = "Reader"
+        scope_resource_id          = "/subscriptions/55555555-5555-5555-5555-555555555555/resourceGroups/rg-shared/providers/Microsoft.KeyVault/vaults/kv-shared"
+      }
+    }
+  }
+
+  assert {
+    condition     = azapi_resource.system_managed_identity_role_assignments["kv_reader"].body.properties.roleDefinitionId == "/subscriptions/55555555-5555-5555-5555-555555555555/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7"
+    error_message = "The role definition ID must be in the subscription of the assignment's scope."
   }
 }
