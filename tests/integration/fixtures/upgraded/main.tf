@@ -39,10 +39,27 @@ data "azapi_resource" "virtual_machine" {
   resource_id = each.value.resource_id
   type        = "Microsoft.Compute/virtualMachines@2024-11-01"
   response_export_values = {
-    os_disk_delete_option = "properties.storageProfile.osDisk.deleteOption"
-    os_disk_id            = "properties.storageProfile.osDisk.managedDisk.id"
-    vm_id                 = "properties.vmId"
-    uefi_settings         = "properties.securityProfile.uefiSettings"
+    os_disk_delete_option  = "properties.storageProfile.osDisk.deleteOption"
+    os_disk_id             = "properties.storageProfile.osDisk.managedDisk.id"
+    vm_id                  = "properties.vmId"
+    replacement_properties = <<-JMESPATH
+      {
+        adminUsername: properties.osProfile.adminUsername,
+        computerName: properties.osProfile.computerName,
+        disablePasswordAuthentication: properties.osProfile.linuxConfiguration.disablePasswordAuthentication,
+        provisionVMAgent: properties.osProfile.linuxConfiguration.provisionVMAgent,
+        diffDiskSettings: properties.storageProfile.osDisk.diffDiskSettings,
+        storageAccountType: properties.storageProfile.osDisk.managedDisk.storageAccountType,
+        uefiSettings: properties.securityProfile.uefiSettings,
+        availabilitySet: properties.availabilitySet,
+        platformFaultDomain: properties.platformFaultDomain,
+        priority: properties.priority,
+        evictionPolicy: properties.evictionPolicy,
+        plan: plan,
+        zones: zones,
+        extendedLocation: extendedLocation
+      }
+    JMESPATH
   }
 
   # A module output is not a direct reference to a managed resource, so without this the machine

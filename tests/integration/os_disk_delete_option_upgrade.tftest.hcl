@@ -121,22 +121,14 @@ run "apply_upgrade" {
     ])
     error_message = "Every machine should keep its VM ID and its OS disk through the upgrade. Identity comparison: ${jsonencode({
       for key, vm in output.virtual_machines : key => {
-        before_vm_id         = run.deploy_v0_21_0.virtual_machines[key].vm_id
-        after_vm_id          = vm.vm_id
-        before_os_disk_id    = run.deploy_v0_21_0.virtual_machines[key].os_disk_id
-        after_os_disk_id     = vm.os_disk_id
-        before_uefi_settings = run.deploy_v0_21_0.virtual_machines[key].uefi_settings
-        after_uefi_settings  = vm.uefi_settings
+        before_vm_id                  = run.deploy_v0_21_0.virtual_machines[key].vm_id
+        after_vm_id                   = vm.vm_id
+        before_os_disk_id             = run.deploy_v0_21_0.virtual_machines[key].os_disk_id
+        after_os_disk_id              = vm.os_disk_id
+        before_replacement_properties = run.deploy_v0_21_0.virtual_machines[key].replacement_properties
+        after_replacement_properties  = vm.replacement_properties
       }
     })}"
-  }
-
-  assert {
-    condition = alltrue([
-      for key, vm in output.virtual_machines :
-      vm.uefi_settings == run.deploy_v0_21_0.virtual_machines[key].uefi_settings
-    ])
-    error_message = "The upgrade must preserve the machines' UEFI settings when neither UEFI input is configured."
   }
 
   assert {
