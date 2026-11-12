@@ -93,7 +93,7 @@ run "core_attributes_are_mapped_to_arm_names" {
   }
   assert {
     condition     = local.linux_vm_body.properties.storageProfile.osDisk.deleteOption == "Delete"
-    error_message = "azurerm deleted the OS disk on destroy through delete_os_disk_on_deletion, so ARM must be asked to do the same or the disk is orphaned and keeps billing."
+    error_message = "Without an explicit os_disk.delete_option, an OS disk built from an image must be deleted with the machine, as the azurerm provider's default delete_os_disk_on_deletion did, or it is orphaned and keeps billing."
   }
   assert {
     condition     = one(local.linux_vm_body.zones) == "1"
@@ -103,6 +103,38 @@ run "core_attributes_are_mapped_to_arm_names" {
     condition     = azapi_resource.this_linux_virtual_machine[0].type == "Microsoft.Compute/virtualMachines@2024-11-01"
     error_message = "The virtual machine must use the compute_virtual_machines resource type."
   }
+}
+
+run "os_disk_delete_option_keeps_an_image_built_disk" {
+  command = apply
+
+  variables {
+    os_disk = {
+      caching              = "ReadWrite"
+      storage_account_type = "Premium_LRS"
+      delete_option        = "Detach"
+    }
+  }
+
+  assert {
+    condition     = local.linux_vm_body.properties.storageProfile.osDisk.deleteOption == "Detach"
+    error_message = "os_disk.delete_option must override the default, so that a caller who set delete_os_disk_on_deletion = false under the azurerm provider can keep the OS disk."
+  }
+}
+
+run "os_disk_delete_option_rejects_unknown_values" {
+  # Variable validation is evaluated during planning, so the apply can never be reached here.
+  command = plan
+
+  variables {
+    os_disk = {
+      caching              = "ReadWrite"
+      storage_account_type = "Premium_LRS"
+      delete_option        = "Retain"
+    }
+  }
+
+  expect_failures = [var.os_disk]
 }
 
 run "the_first_interface_is_marked_primary" {

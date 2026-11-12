@@ -34,10 +34,12 @@ locals {
       # Attach reuses an existing disk; every other path creates one from the image.
       createOption = var.os_disk_attach_mode ? "Attach" : "FromImage"
       caching      = var.os_disk.caching
-      # The azurerm provider deleted the OS disk itself when the machine was destroyed, through
-      # the delete_os_disk_on_deletion feature that defaults to true. AzAPI has no equivalent, so
-      # ARM is asked to do it instead. A disk the caller attached stays, because they own it.
-      deleteOption = var.os_disk_attach_mode ? "Detach" : "Delete"
+      # The azurerm provider deleted the OS disk itself when the machine was destroyed, unless its
+      # delete_os_disk_on_deletion feature was turned off. AzAPI has no equivalent, so ARM is told
+      # what to do instead. Without an explicit choice, a disk built from the image goes with the
+      # machine, as it did under the provider's default, and a disk the caller attached stays,
+      # because they own it.
+      deleteOption = coalesce(var.os_disk.delete_option, var.os_disk_attach_mode ? "Detach" : "Delete")
     },
     var.os_disk_attach_mode ? { osType = lower(var.os_type) == "windows" ? "Windows" : "Linux" } : {},
     var.os_disk.name == null ? {} : { name = var.os_disk.name },

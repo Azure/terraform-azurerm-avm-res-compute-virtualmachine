@@ -94,7 +94,7 @@ run "core_attributes_are_mapped_to_arm_names" {
   }
   assert {
     condition     = local.windows_vm_body.properties.storageProfile.osDisk.deleteOption == "Delete"
-    error_message = "azurerm deleted the OS disk on destroy through delete_os_disk_on_deletion, so ARM must be asked to do the same or the disk is orphaned and keeps billing."
+    error_message = "Without an explicit os_disk.delete_option, an OS disk built from an image must be deleted with the machine, as the azurerm provider's default delete_os_disk_on_deletion did, or it is orphaned and keeps billing."
   }
   assert {
     condition     = one(local.windows_vm_body.zones) == "1"
@@ -107,6 +107,23 @@ run "core_attributes_are_mapped_to_arm_names" {
   assert {
     condition     = !can(local.windows_vm_body.properties.osProfile.linuxConfiguration)
     error_message = "A Windows machine must not carry a linuxConfiguration."
+  }
+}
+
+run "os_disk_delete_option_keeps_an_image_built_disk" {
+  command = apply
+
+  variables {
+    os_disk = {
+      caching              = "ReadWrite"
+      storage_account_type = "Premium_LRS"
+      delete_option        = "Detach"
+    }
+  }
+
+  assert {
+    condition     = local.windows_vm_body.properties.storageProfile.osDisk.deleteOption == "Detach"
+    error_message = "os_disk.delete_option must override the default, so that a caller who set delete_os_disk_on_deletion = false under the azurerm provider can keep the OS disk."
   }
 }
 
