@@ -19,9 +19,20 @@ on:
         required: false
         type: string
         default: ''
+      recovery:
+        description: 'CI-only recovery for failed PR447 run 43140471366. Inspect first; deletion refuses uncertain ownership.'
+        required: false
+        type: choice
+        options:
+          - ''
+          - inspect
+          - delete
+          - verify
+        default: ''
 
 jobs:
   run-managed-workflow:
+    if: ${{ !inputs.recovery }}
     uses: Azure/azure-verified-modules-tools/.github/workflows/terraform-module.yml@31824f07a277458ce24e74ae69a33fdb18803bdf
     name: run managed workflow
     with:
@@ -31,3 +42,37 @@ jobs:
     permissions:
       id-token: write
       contents: read
+
+  recover-43140471366:
+    if: ${{ github.repository == 'Azure/terraform-azurerm-avm-res-compute-virtualmachine' && github.event_name == 'workflow_dispatch' && inputs.recovery != '' }}
+    runs-on: ubuntu-latest
+    environment: integration-test
+    timeout-minutes: 30
+    concurrency:
+      group: recover-pr447-43140471366
+      cancel-in-progress: false
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.ARM_CLIENT_ID || secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ vars.ARM_TENANT_ID || secrets.ARM_TENANT_ID }}
+          allow-no-subscriptions: true
+      - name: Recover only the pinned source run
+        if: ${{ inputs.recovery != 'verify' }}
+        shell: pwsh
+        env:
+          RECOVERY_MODE: ${{ inputs.recovery }}
+        run: ./.github/scripts/Recover-43140471366.ps1 -Mode $env:RECOVERY_MODE
+      - name: Independently verify removal using fresh requests
+        if: ${{ !cancelled() && (inputs.recovery == 'delete' || inputs.recovery == 'verify') }}
+        shell: pwsh
+        run: ./.github/scripts/Recover-43140471366.ps1 -Mode verify

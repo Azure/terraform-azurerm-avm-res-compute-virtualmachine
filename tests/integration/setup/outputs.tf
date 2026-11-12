@@ -5,9 +5,9 @@ output "environment" {
     location            = var.location
     resource_group_id   = azapi_resource.resource_group.id
     resource_group_name = azapi_resource.resource_group.name
-    sku_size            = var.sku_size
+    sku_size            = module.vm_sku.sku
     subnet_id           = "${azapi_resource.virtual_network.id}/subnets/vm"
     suffix              = random_string.suffix.result
-    zone                = local.zone
+    zone                = null
   }
 }
