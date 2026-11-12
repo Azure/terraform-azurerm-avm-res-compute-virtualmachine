@@ -55,7 +55,8 @@ resource "azapi_resource" "this_windows_virtual_machine" {
     "properties.priority",
     "properties.evictionPolicy",
     "plan",
-    "zones",
+    # Azure omits zones for regional machines; an empty list is the same placement.
+    "not_null(zones, `[]`)",
     "extendedLocation",
   ]
   response_export_values = ["properties.vmId", "properties.storageProfile.osDisk.managedDisk.id", "identity", "properties.securityProfile.encryptionAtHost"]

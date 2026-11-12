@@ -446,8 +446,8 @@ run "immutable_properties_force_replacement" {
     error_message = "admin_username is ForceNew under azurerm and must trigger replacement under AzAPI."
   }
   assert {
-    condition     = contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_refs, "zones")
-    error_message = "zone is ForceNew under azurerm and must trigger replacement under AzAPI."
+    condition     = contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_refs, "not_null(zones, `[]`)")
+    error_message = "Zone changes must trigger replacement without treating omitted regional zones as different from an empty list."
   }
   assert {
     condition     = !contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_refs, "properties.osProfile.windowsConfiguration.patchSettings")
