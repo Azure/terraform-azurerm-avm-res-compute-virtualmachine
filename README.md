@@ -6,6 +6,19 @@
 
 This is the virtual machine resource module for the Azure Verified Modules library.  This module deploys a Windows and/or Linux virtual machine along with common associated resources.  It leverages the AzAPI provider and sets a number of initial defaults to minimize the overall inputs for simple configurations.
 
+## Upgrading the OS disk deletion setting
+
+Earlier versions created the virtual machine with the `azurerm` provider. After destroying the virtual machine, the provider deleted its OS disk, attached disks included, unless `delete_os_disk_on_deletion` was set to `false` in its `features` block. The provider never set a deletion policy on the virtual machine itself, so a virtual machine deleted outside Terraform left its OS disk behind.
+
+That setting no longer affects this module. The module now sets the policy on the virtual machine through `os_disk.delete_option`, and Azure applies it to every deletion, including deletions outside Terraform. When it is unset, an OS disk created from an image is deleted with the virtual machine, and a disk attached with `os_managed_disk_id` is kept.
+
+Carry your previous choice into the module before you upgrade:
+
+- If you set `delete_os_disk_on_deletion = false` to keep the OS disk, set `os_disk.delete_option = "Detach"`.
+- If you attach an existing disk with `os_managed_disk_id` and want it deleted with the virtual machine, as the provider's default did, set `os_disk.delete_option = "Delete"`.
+
+The upgrade changes the policy in place. It does not replace the virtual machine or its OS disk.
+
 ## Upgrading generated credential secrets
 
 The generated admin password and SSH key secrets are now written with `azapi_data_plane_resource` instead of `azurerm_key_vault_secret`. Terraform cannot move that state automatically, because `azapi_data_plane_resource` does not support moving state from another resource type, so each existing secret has to be adopted once.
@@ -1292,6 +1305,7 @@ Description: Required configuration values for the OS disk on the virtual machin
 
 - `caching`                          = (Required) - The type of caching which should be used for the internal OS disk.  Possible values are `None`, `ReadOnly`, and `ReadWrite`.
 - `storage_account_type`             = (Required) - The Type of Storage Account which should back this the Internal OS Disk. Possible values are `Standard_LRS`, `Premium_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and `Premium_ZRS`. Changing this forces a new resource to be created
+- `delete_option`                    = (Optional) - What Azure does with the OS Disk when the virtual machine is deleted. Possible values are `Delete` and `Detach`. When unset, an OS Disk created from an image is deleted with the virtual machine and a disk attached with `os_managed_disk_id` is kept. Azure applies this setting to every deletion of the virtual machine, including deletions outside Terraform. Changing it updates the virtual machine in place.
 - `disk_access_resource_id`          = (Optional) - The Azure Resource ID of the Disk Access resource to use for private endpoint connectivity to this OS Disk. Only supported when `network_access_policy` is set to `AllowPrivate`. Applied to the OS Disk after the virtual machine has been created.
 - `disk_encryption_set_id`           = (Optional) - The Azure Resource ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. Conflicts with secure\_vm\_disk\_encryption\_set\_id. The Disk Encryption Set must have the Reader Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault
 - `disk_size_gb`                     = (Optional) - The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from.
@@ -1309,7 +1323,7 @@ Description: Required configuration values for the OS disk on the virtual machin
 
 > Note: The `azurerm` provider's `os_disk` block does not expose the disk network access settings, so `public_network_access_enabled`, `network_access_policy`, and `disk_access_resource_id` are applied to the OS Disk with an `azapi_update_resource` after the virtual machine has been created. Removing these values from the configuration later removes the update resource from state but does not revert the settings on the disk in Azure - set them back to their previous values explicitly instead.
 
-> Note: There is no `delete_option` input because the `azurerm` provider does not expose `storageProfile.osDisk.deleteOption` on `azurerm_linux_virtual_machine` or `azurerm_windows_virtual_machine`. The OS Disk is created implicitly by the virtual machine resource, so it is not tracked separately in state and Azure leaves it behind when the virtual machine is deleted. Deleting it with the virtual machine is controlled by the `delete_os_disk_on_deletion` setting in the provider `features` block rather than by this module, and that setting defaults to `false`. Data disks, network interfaces, and public IP addresses are managed as their own resources by this module and are destroyed normally, so they are not affected by it.
+> Note: The `delete_os_disk_on_deletion` setting in the `azurerm` provider `features` block no longer affects this module. Use `delete_option` instead. If you set `delete_os_disk_on_deletion = false` to keep the OS Disk, set `delete_option = "Detach"` before upgrading. Data disks, network interfaces, and public IP addresses are managed as their own resources by this module and are destroyed normally, so `delete_option` does not affect them.
 
 Example Inputs:
 
@@ -1353,14 +1367,11 @@ os_disk = {
   lock_level           = "CanNotDelete"
 }
 
-#delete the os disk when the virtual machine is destroyed. This is a provider
-#level setting rather than an os_disk value, and it defaults to false.
-provider "azurerm" {
-  features {
-    virtual_machine {
-      delete_os_disk_on_deletion = true
-    }
-  }
+#keep the os disk when the virtual machine is deleted
+os_disk = {
+  caching              = "ReadWrite"
+  storage_account_type = "Premium_LRS"
+  delete_option        = "Detach"
 }
 ```
 
@@ -1370,6 +1381,7 @@ Type:
 object({
     caching                          = string
     storage_account_type             = string
+    delete_option                    = optional(string)
     disk_access_resource_id          = optional(string)
     disk_encryption_set_id           = optional(string)
     disk_size_gb                     = optional(number)
