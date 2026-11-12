@@ -88,7 +88,7 @@ run "deploy_v0_21_0" {
   }
 }
 
-# A replacement makes a resource ID unknown during plan, which fails this assertion.
+# Resource IDs must stay the same; apply_upgrade checks vmId to detect replacement at the same ID.
 run "plan_upgrade" {
   command   = plan
   state_key = "virtual_machines"
@@ -103,7 +103,7 @@ run "plan_upgrade" {
 
   assert {
     condition     = alltrue([for key, id in run.deploy_v0_21_0.resource_ids : lower(output.resource_ids[key]) == lower(id)])
-    error_message = "The upgrade should update the v0.21.0 machines in place rather than replace them."
+    error_message = "The upgrade plan should preserve the v0.21.0 machines' resource IDs."
   }
 }
 
