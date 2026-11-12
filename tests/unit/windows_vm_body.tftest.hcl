@@ -463,9 +463,20 @@ run "omittable_paths_are_watched_through_their_inputs" {
   command = apply
 
   variables {
-    timezone           = "Pacific Standard Time"
-    provision_vm_agent = true
-    winrm_listeners    = [{ protocol = "Http" }]
+    timezone            = "Pacific Standard Time"
+    provision_vm_agent  = true
+    secure_boot_enabled = true
+    vtpm_enabled        = false
+    winrm_listeners     = [{ protocol = "Http" }]
+  }
+
+  assert {
+    condition     = !contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_refs, "properties.securityProfile.uefiSettings")
+    error_message = "Unconfigured UEFI settings must not replace an adopted machine when Azure supplies image defaults."
+  }
+  assert {
+    condition     = contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_external_values, true) && contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_external_values, false)
+    error_message = "Both UEFI inputs must still trigger replacement when their configured values change."
   }
 
   assert {

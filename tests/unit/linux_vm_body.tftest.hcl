@@ -559,12 +559,23 @@ run "omittable_paths_are_watched_through_their_inputs" {
   command = apply
 
   variables {
+    secure_boot_enabled = true
+    vtpm_enabled        = false
     source_image_reference = {
       publisher = "Canonical"
       offer     = "0001-com-ubuntu-server-focal"
       sku       = "20_04-lts-gen2"
       version   = "latest"
     }
+  }
+
+  assert {
+    condition     = !contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.securityProfile.uefiSettings")
+    error_message = "Unconfigured UEFI settings must not replace an adopted machine when Azure supplies image defaults."
+  }
+  assert {
+    condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_external_values, true) && contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_external_values, false)
+    error_message = "Both UEFI inputs must still trigger replacement when their configured values change."
   }
 
   assert {

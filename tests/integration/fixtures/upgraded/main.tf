@@ -42,6 +42,7 @@ data "azapi_resource" "virtual_machine" {
     os_disk_delete_option = "properties.storageProfile.osDisk.deleteOption"
     os_disk_id            = "properties.storageProfile.osDisk.managedDisk.id"
     vm_id                 = "properties.vmId"
+    uefi_settings         = "properties.securityProfile.uefiSettings"
   }
 
   # A module output is not a direct reference to a managed resource, so without this the machine
