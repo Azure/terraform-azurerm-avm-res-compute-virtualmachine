@@ -88,7 +88,7 @@ run "deploy_v0_21_0" {
   }
 }
 
-# Resource IDs must stay the same; apply_upgrade checks vmId to detect replacement at the same ID.
+# Provider-move outputs can be unknown during plan; apply_upgrade checks VM and disk identity.
 run "plan_upgrade" {
   command   = plan
   state_key = "virtual_machines"
@@ -99,11 +99,6 @@ run "plan_upgrade" {
 
   variables {
     environment = run.setup.environment
-  }
-
-  assert {
-    condition     = alltrue([for key, id in run.deploy_v0_21_0.resource_ids : lower(output.resource_ids[key]) == lower(id)])
-    error_message = "The upgrade plan should preserve the v0.21.0 machines' resource IDs."
   }
 }
 
