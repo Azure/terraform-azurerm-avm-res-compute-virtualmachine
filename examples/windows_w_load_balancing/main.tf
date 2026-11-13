@@ -10,11 +10,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 4.42, < 5.0"
     }
-    # tflint-ignore: terraform_unused_required_providers
-    modtm = {
-      source  = "registry.terraform.io/azure/modtm"
-      version = "~> 0.3"
-    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7"
@@ -73,7 +68,7 @@ resource "azurerm_resource_group" "this_rg" {
 
 module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
-  version = "0.3.0"
+  version = "0.4.2"
 
   location         = azurerm_resource_group.this_rg.location
   cache_results    = true
@@ -92,17 +87,23 @@ module "vm_sku" {
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.1"
+  version = "0.4.0"
 
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.nat_gateway.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = var.enable_telemetry
+  location         = azurerm_resource_group.this_rg.location
+  name             = module.naming.nat_gateway.name_unique
+  parent_id        = azurerm_resource_group.this_rg.id
+  enable_telemetry = var.enable_telemetry
+  public_ip_configuration = {
+    public_ip_1 = {
+      sku = "Standard"
+    }
+  }
   public_ips = {
     public_ip_1 = {
       name = "nat_gw_pip1"
     }
   }
+  sku_name = "Standard"
 }
 
 module "vnet" {
@@ -172,7 +173,7 @@ module "vnet" {
 
 module "loadbalancer" {
   source  = "Azure/avm-res-network-loadbalancer/azurerm"
-  version = "0.3.2"
+  version = "0.6.0"
 
   # Frontend IP Configuration
   frontend_ip_configurations = {
@@ -180,9 +181,9 @@ module "loadbalancer" {
       name = "testFrontend"
     }
   }
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.lb.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
+  location  = azurerm_resource_group.this_rg.location
+  name      = module.naming.lb.name_unique
+  parent_id = azurerm_resource_group.this_rg.id
   # Backend Address Pool
   backend_address_pools = {
     pool_1 = {
@@ -388,12 +389,12 @@ module "testvm" {
           }
           load_balancer_backend_pools = {
             lb_pool_1 = {
-              load_balancer_backend_pool_resource_id = module.loadbalancer.azurerm_lb_backend_address_pool["pool_1"].id
+              load_balancer_backend_pool_resource_id = module.loadbalancer.backend_address_pool_resource_ids["pool_1"]
             }
           }
           load_balancer_nat_rules = {
             lb_nat_rule_1 = {
-              load_balancer_nat_rule_resource_id = module.loadbalancer.azurerm_lb_nat_rule["rdp_nat_rule_1"].id
+              load_balancer_nat_rule_resource_id = module.loadbalancer.inbound_nat_rule_resource_ids["lb_nat_rule_1"]
             }
           }
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
