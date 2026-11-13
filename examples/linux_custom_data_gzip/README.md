@@ -21,11 +21,6 @@ terraform {
       source  = "hashicorp/cloudinit"
       version = "~> 2.0"
     }
-    # tflint-ignore: terraform_unused_required_providers
-    modtm = {
-      source  = "registry.terraform.io/azure/modtm"
-      version = "~> 0.3"
-    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7"
@@ -84,7 +79,7 @@ resource "azurerm_resource_group" "this_rg" {
 
 module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
-  version = "0.3.0"
+  version = "0.4.2"
 
   location         = azurerm_resource_group.this_rg.location
   cache_results    = true
@@ -103,29 +98,35 @@ module "vm_sku" {
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.1"
+  version = "0.4.0"
 
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.nat_gateway.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = var.enable_telemetry
+  location         = azurerm_resource_group.this_rg.location
+  name             = module.naming.nat_gateway.name_unique
+  parent_id        = azurerm_resource_group.this_rg.id
+  enable_telemetry = var.enable_telemetry
+  public_ip_configuration = {
+    public_ip_1 = {
+      sku = "Standard"
+    }
+  }
   public_ips = {
     public_ip_1 = {
       name = "nat_gw_pip1"
     }
   }
-  tags = local.tags
+  sku_name = "Standard"
+  tags     = local.tags
 }
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.8.1"
+  version = "=0.23.0"
 
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.this_rg.location
-  resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = var.enable_telemetry
-  name                = module.naming.virtual_network.name_unique
+  location         = azurerm_resource_group.this_rg.location
+  parent_id        = azurerm_resource_group.this_rg.id
+  address_space    = ["10.0.0.0/16"]
+  enable_telemetry = var.enable_telemetry
+  name             = module.naming.virtual_network.name_unique
   subnets = {
     vm_subnet_1 = {
       name             = "${module.naming.subnet.name_unique}-1"
@@ -142,13 +143,13 @@ data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.10.0"
+  version = "=0.13.0"
 
-  location            = azurerm_resource_group.this_rg.location
-  name                = "${module.naming.key_vault.name_unique}-cd-gzip"
-  resource_group_name = azurerm_resource_group.this_rg.name
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  enable_telemetry    = var.enable_telemetry
+  location         = azurerm_resource_group.this_rg.location
+  name             = "${module.naming.key_vault.name_unique}-cd-gzip"
+  parent_id        = azurerm_resource_group.this_rg.id
+  tenant_id        = data.azurerm_client_config.current.tenant_id
+  enable_telemetry = var.enable_telemetry
   network_acls = {
     default_action = "Allow"
   }
@@ -294,8 +295,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_cloudinit"></a> [cloudinit](#requirement\_cloudinit) (~> 2.0)
 
-- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
-
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
 ## Resources
@@ -349,7 +348,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: =0.10.0
+Version: =0.13.0
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
@@ -361,7 +360,7 @@ Version: 0.2.0
 
 Source: Azure/avm-res-network-natgateway/azurerm
 
-Version: 0.2.1
+Version: 0.4.0
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
@@ -385,13 +384,13 @@ Version:
 
 Source: Azure/avm-utl-sku-finder/azapi
 
-Version: 0.3.0
+Version: 0.4.2
 
 ### <a name="module_vnet"></a> [vnet](#module\_vnet)
 
 Source: Azure/avm-res-network-virtualnetwork/azurerm
 
-Version: =0.8.1
+Version: =0.23.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
