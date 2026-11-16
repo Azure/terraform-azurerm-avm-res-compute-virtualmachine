@@ -1,6 +1,7 @@
 variable "environment" {
   type = object({
     attached_os_disk_id = string
+    availability_set_id = string
     location            = string
     resource_group_id   = string
     resource_group_name = string
@@ -26,10 +27,12 @@ variable "source_image_references" {
 
 variable "virtual_machines" {
   type = map(object({
-    name           = string
-    os_type        = string
-    attach_os_disk = optional(bool, false)
-    delete_option  = optional(string)
+    name                = string
+    os_type             = string
+    attach_os_disk      = optional(bool, false)
+    availability_set    = optional(bool, false)
+    delete_option       = optional(string)
+    secure_boot_enabled = optional(bool)
   }))
   description = "The machines under test, keyed by scenario."
   nullable    = false

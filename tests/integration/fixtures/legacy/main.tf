@@ -4,12 +4,13 @@ module "virtual_machine" {
   version  = "0.21.0"
   for_each = var.virtual_machines
 
-  location                   = var.environment.location
-  name                       = "${each.value.name}-${var.environment.suffix}"
-  resource_group_name        = var.environment.resource_group_name
-  zone                       = var.environment.zone
-  enable_telemetry           = false
-  encryption_at_host_enabled = false
+  location                     = var.environment.location
+  name                         = "${each.value.name}-${var.environment.suffix}"
+  resource_group_name          = var.environment.resource_group_name
+  zone                         = var.environment.zone
+  availability_set_resource_id = each.value.availability_set ? var.environment.availability_set_id : null
+  enable_telemetry             = false
+  encryption_at_host_enabled   = false
   network_interfaces = {
     primary = {
       name = "nic-${each.value.name}-${var.environment.suffix}"
@@ -28,6 +29,7 @@ module "virtual_machine" {
   os_disk_attach_mode    = each.value.attach_os_disk
   os_managed_disk_id     = each.value.attach_os_disk ? var.environment.attached_os_disk_id : null
   os_type                = each.value.os_type
+  secure_boot_enabled    = each.value.secure_boot_enabled
   sku_size               = var.environment.sku_size
   source_image_reference = var.source_image_references[each.value.os_type]
 }

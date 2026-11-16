@@ -63,6 +63,24 @@ resource "azapi_resource" "virtual_network" {
   }
 }
 
+# Azure returns the ID of an availability set with its name in upper case, so one machine joins a
+# set to prove that the upgrade tolerates it.
+resource "azapi_resource" "availability_set" {
+  location  = var.location
+  name      = "avset-vm-osdisk-upgrade"
+  parent_id = azapi_resource.resource_group.id
+  type      = "Microsoft.Compute/availabilitySets@2024-07-01"
+  body = {
+    properties = {
+      platformFaultDomainCount  = 2
+      platformUpdateDomainCount = 5
+    }
+    sku = {
+      name = "Aligned"
+    }
+  }
+}
+
 # A disk attached with os_managed_disk_id has to hold an operating system, so it is created from
 # the newest Ubuntu image, the way a restored or imported disk would arrive.
 data "azapi_resource_action" "ubuntu_image_versions" {

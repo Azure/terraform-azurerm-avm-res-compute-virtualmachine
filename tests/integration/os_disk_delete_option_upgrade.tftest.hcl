@@ -15,6 +15,11 @@
 # - linux_attached boots from a disk attached with os_managed_disk_id and keeps the default. The
 #   disk belongs to the caller, so it must survive.
 #
+# Two machines also carry settings the azurerm provider sent differently from this module, so the
+# same upgrade proves they do not replace a machine either. windows_default joins an availability
+# set, whose ID Azure returns with the name in upper case, and linux_retain sets
+# secure_boot_enabled = false, which the azurerm provider never sent.
+#
 # Linux and Windows share the OS disk body, so each choice runs on one of them here and on both in
 # the unit tests.
 
@@ -45,13 +50,15 @@ variables {
   }
   virtual_machines = {
     linux_retain = {
-      name          = "vm-retain"
-      os_type       = "Linux"
-      delete_option = "Detach"
+      name                = "vm-retain"
+      os_type             = "Linux"
+      delete_option       = "Detach"
+      secure_boot_enabled = false
     }
     windows_default = {
-      name    = "vm-win"
-      os_type = "Windows"
+      name             = "vm-win"
+      os_type          = "Windows"
+      availability_set = true
     }
     linux_attached = {
       name           = "vm-attach"

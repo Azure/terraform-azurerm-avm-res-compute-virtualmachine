@@ -495,6 +495,35 @@ run "omittable_paths_are_watched_through_their_inputs" {
   }
 }
 
+# Azure returns the availability set ID with its name in upper case, and fills in the UEFI flags the
+# azurerm provider left out, so the body a moved block adopts never matches these paths.
+run "azure_normalised_paths_are_watched_through_their_inputs" {
+  command = apply
+
+  variables {
+    zone                         = null
+    availability_set_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/availabilitySets/AvSet-Test"
+    secure_boot_enabled          = true
+  }
+
+  assert {
+    condition     = !contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_refs, "properties.availabilitySet") && !contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_refs, "properties.securityProfile.uefiSettings")
+    error_message = "Watching the availability set or UEFI body paths replaces a machine adopted from the azurerm provider."
+  }
+  assert {
+    condition     = contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_external_values, "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/rg-test/providers/microsoft.compute/availabilitysets/avset-test")
+    error_message = "availability_set_resource_id is ForceNew under azurerm, so changing it must still replace the machine, but a change of case alone must not."
+  }
+  assert {
+    condition     = contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_external_values, jsonencode({ secureBootEnabled = true }))
+    error_message = "secure_boot_enabled is ForceNew under azurerm, so changing it must still replace the machine."
+  }
+  assert {
+    condition     = azapi_resource.this_windows_virtual_machine[0].ignore_casing
+    error_message = "ARM returns the availability set ID in a different case, so without ignore_casing every plan shows it changing."
+  }
+}
+
 # Azure fills in the OS disk name and its resource id, so both are present in the body a moved
 # block adopts but absent from the body this module sends. Watching the body paths would read that
 # as an immutable change and replace an adopted machine.
