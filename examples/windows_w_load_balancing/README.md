@@ -33,11 +33,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 4.42, < 5.0"
     }
-    # tflint-ignore: terraform_unused_required_providers
-    modtm = {
-      source  = "registry.terraform.io/azure/modtm"
-      version = "~> 0.3"
-    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7"
@@ -96,7 +91,7 @@ resource "azurerm_resource_group" "this_rg" {
 
 module "vm_sku" {
   source  = "Azure/avm-utl-sku-finder/azapi"
-  version = "0.3.0"
+  version = "0.4.2"
 
   location         = azurerm_resource_group.this_rg.location
   cache_results    = true
@@ -115,22 +110,28 @@ module "vm_sku" {
 
 module "natgateway" {
   source  = "Azure/avm-res-network-natgateway/azurerm"
-  version = "0.2.1"
+  version = "0.4.0"
 
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.nat_gateway.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
-  enable_telemetry    = var.enable_telemetry
+  location         = azurerm_resource_group.this_rg.location
+  name             = module.naming.nat_gateway.name_unique
+  parent_id        = azurerm_resource_group.this_rg.id
+  enable_telemetry = var.enable_telemetry
+  public_ip_configuration = {
+    public_ip_1 = {
+      sku = "Standard"
+    }
+  }
   public_ips = {
     public_ip_1 = {
       name = "nat_gw_pip1"
     }
   }
+  sku_name = "Standard"
 }
 
 module "vnet" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.15.0"
+  version = "=0.23.0"
 
   location         = azurerm_resource_group.this_rg.location
   parent_id        = azurerm_resource_group.this_rg.id
@@ -195,7 +196,7 @@ module "vnet" {
 
 module "loadbalancer" {
   source  = "Azure/avm-res-network-loadbalancer/azurerm"
-  version = "0.3.2"
+  version = "0.6.0"
 
   # Frontend IP Configuration
   frontend_ip_configurations = {
@@ -203,9 +204,9 @@ module "loadbalancer" {
       name = "testFrontend"
     }
   }
-  location            = azurerm_resource_group.this_rg.location
-  name                = module.naming.lb.name_unique
-  resource_group_name = azurerm_resource_group.this_rg.name
+  location  = azurerm_resource_group.this_rg.location
+  name      = module.naming.lb.name_unique
+  parent_id = azurerm_resource_group.this_rg.id
   # Backend Address Pool
   backend_address_pools = {
     pool_1 = {
@@ -312,11 +313,11 @@ data "azurerm_client_config" "current" {}
 
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "=0.10.0"
+  version = "=0.13.0"
 
   location                    = azurerm_resource_group.this_rg.location
   name                        = "${module.naming.key_vault.name_unique}-win-alb"
-  resource_group_name         = azurerm_resource_group.this_rg.name
+  parent_id                   = azurerm_resource_group.this_rg.id
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   enable_telemetry            = var.enable_telemetry
   enabled_for_disk_encryption = true
@@ -411,12 +412,12 @@ module "testvm" {
           }
           load_balancer_backend_pools = {
             lb_pool_1 = {
-              load_balancer_backend_pool_resource_id = module.loadbalancer.azurerm_lb_backend_address_pool["pool_1"].id
+              load_balancer_backend_pool_resource_id = module.loadbalancer.backend_address_pool_resource_ids["pool_1"]
             }
           }
           load_balancer_nat_rules = {
             lb_nat_rule_1 = {
-              load_balancer_nat_rule_resource_id = module.loadbalancer.azurerm_lb_nat_rule["rdp_nat_rule_1"].id
+              load_balancer_nat_rule_resource_id = module.loadbalancer.inbound_nat_rule_resource_ids["lb_nat_rule_1"]
             }
           }
           name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
@@ -453,8 +454,6 @@ The following requirements are needed by this module:
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.42, < 5.0)
-
-- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
@@ -510,13 +509,13 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: =0.10.0
+Version: =0.13.0
 
 ### <a name="module_loadbalancer"></a> [loadbalancer](#module\_loadbalancer)
 
 Source: Azure/avm-res-network-loadbalancer/azurerm
 
-Version: 0.3.2
+Version: 0.6.0
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
@@ -528,7 +527,7 @@ Version: 0.2.0
 
 Source: Azure/avm-res-network-natgateway/azurerm
 
-Version: 0.2.1
+Version: 0.4.0
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
@@ -552,13 +551,13 @@ Version:
 
 Source: Azure/avm-utl-sku-finder/azapi
 
-Version: 0.3.0
+Version: 0.4.2
 
 ### <a name="module_vnet"></a> [vnet](#module\_vnet)
 
 Source: Azure/avm-res-network-virtualnetwork/azurerm
 
-Version: =0.15.0
+Version: =0.23.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
