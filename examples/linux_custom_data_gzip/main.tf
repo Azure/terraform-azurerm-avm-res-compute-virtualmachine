@@ -18,6 +18,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.7"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.13"
+    }
   }
 }
 
@@ -158,6 +162,18 @@ module "avm_res_keyvault_vault" {
   }
 }
 
+# The Key Vault module creates its role assignments with AzAPI, which returns before Azure has
+# propagated them, so without this wait the virtual machine module can try to write its generated
+# secret before it is allowed to.
+resource "time_sleep" "wait_for_key_vault_rbac" {
+  create_duration = "60s"
+  triggers = {
+    key_vault_id = module.avm_res_keyvault_vault.resource_id
+  }
+
+  depends_on = [module.avm_res_keyvault_vault]
+}
+
 # Plain text cloud-init (no gzip) — base64 only
 data "cloudinit_config" "plaintext" {
   gzip          = false
@@ -200,7 +216,7 @@ module "vm_plaintext_custom_data" {
   zone                = random_integer.zone_index.result
   account_credentials = {
     key_vault_configuration = {
-      resource_id = module.avm_res_keyvault_vault.resource_id
+      resource_id = time_sleep.wait_for_key_vault_rbac.triggers["key_vault_id"]
     }
   }
   custom_data                = data.cloudinit_config.plaintext.rendered
@@ -242,7 +258,7 @@ module "vm_gzipped_custom_data" {
   zone                = random_integer.zone_index.result
   account_credentials = {
     key_vault_configuration = {
-      resource_id = module.avm_res_keyvault_vault.resource_id
+      resource_id = time_sleep.wait_for_key_vault_rbac.triggers["key_vault_id"]
     }
   }
   custom_data                = data.cloudinit_config.gzipped.rendered

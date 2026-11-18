@@ -46,6 +46,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.7"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.13"
+    }
   }
 }
 
@@ -251,6 +255,18 @@ module "avm_res_keyvault_vault" {
   }
 }
 
+# The Key Vault module creates its role assignments with AzAPI, which returns before Azure has
+# propagated them, so without this wait the virtual machine module can try to write its generated
+# secret before it is allowed to.
+resource "time_sleep" "wait_for_key_vault_rbac" {
+  create_duration = "60s"
+  triggers = {
+    key_vault_id = module.avm_res_keyvault_vault.resource_id
+  }
+
+  depends_on = [module.avm_res_keyvault_vault]
+}
+
 resource "azurerm_log_analytics_workspace" "this_workspace" {
   location            = azurerm_resource_group.this_rg.location
   name                = module.naming.log_analytics_workspace.name_unique
@@ -330,7 +346,7 @@ module "testvm" {
   zone                = random_integer.zone_index.result
   account_credentials = {
     key_vault_configuration = {
-      resource_id = module.avm_res_keyvault_vault.resource_id
+      resource_id = time_sleep.wait_for_key_vault_rbac.triggers["key_vault_id"]
     }
   }
   bypass_platform_safety_checks_on_user_schedule_enabled = true
@@ -584,6 +600,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
+- <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.13)
+
 ## Resources
 
 The following resources are used by this module:
@@ -600,6 +618,7 @@ The following resources are used by this module:
 - [random_integer.ade_sku_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_integer.zone_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
+- [time_sleep.wait_for_key_vault_rbac](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
 - [azuread_service_principal.backup_service_app](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/data-sources/service_principal) (data source)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 - [azurerm_key_vault.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/key_vault) (data source)
