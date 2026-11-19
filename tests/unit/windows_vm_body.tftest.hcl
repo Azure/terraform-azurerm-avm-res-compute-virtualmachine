@@ -94,7 +94,7 @@ run "core_attributes_are_mapped_to_arm_names" {
   }
   assert {
     condition     = local.windows_vm_body.properties.storageProfile.osDisk.deleteOption == "Delete"
-    error_message = "azurerm deleted the OS disk on destroy through delete_os_disk_on_deletion, so ARM must be asked to do the same or the disk is orphaned and keeps billing."
+    error_message = "Without an explicit os_disk.delete_option, an OS disk built from an image must be deleted with the machine, as the azurerm provider's default delete_os_disk_on_deletion did, or it is orphaned and keeps billing."
   }
   assert {
     condition     = one(local.windows_vm_body.zones) == "1"
@@ -107,6 +107,23 @@ run "core_attributes_are_mapped_to_arm_names" {
   assert {
     condition     = !can(local.windows_vm_body.properties.osProfile.linuxConfiguration)
     error_message = "A Windows machine must not carry a linuxConfiguration."
+  }
+}
+
+run "os_disk_delete_option_keeps_an_image_built_disk" {
+  command = apply
+
+  variables {
+    os_disk = {
+      caching              = "ReadWrite"
+      storage_account_type = "Premium_LRS"
+      delete_option        = "Detach"
+    }
+  }
+
+  assert {
+    condition     = local.windows_vm_body.properties.storageProfile.osDisk.deleteOption == "Detach"
+    error_message = "os_disk.delete_option must override the default, so that a caller who set delete_os_disk_on_deletion = false under the azurerm provider can keep the OS disk."
   }
 }
 
@@ -429,8 +446,8 @@ run "immutable_properties_force_replacement" {
     error_message = "admin_username is ForceNew under azurerm and must trigger replacement under AzAPI."
   }
   assert {
-    condition     = contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_refs, "zones")
-    error_message = "zone is ForceNew under azurerm and must trigger replacement under AzAPI."
+    condition     = contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_refs, "not_null(zones, `[]`)")
+    error_message = "Zone changes must trigger replacement without treating omitted regional zones as different from an empty list."
   }
   assert {
     condition     = !contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_refs, "properties.osProfile.windowsConfiguration.patchSettings")
@@ -475,6 +492,35 @@ run "omittable_paths_are_watched_through_their_inputs" {
   assert {
     condition     = contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_external_values, jsonencode(local.windows_vm_winrm_listeners))
     error_message = "winrm_listeners is ForceNew under azurerm and must still replace the machine when it changes."
+  }
+}
+
+# Azure returns the availability set ID with its name in upper case, and fills in the UEFI flags the
+# azurerm provider left out, so the body a moved block adopts never matches these paths.
+run "azure_normalised_paths_are_watched_through_their_inputs" {
+  command = apply
+
+  variables {
+    zone                         = null
+    availability_set_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/availabilitySets/AvSet-Test"
+    secure_boot_enabled          = true
+  }
+
+  assert {
+    condition     = !contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_refs, "properties.availabilitySet") && !contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_refs, "properties.securityProfile.uefiSettings")
+    error_message = "Watching the availability set or UEFI body paths replaces a machine adopted from the azurerm provider."
+  }
+  assert {
+    condition     = contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_external_values, "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/rg-test/providers/microsoft.compute/availabilitysets/avset-test")
+    error_message = "availability_set_resource_id is ForceNew under azurerm, so changing it must still replace the machine, but a change of case alone must not."
+  }
+  assert {
+    condition     = contains(azapi_resource.this_windows_virtual_machine[0].replace_triggers_external_values, jsonencode({ secureBootEnabled = true }))
+    error_message = "secure_boot_enabled is ForceNew under azurerm, so changing it must still replace the machine."
+  }
+  assert {
+    condition     = azapi_resource.this_windows_virtual_machine[0].ignore_casing
+    error_message = "ARM returns the availability set ID in a different case, so without ignore_casing every plan shows it changing."
   }
 }
 

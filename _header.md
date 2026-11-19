@@ -12,6 +12,19 @@ Back up your Terraform state and review the complete upgrade plan before applyin
 
 Disk attachments and network interface associations are now described in the corresponding virtual machine and network interface bodies; their old standalone state entries are forgotten without an intentional remote delete. Backup protection is managed by the backup submodule, which inspects the existing protected item. The old telemetry state entries are also forgotten without an intentional remote delete. Review these changes against your own deployed configuration rather than assuming every upgrade will be a no-op.
 
+## Upgrading the OS disk deletion setting
+
+Earlier versions created the virtual machine with the `azurerm` provider. After destroying the virtual machine, the provider deleted its OS disk, attached disks included, unless `delete_os_disk_on_deletion` was set to `false` in its `features` block. The provider never set a deletion policy on the virtual machine itself, so a virtual machine deleted outside Terraform left its OS disk behind.
+
+That setting no longer affects this module. The module now sets the policy on the virtual machine through `os_disk.delete_option`, and Azure applies it to every deletion, including deletions outside Terraform. When it is unset, an OS disk created from an image is deleted with the virtual machine, and a disk attached with `os_managed_disk_id` is kept.
+
+Carry your previous choice into the module before you upgrade:
+
+- If you set `delete_os_disk_on_deletion = false` to keep the OS disk, set `os_disk.delete_option = "Detach"`.
+- If you attach an existing disk with `os_managed_disk_id` and want it deleted with the virtual machine, as the provider's default did, set `os_disk.delete_option = "Delete"`.
+
+The upgrade changes the policy in place. It does not replace the virtual machine or its OS disk.
+
 ## Upgrading generated credential secrets
 
 The generated admin password and SSH key secrets are now written with `azapi_data_plane_resource` instead of `azurerm_key_vault_secret`. Terraform cannot move that state automatically, because `azapi_data_plane_resource` does not support moving state from another resource type, so each existing secret has to be adopted once.

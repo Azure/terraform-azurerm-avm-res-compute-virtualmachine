@@ -93,7 +93,7 @@ run "core_attributes_are_mapped_to_arm_names" {
   }
   assert {
     condition     = local.linux_vm_body.properties.storageProfile.osDisk.deleteOption == "Delete"
-    error_message = "azurerm deleted the OS disk on destroy through delete_os_disk_on_deletion, so ARM must be asked to do the same or the disk is orphaned and keeps billing."
+    error_message = "Without an explicit os_disk.delete_option, an OS disk built from an image must be deleted with the machine, as the azurerm provider's default delete_os_disk_on_deletion did, or it is orphaned and keeps billing."
   }
   assert {
     condition     = one(local.linux_vm_body.zones) == "1"
@@ -103,6 +103,38 @@ run "core_attributes_are_mapped_to_arm_names" {
     condition     = azapi_resource.this_linux_virtual_machine[0].type == "Microsoft.Compute/virtualMachines@2024-11-01"
     error_message = "The virtual machine must use the compute_virtual_machines resource type."
   }
+}
+
+run "os_disk_delete_option_keeps_an_image_built_disk" {
+  command = apply
+
+  variables {
+    os_disk = {
+      caching              = "ReadWrite"
+      storage_account_type = "Premium_LRS"
+      delete_option        = "Detach"
+    }
+  }
+
+  assert {
+    condition     = local.linux_vm_body.properties.storageProfile.osDisk.deleteOption == "Detach"
+    error_message = "os_disk.delete_option must override the default, so that a caller who set delete_os_disk_on_deletion = false under the azurerm provider can keep the OS disk."
+  }
+}
+
+run "os_disk_delete_option_rejects_unknown_values" {
+  # Variable validation is evaluated during planning, so the apply can never be reached here.
+  command = plan
+
+  variables {
+    os_disk = {
+      caching              = "ReadWrite"
+      storage_account_type = "Premium_LRS"
+      delete_option        = "Retain"
+    }
+  }
+
+  expect_failures = [var.os_disk]
 }
 
 run "the_first_interface_is_marked_primary" {
@@ -330,6 +362,39 @@ run "trusted_launch_maps_to_the_security_profile" {
   }
 }
 
+# AzureRM sent a UEFI flag only when it was true, so Azure has no value for one that was false.
+run "a_uefi_flag_set_to_false_is_left_out" {
+  command = apply
+
+  variables {
+    secure_boot_enabled = true
+    vtpm_enabled        = false
+  }
+
+  assert {
+    condition     = local.linux_vm_body.properties.securityProfile.uefiSettings.secureBootEnabled == true
+    error_message = "secure_boot_enabled = true must still reach the body."
+  }
+  assert {
+    condition     = !can(local.linux_vm_body.properties.securityProfile.uefiSettings.vTpmEnabled)
+    error_message = "vtpm_enabled = false must be left out of the body, as the azurerm provider left it out."
+  }
+}
+
+run "uefi_flags_set_to_false_keep_a_standard_machine" {
+  command = apply
+
+  variables {
+    secure_boot_enabled = false
+    vtpm_enabled        = false
+  }
+
+  assert {
+    condition     = !can(local.linux_vm_body.properties.securityProfile.uefiSettings) && !can(local.linux_vm_body.properties.securityProfile.securityType)
+    error_message = "With no UEFI flag set to true the azurerm provider built a Standard machine, so the body must not ask for Trusted Launch."
+  }
+}
+
 # The body is a single dynamic attribute: if its shape depended on a value the caller computes,
 # the whole body would be unknown at plan time and every policy check on the virtual machine would
 # be blind. Only inputs decide the shape, never a computed value.
@@ -511,8 +576,8 @@ run "immutable_properties_force_replacement" {
     error_message = "admin_username is ForceNew under azurerm and must trigger replacement under AzAPI."
   }
   assert {
-    condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "zones")
-    error_message = "zone is ForceNew under azurerm and must trigger replacement under AzAPI."
+    condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "not_null(zones, `[]`)")
+    error_message = "Zone changes must trigger replacement without treating omitted regional zones as different from an empty list."
   }
   assert {
     condition     = !contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.hardwareProfile.vmSize")
@@ -551,6 +616,35 @@ run "omittable_paths_are_watched_through_their_inputs" {
   assert {
     condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_external_values, jsonencode(local.source_image_reference))
     error_message = "source_image_reference is ForceNew under azurerm and must still replace the machine when it changes."
+  }
+}
+
+# Azure returns the availability set ID with its name in upper case, and fills in the UEFI flags the
+# azurerm provider left out, so the body a moved block adopts never matches these paths.
+run "azure_normalised_paths_are_watched_through_their_inputs" {
+  command = apply
+
+  variables {
+    zone                         = null
+    availability_set_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/availabilitySets/AvSet-Test"
+    secure_boot_enabled          = true
+  }
+
+  assert {
+    condition     = !contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.availabilitySet") && !contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_refs, "properties.securityProfile.uefiSettings")
+    error_message = "Watching the availability set or UEFI body paths replaces a machine adopted from the azurerm provider."
+  }
+  assert {
+    condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_external_values, "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/rg-test/providers/microsoft.compute/availabilitysets/avset-test")
+    error_message = "availability_set_resource_id is ForceNew under azurerm, so changing it must still replace the machine, but a change of case alone must not."
+  }
+  assert {
+    condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_external_values, jsonencode({ secureBootEnabled = true }))
+    error_message = "secure_boot_enabled is ForceNew under azurerm, so changing it must still replace the machine."
+  }
+  assert {
+    condition     = azapi_resource.this_linux_virtual_machine[0].ignore_casing
+    error_message = "ARM returns the availability set ID in a different case, so without ignore_casing every plan shows it changing."
   }
 }
 

@@ -12,6 +12,10 @@ resource "azapi_resource" "this_linux_virtual_machine" {
   type                = var.resource_types.compute_virtual_machines
   body                = local.linux_vm_body
   ignore_body_changes = length(var.ignore_body_changes.compute_virtual_machines) > 0 ? var.ignore_body_changes.compute_virtual_machines : null
+  # ARM can return the availability set, proximity placement group, capacity reservation group and
+  # dedicated host IDs in a different case than they were sent, and the azurerm provider ignored
+  # the difference. Without this, every plan would show them changing.
+  ignore_casing = true
   # ARM returns the data disks in the order they were attached, which is not the order this module
   # sends them. Matching by name rather than by position stops that difference reading as a change
   # on every plan. name is also AzAPI's default identifier, but it is set explicitly because the
@@ -36,6 +40,10 @@ resource "azapi_resource" "this_linux_virtual_machine" {
     var.source_image_resource_id,
     jsonencode(local.source_image_reference),
     jsonencode(local.linux_vm_ssh_public_keys),
+    # Azure returns the availability set ID with its name in upper case, and fills in the UEFI
+    # flags that the azurerm provider left out, so neither body path matches after an upgrade.
+    var.availability_set_resource_id == null ? null : lower(var.availability_set_resource_id),
+    jsonencode(local.vm_uefi_settings),
   ]
   replace_triggers_refs = [
     # Every path the azurerm provider marked ForceNew that the module always sends a real value
@@ -47,13 +55,12 @@ resource "azapi_resource" "this_linux_virtual_machine" {
     "properties.osProfile.linuxConfiguration.provisionVMAgent",
     "properties.storageProfile.osDisk.diffDiskSettings",
     "properties.storageProfile.osDisk.managedDisk.storageAccountType",
-    "properties.securityProfile.uefiSettings",
-    "properties.availabilitySet",
     "properties.platformFaultDomain",
     "properties.priority",
     "properties.evictionPolicy",
     "plan",
-    "zones",
+    # Azure omits zones for regional machines; an empty list is the same placement.
+    "not_null(zones, `[]`)",
     "extendedLocation",
   ]
   response_export_values = ["properties.vmId", "properties.storageProfile.osDisk.managedDisk.id", "identity", "properties.securityProfile.encryptionAtHost"]

@@ -34,10 +34,12 @@ locals {
       # Attach reuses an existing disk; every other path creates one from the image.
       createOption = var.os_disk_attach_mode ? "Attach" : "FromImage"
       caching      = var.os_disk.caching
-      # The azurerm provider deleted the OS disk itself when the machine was destroyed, through
-      # the delete_os_disk_on_deletion feature that defaults to true. AzAPI has no equivalent, so
-      # ARM is asked to do it instead. A disk the caller attached stays, because they own it.
-      deleteOption = var.os_disk_attach_mode ? "Detach" : "Delete"
+      # The azurerm provider deleted the OS disk itself when the machine was destroyed, unless its
+      # delete_os_disk_on_deletion feature was turned off. AzAPI has no equivalent, so ARM is told
+      # what to do instead. Without an explicit choice, a disk built from the image goes with the
+      # machine, as it did under the provider's default, and a disk the caller attached stays,
+      # because they own it.
+      deleteOption = coalesce(var.os_disk.delete_option, var.os_disk_attach_mode ? "Detach" : "Delete")
     },
     var.os_disk_attach_mode ? { osType = lower(var.os_type) == "windows" ? "Windows" : "Linux" } : {},
     var.os_disk.name == null ? {} : { name = var.os_disk.name },
@@ -69,9 +71,15 @@ locals {
     }
   )
 
-  vm_uefi_settings = var.secure_boot_enabled == null && var.vtpm_enabled == null ? null : merge(
-    var.secure_boot_enabled == null ? {} : { secureBootEnabled = var.secure_boot_enabled },
-    var.vtpm_enabled == null ? {} : { vTpmEnabled = var.vtpm_enabled },
+  # AzureRM sent a UEFI flag only when it was true, and a security type only alongside one, so a
+  # machine it built has no value for a flag that was false or unset, and with neither flag true it
+  # is a Standard machine. Sending false here would ask Azure to turn it into a Trusted Launch
+  # machine. A confidential machine is the exception: AzureRM sent both flags for it.
+  vm_uefi_secure_boot = var.os_disk.security_encryption_type != null ? var.secure_boot_enabled == true : (var.secure_boot_enabled == true ? true : null)
+  vm_uefi_vtpm        = var.os_disk.security_encryption_type != null ? var.vtpm_enabled == true : (var.vtpm_enabled == true ? true : null)
+  vm_uefi_settings = local.vm_uefi_secure_boot == null && local.vm_uefi_vtpm == null ? null : merge(
+    local.vm_uefi_secure_boot == null ? {} : { secureBootEnabled = local.vm_uefi_secure_boot },
+    local.vm_uefi_vtpm == null ? {} : { vTpmEnabled = local.vm_uefi_vtpm },
   )
 
   vm_security_profile = merge(

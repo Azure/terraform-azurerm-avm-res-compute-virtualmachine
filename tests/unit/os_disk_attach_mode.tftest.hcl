@@ -199,6 +199,31 @@ run "windows_attach_mode_omits_os_profile_attributes" {
   }
 }
 
+run "attached_os_disk_can_be_deleted_with_the_machine" {
+  command = apply
+
+  variables {
+    os_disk_attach_mode = true
+    os_managed_disk_id  = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Compute/disks/disk-test"
+    os_disk = {
+      caching              = "ReadWrite"
+      storage_account_type = "Premium_LRS"
+      delete_option        = "Delete"
+    }
+    account_credentials = {
+      admin_credentials = {
+        generate_admin_password_or_ssh_key = true
+      }
+      password_authentication_disabled = false
+    }
+  }
+
+  assert {
+    condition     = local.linux_vm_body.properties.storageProfile.osDisk.deleteOption == "Delete"
+    error_message = "os_disk.delete_option must let the caller delete an attached OS disk with the machine, which the azurerm provider did by default."
+  }
+}
+
 run "windows_without_attach_mode_honours_os_profile_attributes" {
   command = apply
 

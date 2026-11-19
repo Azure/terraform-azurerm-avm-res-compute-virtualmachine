@@ -14,6 +14,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.7"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.13"
+    }
   }
 }
 
@@ -191,6 +195,18 @@ module "avm_res_keyvault_vault" {
   }
 }
 
+# The Key Vault module creates its role assignments with AzAPI, which returns before Azure has
+# propagated them, so without this wait the virtual machine module can try to write its generated
+# secret before it is allowed to.
+resource "time_sleep" "wait_for_key_vault_rbac" {
+  create_duration = "60s"
+  triggers = {
+    key_vault_id = module.avm_res_keyvault_vault.resource_id
+  }
+
+  depends_on = [module.avm_res_keyvault_vault]
+}
+
 resource "azurerm_storage_account" "app_account" {
   account_replication_type = "ZRS"
   account_tier             = "Standard"
@@ -287,7 +303,7 @@ module "testvm" {
   zone                = random_integer.zone_index.result
   account_credentials = {
     key_vault_configuration = {
-      resource_id = module.avm_res_keyvault_vault.resource_id
+      resource_id = time_sleep.wait_for_key_vault_rbac.triggers["key_vault_id"]
     }
   }
   bypass_platform_safety_checks_on_user_schedule_enabled = true
