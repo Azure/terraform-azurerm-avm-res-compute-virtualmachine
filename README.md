@@ -379,7 +379,7 @@ Default: `null`
 
 ### <a name="input_availability_set_resource_id"></a> [availability\_set\_resource\_id](#input\_availability\_set\_resource\_id)
 
-Description: (Optional) Specifies the Azure Resource ID of the Availability Set in which the Virtual Machine should exist. Cannot be used along with `new_availability_set`, `new_capacity_reservation_group`, `capacity_reservation_group_id`, `virtual_machine_scale_set_id`, `zone`. Changing this forces a new resource to be created.
+Description: (Optional) Specifies the Azure Resource ID of the Availability Set in which the Virtual Machine should exist. Cannot be used along with `new_availability_set`, `new_capacity_reservation_group`, `capacity_reservation_group_id`, `virtual_machine_scale_set_id`, `zone`. The module does not recreate the virtual machine when this changes.
 
 Type: `string`
 
@@ -1961,7 +1961,7 @@ Default: `[]`
 
 ### <a name="input_secure_boot_enabled"></a> [secure\_boot\_enabled](#input\_secure\_boot\_enabled)
 
-Description: (Optional) Specifies whether secure boot should be enabled on the virtual machine. Changing this forces a new resource to be created.
+Description: (Optional) Specifies whether secure boot should be enabled on the virtual machine. The module does not recreate the virtual machine when this changes.
 
 Type: `bool`
 
@@ -2240,7 +2240,7 @@ Default: `null`
 
 ### <a name="input_vtpm_enabled"></a> [vtpm\_enabled](#input\_vtpm\_enabled)
 
-Description: (Optional) Specifies whether vTPM should be enabled on the virtual machine. Changing this forces a new resource to be created.
+Description: (Optional) Specifies whether vTPM should be enabled on the virtual machine. The module does not recreate the virtual machine when this changes.
 
 Type: `bool`
 
