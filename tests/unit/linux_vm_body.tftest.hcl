@@ -620,8 +620,10 @@ run "omittable_paths_are_watched_through_their_inputs" {
 }
 
 # Azure returns the availability set ID with its name in upper case, and fills in the UEFI flags the
-# azurerm provider left out, so the body a moved block adopts never matches these paths.
-run "azure_normalised_paths_are_watched_through_their_inputs" {
+# azurerm provider left out, so the body a moved block adopts never matches these paths. Changing
+# replace_triggers_external_values replaces every machine already deployed with the AzAPI module,
+# so they are not watched there either.
+run "azure_normalised_paths_do_not_force_replacement" {
   command = apply
 
   variables {
@@ -635,12 +637,8 @@ run "azure_normalised_paths_are_watched_through_their_inputs" {
     error_message = "Watching the availability set or UEFI body paths replaces a machine adopted from the azurerm provider."
   }
   assert {
-    condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_external_values, "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/rg-test/providers/microsoft.compute/availabilitysets/avset-test")
-    error_message = "availability_set_resource_id is ForceNew under azurerm, so changing it must still replace the machine, but a change of case alone must not."
-  }
-  assert {
-    condition     = contains(azapi_resource.this_linux_virtual_machine[0].replace_triggers_external_values, jsonencode({ secureBootEnabled = true }))
-    error_message = "secure_boot_enabled is ForceNew under azurerm, so changing it must still replace the machine."
+    condition     = length(azapi_resource.this_linux_virtual_machine[0].replace_triggers_external_values) == 8
+    error_message = "Adding to or removing from replace_triggers_external_values replaces every machine already deployed with the AzAPI module."
   }
   assert {
     condition     = azapi_resource.this_linux_virtual_machine[0].ignore_casing

@@ -43,10 +43,8 @@ resource "azapi_resource" "this_windows_virtual_machine" {
     var.timezone,
     jsonencode(local.windows_vm_additional_unattend_content),
     jsonencode(local.windows_vm_winrm_listeners),
-    # Azure returns the availability set ID with its name in upper case, and fills in the UEFI
-    # flags that the azurerm provider left out, so neither body path matches after an upgrade.
-    var.availability_set_resource_id == null ? null : lower(var.availability_set_resource_id),
-    jsonencode(local.vm_uefi_settings),
+    # Keep this list exactly as it is. Any change to it replaces every machine already managed by
+    # this module through AzAPI, so the availability set and UEFI settings are not watched here.
   ]
   replace_triggers_refs = [
     # Every path the azurerm provider marked ForceNew that the module always sends a real value

@@ -215,7 +215,7 @@ variable "automatic_updates_enabled" {
 variable "availability_set_resource_id" {
   type        = string
   default     = null
-  description = "(Optional) Specifies the Azure Resource ID of the Availability Set in which the Virtual Machine should exist. Cannot be used along with `new_availability_set`, `new_capacity_reservation_group`, `capacity_reservation_group_id`, `virtual_machine_scale_set_id`, `zone`. Changing this forces a new resource to be created."
+  description = "(Optional) Specifies the Azure Resource ID of the Availability Set in which the Virtual Machine should exist. Cannot be used along with `new_availability_set`, `new_capacity_reservation_group`, `capacity_reservation_group_id`, `virtual_machine_scale_set_id`, `zone`. The module does not recreate the virtual machine when this changes."
 }
 
 variable "avm_managed_migration_enabled" {
@@ -1706,7 +1706,7 @@ SECRETS
 variable "secure_boot_enabled" {
   type        = bool
   default     = null
-  description = "(Optional) Specifies whether secure boot should be enabled on the virtual machine. Changing this forces a new resource to be created."
+  description = "(Optional) Specifies whether secure boot should be enabled on the virtual machine. The module does not recreate the virtual machine when this changes."
 }
 
 variable "shutdown_schedules" {
@@ -1937,7 +1937,7 @@ VM_ADDITIONAL_CAPABILITIES
 variable "vtpm_enabled" {
   type        = bool
   default     = null
-  description = "(Optional) Specifies whether vTPM should be enabled on the virtual machine. Changing this forces a new resource to be created."
+  description = "(Optional) Specifies whether vTPM should be enabled on the virtual machine. The module does not recreate the virtual machine when this changes."
 }
 
 variable "winrm_listeners" {
