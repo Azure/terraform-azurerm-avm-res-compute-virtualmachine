@@ -142,4 +142,8 @@ run "the_script_source_and_parameters_are_mapped_to_arm_names" {
     condition     = !can(local.run_command_properties.errorBlobUri)
     error_message = "An omitted optional property must be absent from the body rather than sent as null."
   }
+  assert {
+    condition     = local.run_command_properties.treatFailureAsDeploymentFailure == true
+    error_message = "A failing script must fail the apply, as it did with the azurerm provider."
+  }
 }
