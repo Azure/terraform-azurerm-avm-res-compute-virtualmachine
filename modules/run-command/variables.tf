@@ -184,6 +184,19 @@ DESCRIPTION
   sensitive   = true
 }
 
+variable "start_virtual_machine_before_change" {
+  type        = bool
+  default     = false
+  description = "(Optional) Start the virtual machine before this run command is created, updated or destroyed. A stopped or deallocated virtual machine rejects run command operations. Defaults to `false`."
+  nullable    = false
+}
+
+variable "start_virtual_machine_resource_id" {
+  type        = string
+  default     = null
+  description = "(Optional) Resource ID of the virtual machine to start. Terraform must know the action's configuration at plan time to run it before a destroy, so supply an ID built from known inputs rather than a computed attribute. Defaults to `virtualmachine_resource_id`."
+}
+
 variable "tags" {
   type        = map(string)
   default     = null
@@ -208,4 +221,11 @@ An object of timeouts to apply to the creation and destruction of resources.
 
 Each time duration is parsed using this function: <https://pkg.go.dev/time#ParseDuration>.
 DESCRIPTION
+}
+
+variable "virtual_machine_resource_type" {
+  type        = string
+  default     = "Microsoft.Compute/virtualMachines@2024-11-01"
+  description = "The AzAPI `<resource>@<api-version>` string of the parent virtual machine, used by the start action."
+  nullable    = false
 }

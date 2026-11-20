@@ -1836,6 +1836,21 @@ variable "source_image_resource_id" {
   DESCRIPTION
 }
 
+variable "start_virtual_machine_before_guest_operations" {
+  type        = bool
+  default     = false
+  description = <<DESCRIPTION
+(Optional) Start the virtual machine before any extension or run command is created, updated or
+destroyed. Azure rejects these operations while the virtual machine is stopped or deallocated, for
+example after an auto-shutdown schedule or a manual shutdown. Defaults to `false`.
+
+Starting the machine has a cost and may be unwanted if it was stopped on purpose, so this is opt-in.
+The start request is idempotent: it has no effect when the machine is already running. It requires
+Terraform 1.16 or later.
+DESCRIPTION
+  nullable    = false
+}
+
 variable "tags" {
   type        = map(string)
   default     = null

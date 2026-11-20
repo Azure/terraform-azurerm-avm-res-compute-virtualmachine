@@ -78,6 +78,9 @@ locals {
   tags = var.tags
   #get the vm id value depending on whether the vm is linux or windows
   virtualmachine_resource_id = (lower(var.os_type) == "windows") ? azapi_resource.this_windows_virtual_machine[0].id : azapi_resource.this_linux_virtual_machine[0].id
+  # Built from inputs rather than the resource, so it is known at plan time; Terraform requires that
+  # for an action that runs before a destroy.
+  virtualmachine_start_resource_id = local.parent_id_for_resource_group[var.resource_group_name] == null ? null : "${local.parent_id_for_resource_group[var.resource_group_name]}/providers/Microsoft.Compute/virtualMachines/${var.name}"
   windows_virtual_machine_output_map = (lower(var.os_type) == "windows") ? {
     id = azapi_resource.this_windows_virtual_machine[0].id
     # ARM returns the identity block directly. The azurerm provider exposed it as a single-element

@@ -3,6 +3,18 @@ moved {
   to   = azapi_resource.this
 }
 
+# A stopped VM rejects extension operations. `action_trigger` needs a static action reference, so the
+# action always exists: it starts the VM when enabled and otherwise issues a read-only GET that
+# changes nothing.
+action "azapi_resource_action" "start_virtual_machine" {
+  config {
+    resource_id = coalesce(var.start_virtual_machine_resource_id, var.virtualmachine_resource_id)
+    type        = var.virtual_machine_resource_type
+    action      = var.start_virtual_machine_before_change ? "start" : null
+    method      = var.start_virtual_machine_before_change ? "POST" : "GET"
+  }
+}
+
 resource "azapi_resource" "this" {
   location  = var.location
   name      = var.name
@@ -31,6 +43,13 @@ resource "azapi_resource" "this" {
       delete = timeouts.value.delete
       read   = timeouts.value.read
       update = timeouts.value.update
+    }
+  }
+
+  lifecycle {
+    action_trigger {
+      events  = [before_create, before_update, before_destroy]
+      actions = [action.azapi_resource_action.start_virtual_machine]
     }
   }
 }
