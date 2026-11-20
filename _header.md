@@ -50,6 +50,12 @@ Keep the `azurerm` provider configured in your root module until this upgrade ha
 
 The secret keeps its name, its value and its version history. Key Vault creates a new version on any write, so the apply adds a version carrying the same value rather than replacing the secret.
 
+## Role assignments
+
+Role names are matched case-insensitively against the role definitions that can be assigned at the virtual machine's resource group, and the plan fails if a name matches none. For a custom role that can't be assigned there, for example one in another subscription, pass the role definition's resource ID.
+
+Upgraded role assignments keep their names and are updated in place. An assignment is replaced only when one of its inputs changes.
+
 ## Azure Backup lifecycle
 
 The module manages each configured Azure VM backup protected item through its full lifecycle:

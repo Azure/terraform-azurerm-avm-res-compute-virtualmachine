@@ -4,11 +4,9 @@ module "avm_utl_interfaces" {
 
   enable_telemetry = var.enable_telemetry
   location         = var.location
-  # Role definitions are looked up by name against this scope. The scope only resolves built-in role
-  # names to resource IDs; each assignment's own placement is set by its parent_id, so a single
-  # instance serves every assignment this module creates. The resource group is used rather than the
-  # virtual machine because its ID is known at plan time, even when the machine is being replaced,
-  # so the lookup never leaves every role assignment's body unknown.
-  role_assignment_definition_scope = local.parent_id_for_resource_group[var.resource_group_name]
-  role_assignments                 = local.interface_role_assignments
+  # Role names are resolved to IDs by this module (see data.azapi_resource_list.role_definitions), so
+  # the utility only builds the bodies. A single instance serves every assignment this module creates;
+  # each assignment's placement is set by its own parent_id.
+  role_assignment_definition_lookup_enabled = false
+  role_assignments                          = local.interface_role_assignments
 }
