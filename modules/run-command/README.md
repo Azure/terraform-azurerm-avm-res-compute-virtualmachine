@@ -38,7 +38,7 @@ module "avm-res-compute-virtualmachine-runcommand" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.10, < 2.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.16, < 2.0)
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
@@ -264,6 +264,22 @@ Type: `string`
 
 Default: `null`
 
+### <a name="input_start_virtual_machine_before_change"></a> [start\_virtual\_machine\_before\_change](#input\_start\_virtual\_machine\_before\_change)
+
+Description: (Optional) Start the virtual machine before this run command is created, updated or destroyed. A stopped or deallocated virtual machine rejects run command operations. Defaults to `false`.
+
+Type: `bool`
+
+Default: `false`
+
+### <a name="input_start_virtual_machine_resource_id"></a> [start\_virtual\_machine\_resource\_id](#input\_start\_virtual\_machine\_resource\_id)
+
+Description: (Optional) Resource ID of the virtual machine to start. Terraform must know the action's configuration at plan time to run it before a destroy, so supply an ID built from known inputs rather than a computed attribute. Defaults to `virtualmachine_resource_id`.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
 Description: `tags` - (Optional) Tags of the resource.
@@ -295,6 +311,14 @@ object({
 ```
 
 Default: `{}`
+
+### <a name="input_virtual_machine_resource_type"></a> [virtual\_machine\_resource\_type](#input\_virtual\_machine\_resource\_type)
+
+Description: The AzAPI `<resource>@<api-version>` string of the parent virtual machine, used by the start action.
+
+Type: `string`
+
+Default: `"Microsoft.Compute/virtualMachines@2024-11-01"`
 
 ## Outputs
 

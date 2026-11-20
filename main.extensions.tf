@@ -3,30 +3,33 @@ module "extension" {
   for_each = toset([for k, v in nonsensitive(var.extensions) : k if v.deploy_sequence >= 5]) #forcing to use the map key to address terraform limitation around sensitive values in the map (https://developer.hashicorp.com/terraform/language/meta-arguments/for_each#limitations-on-values-used-in-for_each)
 
   #using explicit references using the for_each key to get around the secrets issue in the above link
-  location                          = var.location
-  name                              = var.extensions[each.key].name
-  publisher                         = var.extensions[each.key].publisher
-  type                              = var.extensions[each.key].type
-  type_handler_version              = var.extensions[each.key].type_handler_version
-  virtualmachine_resource_id        = local.virtualmachine_resource_id
-  auto_upgrade_minor_version        = var.extensions[each.key].auto_upgrade_minor_version
-  automatic_upgrade_enabled         = var.extensions[each.key].automatic_upgrade_enabled
-  enable_telemetry                  = var.enable_telemetry
-  failure_suppression_enabled       = var.extensions[each.key].failure_suppression_enabled
-  ignore_body_changes               = var.ignore_body_changes.compute_virtual_machines_extensions
-  protected_settings                = var.extensions[each.key].protected_settings
-  protected_settings_from_key_vault = var.extensions[each.key].protected_settings_from_key_vault
-  provision_after_extensions        = var.extensions[each.key].provision_after_extensions
-  resource_types                    = var.resource_types.compute_virtual_machines_extensions
-  retry                             = var.retry
-  settings                          = var.extensions[each.key].settings
-  tags                              = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
+  location                            = var.location
+  name                                = var.extensions[each.key].name
+  publisher                           = var.extensions[each.key].publisher
+  type                                = var.extensions[each.key].type
+  type_handler_version                = var.extensions[each.key].type_handler_version
+  virtualmachine_resource_id          = local.virtualmachine_resource_id
+  auto_upgrade_minor_version          = var.extensions[each.key].auto_upgrade_minor_version
+  automatic_upgrade_enabled           = var.extensions[each.key].automatic_upgrade_enabled
+  enable_telemetry                    = var.enable_telemetry
+  failure_suppression_enabled         = var.extensions[each.key].failure_suppression_enabled
+  ignore_body_changes                 = var.ignore_body_changes.compute_virtual_machines_extensions
+  protected_settings                  = var.extensions[each.key].protected_settings
+  protected_settings_from_key_vault   = var.extensions[each.key].protected_settings_from_key_vault
+  provision_after_extensions          = var.extensions[each.key].provision_after_extensions
+  resource_types                      = var.resource_types.compute_virtual_machines_extensions
+  retry                               = var.retry
+  settings                            = var.extensions[each.key].settings
+  start_virtual_machine_before_change = var.start_virtual_machine_before_guest_operations
+  start_virtual_machine_resource_id   = local.virtualmachine_start_resource_id
+  tags                                = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
   timeouts = {
     create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.create, try(var.timeouts.create, null), "30m")
     delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.delete, try(var.timeouts.delete, null), "30m")
     read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
+  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_linux_virtual_machine,
@@ -43,30 +46,33 @@ module "extension_1" {
   for_each = toset([for k, v in nonsensitive(var.extensions) : k if v.deploy_sequence == 1]) #forcing to use the map key to address terraform limitation around sensitive values in the map (https://developer.hashicorp.com/terraform/language/meta-arguments/for_each#limitations-on-values-used-in-for_each)
 
   #using explicit references using the for_each key to get around the secrets issue in the above link
-  location                          = var.location
-  name                              = var.extensions[each.key].name
-  publisher                         = var.extensions[each.key].publisher
-  type                              = var.extensions[each.key].type
-  type_handler_version              = var.extensions[each.key].type_handler_version
-  virtualmachine_resource_id        = local.virtualmachine_resource_id
-  auto_upgrade_minor_version        = var.extensions[each.key].auto_upgrade_minor_version
-  automatic_upgrade_enabled         = var.extensions[each.key].automatic_upgrade_enabled
-  enable_telemetry                  = var.enable_telemetry
-  failure_suppression_enabled       = var.extensions[each.key].failure_suppression_enabled
-  ignore_body_changes               = var.ignore_body_changes.compute_virtual_machines_extensions
-  protected_settings                = var.extensions[each.key].protected_settings
-  protected_settings_from_key_vault = var.extensions[each.key].protected_settings_from_key_vault
-  provision_after_extensions        = var.extensions[each.key].provision_after_extensions
-  resource_types                    = var.resource_types.compute_virtual_machines_extensions
-  retry                             = var.retry
-  settings                          = var.extensions[each.key].settings
-  tags                              = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
+  location                            = var.location
+  name                                = var.extensions[each.key].name
+  publisher                           = var.extensions[each.key].publisher
+  type                                = var.extensions[each.key].type
+  type_handler_version                = var.extensions[each.key].type_handler_version
+  virtualmachine_resource_id          = local.virtualmachine_resource_id
+  auto_upgrade_minor_version          = var.extensions[each.key].auto_upgrade_minor_version
+  automatic_upgrade_enabled           = var.extensions[each.key].automatic_upgrade_enabled
+  enable_telemetry                    = var.enable_telemetry
+  failure_suppression_enabled         = var.extensions[each.key].failure_suppression_enabled
+  ignore_body_changes                 = var.ignore_body_changes.compute_virtual_machines_extensions
+  protected_settings                  = var.extensions[each.key].protected_settings
+  protected_settings_from_key_vault   = var.extensions[each.key].protected_settings_from_key_vault
+  provision_after_extensions          = var.extensions[each.key].provision_after_extensions
+  resource_types                      = var.resource_types.compute_virtual_machines_extensions
+  retry                               = var.retry
+  settings                            = var.extensions[each.key].settings
+  start_virtual_machine_before_change = var.start_virtual_machine_before_guest_operations
+  start_virtual_machine_resource_id   = local.virtualmachine_start_resource_id
+  tags                                = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
   timeouts = {
     create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.create, try(var.timeouts.create, null), "30m")
     delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.delete, try(var.timeouts.delete, null), "30m")
     read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
+  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_linux_virtual_machine,
@@ -79,30 +85,33 @@ module "extension_2" {
   for_each = toset([for k, v in nonsensitive(var.extensions) : k if v.deploy_sequence == 2]) #forcing to use the map key to address terraform limitation around sensitive values in the map (https://developer.hashicorp.com/terraform/language/meta-arguments/for_each#limitations-on-values-used-in-for_each)
 
   #using explicit references using the for_each key to get around the secrets issue in the above link
-  location                          = var.location
-  name                              = var.extensions[each.key].name
-  publisher                         = var.extensions[each.key].publisher
-  type                              = var.extensions[each.key].type
-  type_handler_version              = var.extensions[each.key].type_handler_version
-  virtualmachine_resource_id        = local.virtualmachine_resource_id
-  auto_upgrade_minor_version        = var.extensions[each.key].auto_upgrade_minor_version
-  automatic_upgrade_enabled         = var.extensions[each.key].automatic_upgrade_enabled
-  enable_telemetry                  = var.enable_telemetry
-  failure_suppression_enabled       = var.extensions[each.key].failure_suppression_enabled
-  ignore_body_changes               = var.ignore_body_changes.compute_virtual_machines_extensions
-  protected_settings                = var.extensions[each.key].protected_settings
-  protected_settings_from_key_vault = var.extensions[each.key].protected_settings_from_key_vault
-  provision_after_extensions        = var.extensions[each.key].provision_after_extensions
-  resource_types                    = var.resource_types.compute_virtual_machines_extensions
-  retry                             = var.retry
-  settings                          = var.extensions[each.key].settings
-  tags                              = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
+  location                            = var.location
+  name                                = var.extensions[each.key].name
+  publisher                           = var.extensions[each.key].publisher
+  type                                = var.extensions[each.key].type
+  type_handler_version                = var.extensions[each.key].type_handler_version
+  virtualmachine_resource_id          = local.virtualmachine_resource_id
+  auto_upgrade_minor_version          = var.extensions[each.key].auto_upgrade_minor_version
+  automatic_upgrade_enabled           = var.extensions[each.key].automatic_upgrade_enabled
+  enable_telemetry                    = var.enable_telemetry
+  failure_suppression_enabled         = var.extensions[each.key].failure_suppression_enabled
+  ignore_body_changes                 = var.ignore_body_changes.compute_virtual_machines_extensions
+  protected_settings                  = var.extensions[each.key].protected_settings
+  protected_settings_from_key_vault   = var.extensions[each.key].protected_settings_from_key_vault
+  provision_after_extensions          = var.extensions[each.key].provision_after_extensions
+  resource_types                      = var.resource_types.compute_virtual_machines_extensions
+  retry                               = var.retry
+  settings                            = var.extensions[each.key].settings
+  start_virtual_machine_before_change = var.start_virtual_machine_before_guest_operations
+  start_virtual_machine_resource_id   = local.virtualmachine_start_resource_id
+  tags                                = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
   timeouts = {
     create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.create, try(var.timeouts.create, null), "30m")
     delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.delete, try(var.timeouts.delete, null), "30m")
     read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
+  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_linux_virtual_machine,
@@ -116,30 +125,33 @@ module "extension_3" {
   for_each = toset([for k, v in nonsensitive(var.extensions) : k if v.deploy_sequence == 3]) #forcing to use the map key to address terraform limitation around sensitive values in the map (https://developer.hashicorp.com/terraform/language/meta-arguments/for_each#limitations-on-values-used-in-for_each)
 
   #using explicit references using the for_each key to get around the secrets issue in the above link
-  location                          = var.location
-  name                              = var.extensions[each.key].name
-  publisher                         = var.extensions[each.key].publisher
-  type                              = var.extensions[each.key].type
-  type_handler_version              = var.extensions[each.key].type_handler_version
-  virtualmachine_resource_id        = local.virtualmachine_resource_id
-  auto_upgrade_minor_version        = var.extensions[each.key].auto_upgrade_minor_version
-  automatic_upgrade_enabled         = var.extensions[each.key].automatic_upgrade_enabled
-  enable_telemetry                  = var.enable_telemetry
-  failure_suppression_enabled       = var.extensions[each.key].failure_suppression_enabled
-  ignore_body_changes               = var.ignore_body_changes.compute_virtual_machines_extensions
-  protected_settings                = var.extensions[each.key].protected_settings
-  protected_settings_from_key_vault = var.extensions[each.key].protected_settings_from_key_vault
-  provision_after_extensions        = var.extensions[each.key].provision_after_extensions
-  resource_types                    = var.resource_types.compute_virtual_machines_extensions
-  retry                             = var.retry
-  settings                          = var.extensions[each.key].settings
-  tags                              = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
+  location                            = var.location
+  name                                = var.extensions[each.key].name
+  publisher                           = var.extensions[each.key].publisher
+  type                                = var.extensions[each.key].type
+  type_handler_version                = var.extensions[each.key].type_handler_version
+  virtualmachine_resource_id          = local.virtualmachine_resource_id
+  auto_upgrade_minor_version          = var.extensions[each.key].auto_upgrade_minor_version
+  automatic_upgrade_enabled           = var.extensions[each.key].automatic_upgrade_enabled
+  enable_telemetry                    = var.enable_telemetry
+  failure_suppression_enabled         = var.extensions[each.key].failure_suppression_enabled
+  ignore_body_changes                 = var.ignore_body_changes.compute_virtual_machines_extensions
+  protected_settings                  = var.extensions[each.key].protected_settings
+  protected_settings_from_key_vault   = var.extensions[each.key].protected_settings_from_key_vault
+  provision_after_extensions          = var.extensions[each.key].provision_after_extensions
+  resource_types                      = var.resource_types.compute_virtual_machines_extensions
+  retry                               = var.retry
+  settings                            = var.extensions[each.key].settings
+  start_virtual_machine_before_change = var.start_virtual_machine_before_guest_operations
+  start_virtual_machine_resource_id   = local.virtualmachine_start_resource_id
+  tags                                = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
   timeouts = {
     create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.create, try(var.timeouts.create, null), "30m")
     delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.delete, try(var.timeouts.delete, null), "30m")
     read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
+  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_linux_virtual_machine,
@@ -154,30 +166,33 @@ module "extension_4" {
   for_each = toset([for k, v in nonsensitive(var.extensions) : k if v.deploy_sequence == 4]) #forcing to use the map key to address terraform limitation around sensitive values in the map (https://developer.hashicorp.com/terraform/language/meta-arguments/for_each#limitations-on-values-used-in-for_each)
 
   #using explicit references using the for_each key to get around the secrets issue in the above link
-  location                          = var.location
-  name                              = var.extensions[each.key].name
-  publisher                         = var.extensions[each.key].publisher
-  type                              = var.extensions[each.key].type
-  type_handler_version              = var.extensions[each.key].type_handler_version
-  virtualmachine_resource_id        = local.virtualmachine_resource_id
-  auto_upgrade_minor_version        = var.extensions[each.key].auto_upgrade_minor_version
-  automatic_upgrade_enabled         = var.extensions[each.key].automatic_upgrade_enabled
-  enable_telemetry                  = var.enable_telemetry
-  failure_suppression_enabled       = var.extensions[each.key].failure_suppression_enabled
-  ignore_body_changes               = var.ignore_body_changes.compute_virtual_machines_extensions
-  protected_settings                = var.extensions[each.key].protected_settings
-  protected_settings_from_key_vault = var.extensions[each.key].protected_settings_from_key_vault
-  provision_after_extensions        = var.extensions[each.key].provision_after_extensions
-  resource_types                    = var.resource_types.compute_virtual_machines_extensions
-  retry                             = var.retry
-  settings                          = var.extensions[each.key].settings
-  tags                              = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
+  location                            = var.location
+  name                                = var.extensions[each.key].name
+  publisher                           = var.extensions[each.key].publisher
+  type                                = var.extensions[each.key].type
+  type_handler_version                = var.extensions[each.key].type_handler_version
+  virtualmachine_resource_id          = local.virtualmachine_resource_id
+  auto_upgrade_minor_version          = var.extensions[each.key].auto_upgrade_minor_version
+  automatic_upgrade_enabled           = var.extensions[each.key].automatic_upgrade_enabled
+  enable_telemetry                    = var.enable_telemetry
+  failure_suppression_enabled         = var.extensions[each.key].failure_suppression_enabled
+  ignore_body_changes                 = var.ignore_body_changes.compute_virtual_machines_extensions
+  protected_settings                  = var.extensions[each.key].protected_settings
+  protected_settings_from_key_vault   = var.extensions[each.key].protected_settings_from_key_vault
+  provision_after_extensions          = var.extensions[each.key].provision_after_extensions
+  resource_types                      = var.resource_types.compute_virtual_machines_extensions
+  retry                               = var.retry
+  settings                            = var.extensions[each.key].settings
+  start_virtual_machine_before_change = var.start_virtual_machine_before_guest_operations
+  start_virtual_machine_resource_id   = local.virtualmachine_start_resource_id
+  tags                                = var.extensions[each.key].tags != null && var.extensions[each.key].tags != {} ? var.extensions[each.key].tags : local.tags
   timeouts = {
     create = coalesce(try(var.extensions[each.key].timeouts.create, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.create, try(var.timeouts.create, null), "30m")
     delete = coalesce(try(var.extensions[each.key].timeouts.delete, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.delete, try(var.timeouts.delete, null), "30m")
     read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
+  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_linux_virtual_machine,
