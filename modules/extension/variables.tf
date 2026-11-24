@@ -135,6 +135,7 @@ DESCRIPTION
 
 variable "resource_types" {
   type = object({
+    compute_virtual_machines            = optional(string, "Microsoft.Compute/virtualMachines@2024-11-01")
     compute_virtual_machines_extensions = optional(string, "Microsoft.Compute/virtualMachines/extensions@2024-11-01")
   })
   default     = {}
@@ -142,6 +143,7 @@ variable "resource_types" {
 Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key
 defaults to a tested value; supply only the keys you want to override.
 
+- `compute_virtual_machines` - The parent virtual machine, used by the start action.
 - `compute_virtual_machines_extensions` - The virtual machine extension.
 DESCRIPTION
   nullable    = false
@@ -209,11 +211,4 @@ An object of timeouts to apply to the creation and destruction of resources.
 
 Each time duration is parsed using this function: <https://pkg.go.dev/time#ParseDuration>.
 DESCRIPTION
-}
-
-variable "virtual_machine_resource_type" {
-  type        = string
-  default     = "Microsoft.Compute/virtualMachines@2024-11-01"
-  description = "The AzAPI `<resource>@<api-version>` string of the parent virtual machine, used by the start action."
-  nullable    = false
 }

@@ -4,12 +4,13 @@ moved {
 }
 
 # A stopped VM rejects run command operations. `action_trigger` needs a static action reference, so
-# the action always exists: it starts the VM when enabled and otherwise issues a read-only GET that
-# changes nothing.
+# the action is always declared. It starts the VM when enabled and otherwise issues a read-only GET
+# that changes nothing. The create and update triggers are conditional, so the action is not planned
+# at all unless the module is opted in.
 action "azapi_resource_action" "start_virtual_machine" {
   config {
     resource_id = coalesce(var.start_virtual_machine_resource_id, var.virtualmachine_resource_id)
-    type        = var.virtual_machine_resource_type
+    type        = var.resource_types.compute_virtual_machines
     action      = var.start_virtual_machine_before_change ? "start" : null
     method      = var.start_virtual_machine_before_change ? "POST" : "GET"
   }
@@ -45,7 +46,15 @@ resource "azapi_resource" "this" {
 
   lifecycle {
     action_trigger {
-      events  = [before_create, before_update, before_destroy]
+      events    = [before_create, before_update]
+      condition = var.start_virtual_machine_before_change
+      actions   = [action.azapi_resource_action.start_virtual_machine]
+    }
+
+    # Terraform rejects a condition on destroy events, so this always fires and falls back to a
+    # read-only GET when the flag is off.
+    action_trigger {
+      events  = [before_destroy]
       actions = [action.azapi_resource_action.start_virtual_machine]
     }
   }

@@ -1422,10 +1422,12 @@ variable "resource_types" {
     }), {})
 
     compute_virtual_machines_extensions = optional(object({
+      compute_virtual_machines            = optional(string)
       compute_virtual_machines_extensions = optional(string)
     }), {})
 
     compute_virtual_machines_run_commands = optional(object({
+      compute_virtual_machines              = optional(string)
       compute_virtual_machines_run_commands = optional(string)
     }), {})
   })
@@ -1448,8 +1450,10 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
 - `compute_virtual_machines_extensions` - Resource-type overrides passed to the extension submodule.
+- `compute_virtual_machines_extensions.compute_virtual_machines` - The parent virtual machine used by the start action. Set it here; the top-level `compute_virtual_machines` key does not reach the submodule.
 - `compute_virtual_machines_extensions.compute_virtual_machines_extensions` - The virtual machine extension.
 - `compute_virtual_machines_run_commands` - Resource-type overrides passed to the run command submodule.
+- `compute_virtual_machines_run_commands.compute_virtual_machines` - The parent virtual machine used by the start action. Set it here; the top-level `compute_virtual_machines` key does not reach the submodule.
 - `compute_virtual_machines_run_commands.compute_virtual_machines_run_commands` - The virtual machine run command.
 DESCRIPTION
   nullable    = false

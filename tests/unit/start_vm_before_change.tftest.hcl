@@ -1,5 +1,5 @@
-# Actions cannot be conditional in an action_trigger, so the start action always exists and degrades
-# to a read-only GET unless the module is opted in.
+# The start action is always declared, but create and update only trigger it when the module is opted
+# in. Destroy cannot be conditional, so it falls back to a read-only GET.
 mock_provider "azapi" {
   mock_data "azapi_client_config" {
     defaults = {

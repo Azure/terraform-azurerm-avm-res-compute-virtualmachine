@@ -199,12 +199,14 @@ Default: `[]`
 Description: Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key  
 defaults to a tested value; supply only the keys you want to override.
 
+- `compute_virtual_machines` - The parent virtual machine, used by the start action.
 - `compute_virtual_machines_extensions` - The virtual machine extension.
 
 Type:
 
 ```hcl
 object({
+    compute_virtual_machines            = optional(string, "Microsoft.Compute/virtualMachines@2024-11-01")
     compute_virtual_machines_extensions = optional(string, "Microsoft.Compute/virtualMachines/extensions@2024-11-01")
   })
 ```
@@ -287,14 +289,6 @@ object({
 ```
 
 Default: `{}`
-
-### <a name="input_virtual_machine_resource_type"></a> [virtual\_machine\_resource\_type](#input\_virtual\_machine\_resource\_type)
-
-Description: The AzAPI `<resource>@<api-version>` string of the parent virtual machine, used by the start action.
-
-Type: `string`
-
-Default: `"Microsoft.Compute/virtualMachines@2024-11-01"`
 
 ## Outputs
 

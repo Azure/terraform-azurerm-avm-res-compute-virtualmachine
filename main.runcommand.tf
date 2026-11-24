@@ -27,7 +27,6 @@ module "run_command" {
     read   = coalesce(try(each.value.timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(each.value.timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.update, try(var.timeouts.update, null), "30m")
   }
-  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_windows_virtual_machine,
@@ -69,7 +68,6 @@ module "run_command_1" {
     read   = coalesce(try(each.value.timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(each.value.timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.update, try(var.timeouts.update, null), "30m")
   }
-  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_windows_virtual_machine,
@@ -109,7 +107,6 @@ module "run_command_2" {
     read   = coalesce(try(each.value.timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(each.value.timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_run_command.update, try(var.timeouts.update, null), "30m")
   }
-  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_windows_virtual_machine,

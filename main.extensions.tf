@@ -29,7 +29,6 @@ module "extension" {
     read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
-  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_linux_virtual_machine,
@@ -72,7 +71,6 @@ module "extension_1" {
     read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
-  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_linux_virtual_machine,
@@ -111,7 +109,6 @@ module "extension_2" {
     read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
-  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_linux_virtual_machine,
@@ -151,7 +148,6 @@ module "extension_3" {
     read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
-  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_linux_virtual_machine,
@@ -192,7 +188,6 @@ module "extension_4" {
     read   = coalesce(try(var.extensions[each.key].timeouts.read, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.read, try(var.timeouts.read, null), "5m")
     update = coalesce(try(var.extensions[each.key].timeouts.update, null), var.timeouts_by_resource_type.azurerm_virtual_machine_extension.update, try(var.timeouts.update, null), "30m")
   }
-  virtual_machine_resource_type = var.resource_types.compute_virtual_machines
 
   depends_on = [
     azapi_resource.this_linux_virtual_machine,
