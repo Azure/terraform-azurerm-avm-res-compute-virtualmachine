@@ -164,13 +164,13 @@ resource "azapi_resource" "this_network_interface_role_assignments" {
   type                 = var.resource_types.authorization_role_assignments
   body                 = module.avm_utl_interfaces.role_assignments_azapi["nic-${each.key}"].body
   ignore_body_changes  = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
+  ignore_casing        = true
   ignore_null_property = true
   # Azure cannot change the principal or role definition of an existing role assignment, and the
-  # azurerm resource treated both as ForceNew. The generated name is stable across such a change, so
-  # without this the module would plan an in-place update that Azure rejects.
-  replace_triggers_refs  = ["properties.principalId", "properties.roleDefinitionId"]
-  response_export_values = []
-  retry                  = var.retry
+  # azurerm resource treated every input as ForceNew. See local.role_assignments_replace_triggers.
+  replace_triggers_external_values = local.role_assignments_replace_triggers["nic-${each.key}"]
+  response_export_values           = []
+  retry                            = var.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -187,6 +187,11 @@ resource "azapi_resource" "this_network_interface_role_assignments" {
     # See the note on azapi_resource.disks_role_assignments: the generated GUID name would force a
     # replacement, and deleting an assignment under a CanNotDelete lock fails with ScopeLocked.
     ignore_changes = [name]
+
+    precondition {
+      condition     = strcontains(lower(local.interface_role_assignments["nic-${each.key}"].role_definition_id_or_name), local.role_definition_resource_substring)
+      error_message = "The role definition `${local.role_assignments_requested["nic-${each.key}"].role_definition_id_or_name}` was not found at the virtual machine's resource group. Use the name of a role definition that can be assigned there, or the role definition's resource ID."
+    }
   }
 }
 

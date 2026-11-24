@@ -52,6 +52,12 @@ Keep the `azurerm` provider configured in your root module until this upgrade ha
 
 The secret keeps its name, its value and its version history. Key Vault creates a new version on any write, so the apply adds a version carrying the same value rather than replacing the secret.
 
+## Role assignments
+
+Role names are matched case-insensitively against the role definitions that can be assigned at the virtual machine's resource group, and the plan fails if a name matches none. For a custom role that can't be assigned there, for example one in another subscription, pass the role definition's resource ID.
+
+Upgraded role assignments keep their names and are updated in place. An assignment is replaced only when one of its inputs changes.
+
 ## Azure Backup lifecycle
 
 The module manages each configured Azure VM backup protected item through its full lifecycle:
@@ -167,6 +173,7 @@ The following resources are used by this module:
 - [time_sleep.lock_removal](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
 - [tls_private_key.this](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) (resource)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_resource_list.role_definitions](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_list) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs

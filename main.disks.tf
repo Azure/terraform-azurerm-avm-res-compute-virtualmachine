@@ -197,13 +197,13 @@ resource "azapi_resource" "disks_role_assignments" {
   type                 = var.resource_types.authorization_role_assignments
   body                 = module.avm_utl_interfaces.role_assignments_azapi["disk-${each.key}"].body
   ignore_body_changes  = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
+  ignore_casing        = true
   ignore_null_property = true
   # Azure cannot change the principal or role definition of an existing role assignment, and the
-  # azurerm resource treated both as ForceNew. The generated name is stable across such a change, so
-  # without this the module would plan an in-place update that Azure rejects.
-  replace_triggers_refs  = ["properties.principalId", "properties.roleDefinitionId"]
-  response_export_values = []
-  retry                  = var.retry
+  # azurerm resource treated every input as ForceNew. See local.role_assignments_replace_triggers.
+  replace_triggers_external_values = local.role_assignments_replace_triggers["disk-${each.key}"]
+  response_export_values           = []
+  retry                            = var.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -223,5 +223,10 @@ resource "azapi_resource" "disks_role_assignments" {
     # lock fails with ScopeLocked, which aborts the upgrade partway through. Keep whatever name the
     # assignment already has; the value is an opaque identifier that no consumer should need to set.
     ignore_changes = [name]
+
+    precondition {
+      condition     = strcontains(lower(local.interface_role_assignments["disk-${each.key}"].role_definition_id_or_name), local.role_definition_resource_substring)
+      error_message = "The role definition `${local.role_assignments_requested["disk-${each.key}"].role_definition_id_or_name}` was not found at the virtual machine's resource group. Use the name of a role definition that can be assigned there, or the role definition's resource ID."
+    }
   }
 }
