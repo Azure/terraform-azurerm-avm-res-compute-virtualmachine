@@ -43,6 +43,9 @@ locals {
   run_command_properties = merge(
     {
       source = local.run_command_source
+      # The azurerm provider created every run command with this set, so a failing script failed the
+      # apply. Azure defaults it to false, and a PUT that omits it resets an existing run command.
+      treatFailureAsDeploymentFailure = true
     },
     var.error_blob_uri == null ? {} : { errorBlobUri = var.error_blob_uri },
     var.output_blob_uri == null ? {} : { outputBlobUri = var.output_blob_uri },
