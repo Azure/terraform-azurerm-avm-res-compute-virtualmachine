@@ -63,6 +63,10 @@ The module manages each configured Azure VM backup protected item through its fu
 
 By default, removing a backup configuration or destroying the module deletes the protected item, matching the module's previous behavior. Set `retain_backup_data_on_destroy = true` on an `azure_backup_configurations` entry to stop protection while retaining its recovery points. This mode is intended for immutable vaults and other scenarios where backup data must outlive the virtual machine. Retained recovery points can continue to incur charges until they expire or are deleted.
 
+## Starting a stopped VM before extension and run command changes
+
+Azure rejects extension and run command operations on a VM that is stopped or deallocated, for example after an auto-shutdown schedule or a manual stop. Set `start_virtual_machine_before_guest_operations = true` to start the VM before each extension or run command is created, updated or destroyed. The start uses an AzAPI action and is a no-op when the VM is already running, but a stopped VM is left running afterwards and starts to incur compute charges again. The setting is off by default and requires Terraform 1.16 or later.
+
 ## Cross-subscription Application Gateway backend pools
 
 An IP configuration can join an Application Gateway backend pool in another subscription by passing the pool's full Azure resource ID to `app_gateway_backend_pool_resource_id`. The association is written to the VM's network interface, so this module writes it in the VM subscription and no provider is passed to the module. A provider alias is only needed in the root configuration that reads or creates the Application Gateway, as in the example below.
@@ -1658,8 +1662,10 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
 - `compute_virtual_machines_extensions` - Resource-type overrides passed to the extension submodule.
+- `compute_virtual_machines_extensions.compute_virtual_machines` - The parent virtual machine used by the start action. Set it here; the top-level `compute_virtual_machines` key does not reach the submodule.
 - `compute_virtual_machines_extensions.compute_virtual_machines_extensions` - The virtual machine extension.
 - `compute_virtual_machines_run_commands` - Resource-type overrides passed to the run command submodule.
+- `compute_virtual_machines_run_commands.compute_virtual_machines` - The parent virtual machine used by the start action. Set it here; the top-level `compute_virtual_machines` key does not reach the submodule.
 - `compute_virtual_machines_run_commands.compute_virtual_machines_run_commands` - The virtual machine run command.
 
 Type:
@@ -1682,10 +1688,12 @@ object({
     }), {})
 
     compute_virtual_machines_extensions = optional(object({
+      compute_virtual_machines            = optional(string)
       compute_virtual_machines_extensions = optional(string)
     }), {})
 
     compute_virtual_machines_run_commands = optional(object({
+      compute_virtual_machines              = optional(string)
       compute_virtual_machines_run_commands = optional(string)
     }), {})
   })
@@ -2090,6 +2098,20 @@ Description: The Azure resource ID of the source image used to create the VM. Ei
 Type: `string`
 
 Default: `null`
+
+### <a name="input_start_virtual_machine_before_guest_operations"></a> [start\_virtual\_machine\_before\_guest\_operations](#input\_start\_virtual\_machine\_before\_guest\_operations)
+
+Description: (Optional) Start the virtual machine before any extension or run command is created, updated or  
+destroyed. Azure rejects these operations while the virtual machine is stopped or deallocated, for  
+example after an auto-shutdown schedule or a manual shutdown. Defaults to `false`.
+
+Starting the machine has a cost and may be unwanted if it was stopped on purpose, so this is opt-in.  
+The start request is idempotent: it has no effect when the machine is already running. It requires  
+Terraform 1.16 or later.
+
+Type: `bool`
+
+Default: `false`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 

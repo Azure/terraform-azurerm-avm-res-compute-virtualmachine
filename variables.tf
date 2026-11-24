@@ -1422,10 +1422,12 @@ variable "resource_types" {
     }), {})
 
     compute_virtual_machines_extensions = optional(object({
+      compute_virtual_machines            = optional(string)
       compute_virtual_machines_extensions = optional(string)
     }), {})
 
     compute_virtual_machines_run_commands = optional(object({
+      compute_virtual_machines              = optional(string)
       compute_virtual_machines_run_commands = optional(string)
     }), {})
   })
@@ -1448,8 +1450,10 @@ sovereign cloud with older API versions, or when opting into a newer preview API
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - Resource-type overrides passed to the backup submodule.
 - `recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems.recoveryservices_vaults_backupfabrics_protectioncontainers_protecteditems` - The backup protected item.
 - `compute_virtual_machines_extensions` - Resource-type overrides passed to the extension submodule.
+- `compute_virtual_machines_extensions.compute_virtual_machines` - The parent virtual machine used by the start action. Set it here; the top-level `compute_virtual_machines` key does not reach the submodule.
 - `compute_virtual_machines_extensions.compute_virtual_machines_extensions` - The virtual machine extension.
 - `compute_virtual_machines_run_commands` - Resource-type overrides passed to the run command submodule.
+- `compute_virtual_machines_run_commands.compute_virtual_machines` - The parent virtual machine used by the start action. Set it here; the top-level `compute_virtual_machines` key does not reach the submodule.
 - `compute_virtual_machines_run_commands.compute_virtual_machines_run_commands` - The virtual machine run command.
 DESCRIPTION
   nullable    = false
@@ -1834,6 +1838,21 @@ variable "source_image_resource_id" {
   >
   > To deploy from a specialized image, create a managed disk from the image version with `azurerm_managed_disk` (`create_option = "FromImage"` and `gallery_image_reference_id`), then attach it using `os_managed_disk_id` and `os_disk_attach_mode = true`. A working example can be found in the [`./examples/linux_specialized_gallery_image`](https://github.com/Azure/terraform-azurerm-avm-res-compute-virtualmachine/tree/main/examples/linux_specialized_gallery_image) directory within the GitHub Repository.
   DESCRIPTION
+}
+
+variable "start_virtual_machine_before_guest_operations" {
+  type        = bool
+  default     = false
+  description = <<DESCRIPTION
+(Optional) Start the virtual machine before any extension or run command is created, updated or
+destroyed. Azure rejects these operations while the virtual machine is stopped or deallocated, for
+example after an auto-shutdown schedule or a manual shutdown. Defaults to `false`.
+
+Starting the machine has a cost and may be unwanted if it was stopped on purpose, so this is opt-in.
+The start request is idempotent: it has no effect when the machine is already running. It requires
+Terraform 1.16 or later.
+DESCRIPTION
+  nullable    = false
 }
 
 variable "tags" {

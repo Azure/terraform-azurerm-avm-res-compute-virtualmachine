@@ -135,6 +135,7 @@ DESCRIPTION
 
 variable "resource_types" {
   type = object({
+    compute_virtual_machines            = optional(string, "Microsoft.Compute/virtualMachines@2024-11-01")
     compute_virtual_machines_extensions = optional(string, "Microsoft.Compute/virtualMachines/extensions@2024-11-01")
   })
   default     = {}
@@ -142,6 +143,7 @@ variable "resource_types" {
 Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key
 defaults to a tested value; supply only the keys you want to override.
 
+- `compute_virtual_machines` - The parent virtual machine, used by the start action.
 - `compute_virtual_machines_extensions` - The virtual machine extension.
 DESCRIPTION
   nullable    = false
@@ -170,6 +172,19 @@ variable "settings" {
   description = <<DESCRIPTION
 `settings` - (Optional) - The settings passed to the extension, these are specified as a JSON object in a string. Certain VM Extensions require that the keys in the settings block are case sensitive. If you're seeing unhelpful errors, please ensure the keys are consistent with how Azure is expecting them (for instance, for the JsonADDomainExtension extension, the keys are expected to be in TitleCase.)
 DESCRIPTION
+}
+
+variable "start_virtual_machine_before_change" {
+  type        = bool
+  default     = false
+  description = "(Optional) Start the virtual machine before this extension is created, updated or destroyed. A stopped or deallocated virtual machine rejects extension operations. Defaults to `false`."
+  nullable    = false
+}
+
+variable "start_virtual_machine_resource_id" {
+  type        = string
+  default     = null
+  description = "(Optional) Resource ID of the virtual machine to start. Terraform must know the action's configuration at plan time to run it before a destroy, so supply an ID built from known inputs rather than a computed attribute. Defaults to `virtualmachine_resource_id`."
 }
 
 variable "tags" {

@@ -61,6 +61,10 @@ The module manages each configured Azure VM backup protected item through its fu
 
 By default, removing a backup configuration or destroying the module deletes the protected item, matching the module's previous behavior. Set `retain_backup_data_on_destroy = true` on an `azure_backup_configurations` entry to stop protection while retaining its recovery points. This mode is intended for immutable vaults and other scenarios where backup data must outlive the virtual machine. Retained recovery points can continue to incur charges until they expire or are deleted.
 
+## Starting a stopped VM before extension and run command changes
+
+Azure rejects extension and run command operations on a VM that is stopped or deallocated, for example after an auto-shutdown schedule or a manual stop. Set `start_virtual_machine_before_guest_operations = true` to start the VM before each extension or run command is created, updated or destroyed. The start uses an AzAPI action and is a no-op when the VM is already running, but a stopped VM is left running afterwards and starts to incur compute charges again. The setting is off by default and requires Terraform 1.16 or later.
+
 ## Cross-subscription Application Gateway backend pools
 
 An IP configuration can join an Application Gateway backend pool in another subscription by passing the pool's full Azure resource ID to `app_gateway_backend_pool_resource_id`. The association is written to the VM's network interface, so this module writes it in the VM subscription and no provider is passed to the module. A provider alias is only needed in the root configuration that reads or creates the Application Gateway, as in the example below.

@@ -137,6 +137,7 @@ DESCRIPTION
 
 variable "resource_types" {
   type = object({
+    compute_virtual_machines              = optional(string, "Microsoft.Compute/virtualMachines@2024-11-01")
     compute_virtual_machines_run_commands = optional(string, "Microsoft.Compute/virtualMachines/runCommands@2024-11-01")
   })
   default     = {}
@@ -144,6 +145,7 @@ variable "resource_types" {
 Override the AzAPI `<provider>/<resource>@<api-version>` strings used by this module. Each key
 defaults to a tested value; supply only the keys you want to override.
 
+- `compute_virtual_machines` - The parent virtual machine, used by the start action.
 - `compute_virtual_machines_run_commands` - The virtual machine run command.
 DESCRIPTION
   nullable    = false
@@ -182,6 +184,19 @@ variable "run_as_user" {
 `run_as_user` - (Optional): Specifies the user account on the VM when executing the Virtual Machine Run Command.
 DESCRIPTION
   sensitive   = true
+}
+
+variable "start_virtual_machine_before_change" {
+  type        = bool
+  default     = false
+  description = "(Optional) Start the virtual machine before this run command is created, updated or destroyed. A stopped or deallocated virtual machine rejects run command operations. Defaults to `false`."
+  nullable    = false
+}
+
+variable "start_virtual_machine_resource_id" {
+  type        = string
+  default     = null
+  description = "(Optional) Resource ID of the virtual machine to start. Terraform must know the action's configuration at plan time to run it before a destroy, so supply an ID built from known inputs rather than a computed attribute. Defaults to `virtualmachine_resource_id`."
 }
 
 variable "tags" {
